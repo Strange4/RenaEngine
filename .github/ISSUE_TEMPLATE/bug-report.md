@@ -48,6 +48,7 @@ Describe what actually happened.
 
 ## Environment
 <!-- OS, device, app version -->
+- Suspected Component: [game server, viewer, etc.]
 - Browser:
 
 ---
