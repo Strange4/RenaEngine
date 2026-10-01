@@ -2,7 +2,7 @@
 name: Task
 about: Everything the prof wants in a task issue
 title: "[EpicNumber].[UserStoryNumber].[TaskNumber] - Task Name"
-labels: task
+labels: Task
 type: Task
 assignees: ''
 
