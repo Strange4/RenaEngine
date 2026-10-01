@@ -10,10 +10,15 @@ assignees: ''
 
 ## Overview
 As a [type of user with description], I want [action they want to do] so that [overall user goal].
+
 Story Points: [Number]
+
 Estimate: [Number of *locked in* hours]
+
 Priority: [Number: lower is higher priority]
+
 Risk: [low/medium/high]
+
 Child of: [#issue number of epic (also make sure to use the sub-issue feature)] 
 
 
@@ -25,8 +30,8 @@ Design documents could include meeting minutes or drawings
 
 ### Design Task Breakdown:
 
-    [Discussion/design task description] (Time estimate)
-    EX: Discuss how to display the appointments on the UI (10 minutes)
+- [Discussion/design task description] (Time estimate)
+- EX: Discuss how to display the appointments on the UI (10 minutes)
 
 ### Implementation Task Breakdown:
 

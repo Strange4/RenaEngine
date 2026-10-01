@@ -10,8 +10,11 @@ assignees: ''
 
 ## Overview
 As a [type of user with description], I want [action they want to do] so that [overall user goal].
+
 Story Points: [Number]
+
 Priority: [Number: lower is higher priority]
+
 Risk: [low/medium/high]
 
 ## Child Stories
@@ -20,6 +23,7 @@ Risk: [low/medium/high]
 
 ## Related Design Documents
 ***Mandatory*** [put related design documents here]
+
 Design documents could include meeting minutes or drawings
 
 

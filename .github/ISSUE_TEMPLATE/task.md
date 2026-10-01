@@ -10,11 +10,13 @@ assignees: ''
 
 ## Overview
 Description of task (if title is not enough)
+
 Priority: [Number: lower is higher priority]
 
 
 ## Related Design Documents
 ***Mandatory*** [put related design documents here or in the PR]
+
 Design documents could include meeting minutes or drawings
 
 # IMPORTANT
