@@ -25,3 +25,4 @@ Closes: #issue number of task
 - [ ] The PR is added to a milestone if it is planned
 - [ ] Labels have been added
 - [ ] Design documents are present either here or in the related task issue
+- [ ] Did you actually review the code or did you skim it and write lgtm?
