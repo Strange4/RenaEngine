@@ -48,10 +48,7 @@ Describe what actually happened.
 
 ## Environment
 <!-- OS, device, app version -->
-- OS:
-- Device:
-- App version:
-- Build type (Debug/Release):
+- Browser:
 
 ---
 
