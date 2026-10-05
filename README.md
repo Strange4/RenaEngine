@@ -28,7 +28,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 https://github.com/users/Strange4/projects/2
 
 ## Wiki Table of Contents
-### Table of Contents
 
 **[[Home]](https://github.com/Strange4/RenaEngine/wiki)**
 
