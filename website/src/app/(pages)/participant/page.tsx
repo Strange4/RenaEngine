@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import LogoutButton from "@/components/LogoutButton";
+import LogoutButton from "@/app/components/LogoutButton";
 import { getSession } from "@/server/lib/session";
 
 export default async function ParticipantPage() {
