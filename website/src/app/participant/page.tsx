@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import LogoutButton from "@/components/LogoutButton";
-import { getSession } from "@/lib/session";
+import { getSession } from "@/server/lib/session";
 
 export default async function ParticipantPage() {
   const session = await getSession();
