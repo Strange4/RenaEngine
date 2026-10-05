@@ -1,7 +1,8 @@
 node_modules
 .next
 out
+coverage
 next-env.d.ts
 *.tsbuildinfo
-.env
-.env.local
+.env*
+!.env.example
