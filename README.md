@@ -77,7 +77,7 @@ https://github.com/users/Strange4/projects/2
 
 **[[Security]](https://github.com/Strange4/RenaEngine/wiki/Security)**
 
-**[[Performance]]**
+**[[Performance]](https://github.com/Strange4/RenaEngine/wiki/Performance)**
 
 **[[Deployment Plan and Infrastructure]](https://github.com/Strange4/RenaEngine/wiki/Performance)**
 
