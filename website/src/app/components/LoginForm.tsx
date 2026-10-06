@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { parseToken } from "@/lib/token";
+import { parseToken } from "@/shared/token";
 
 export default function LoginForm() {
   const router = useRouter();

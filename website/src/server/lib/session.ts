@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { parseToken, type ParsedToken } from "./token";
+import { parseToken, type ParsedToken } from "@/shared/token";
 
 export const SESSION_COOKIE = "rena_session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24;

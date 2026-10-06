@@ -1,0 +1,16 @@
+
+services:
+  game-server:
+    build:
+      context: ./game-server
+      dockerfile: game-server.Dockerfile
+    env_file:
+      - ./game-server/src/.env
+    ports:
+      - "${GAME_SERVER_CONTAINER_PORT}:${GAME_SERVER_PORT}"
+    networks:
+      - game-server-network
+
+networks:
+  game-server-network:
+    driver: bridge

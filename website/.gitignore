@@ -6,3 +6,6 @@ next-env.d.ts
 *.tsbuildinfo
 .env*
 !.env.example
+/test-results/
+/playwright-report/
+/playwright/.cache/

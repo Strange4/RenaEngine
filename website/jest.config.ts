@@ -10,6 +10,7 @@ const config: Config = {
   watchman: false,
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   modulePathIgnorePatterns: ["<rootDir>/.next/"],
+  testPathIgnorePatterns: ["<rootDir>/.next/", "<rootDir>/tests/"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
   },
