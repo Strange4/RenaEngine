@@ -37,7 +37,7 @@ List of changes/actions is sent by the game server
 */
 export interface RenderableChange{
     index: number; //position of the action change (keep a sequence of changes-- helps us jump to moments backwards, forwards etc)
-    changes: Renderable[]; //list of changed renderables, each has a unique id
+    changes: GameRenderable[]; //list of changed renderables, each has a unique id
 }
 
 /*
