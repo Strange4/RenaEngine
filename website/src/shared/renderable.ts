@@ -19,7 +19,7 @@ export enum RenderableType{
 
 //Generic renderable- the game object contains a unique id (to track what sprites belong to what game *could also have this in the url tbd)
 //any renderable change should lookup the id!!! (for proper game linking)
-export interface Renderable{
+export interface GameRenderable{
     id: string; 
     position: [number, number];
     assetPath:string; 
