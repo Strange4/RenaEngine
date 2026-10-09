@@ -26,6 +26,7 @@ export interface GameRenderable{
     size:[number, number]; //how big the object is tile-wise
     type:RenderableType; 
     layer:number; //zIndex for the Z Algorithm drawing the layers (graphics)
+    removed?: boolean; //optional, might need this for games like Battleship where elements get removed
 }
 
 
