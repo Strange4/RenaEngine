@@ -21,7 +21,7 @@ describe("RenderableType", ()=>{
         expect(RenderableType.OBJECT).toBe("OBJECT");
     });
 
-    it("valid renerable type DECORATION", ()=>{
+    it("valid renderable type DECORATION", ()=>{
         expect(RenderableType.DECORATION).toBe("DECORATION");
     });
 
