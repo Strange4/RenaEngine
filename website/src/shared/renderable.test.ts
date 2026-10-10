@@ -34,16 +34,28 @@ describe("RenderableType", ()=>{
 
 describe("Renderable with JSON data",()=>{
     it("valid renderable parsing", ()=>{
-        const json = `{"id": "player123", "position": [0,0], "layer": 1}`;
+        const json = `{
+        "id": "player123", 
+        "position": [0,0], 
+        "layer": 1,
+        "assetPath": "/sprites/player1.png",
+        "size": [1,1],
+        "type":"OBJECT",
+        }`;
         const parsed = JSON.parse(json) as GameRenderable; //as GameRenderable to know what format/shape to expect in JSON
 
         expect(parsed.id).toBe("player123");
         expect(parsed.position).toEqual([0,0]);
         expect(parsed.layer).toBe(1);
+        expect(parsed.assetPath).toBe("/sprites/player1.png");
+        expect(parsed.size).toEqual([1,1]);
+        expect(parsed.type).toBe(RenderableType.OBJECT);
+        expect(parsed.layer).toBe(1);
 
     });
 
-    it("test the 3 layer types working with GameRenderable", ()=>{
+    //simulating viewer logic
+    it("test the 3 renderable types working with GameRenderable", ()=>{
         const base: GameRenderable={
             id: "title1",
             position: [2,2],
@@ -53,7 +65,7 @@ describe("Renderable with JSON data",()=>{
             layer: 0,
         };
 
-        expect({...base, type: RenderableType.MAP}.type).toBe("MAP");
+        expect({...base, type: RenderableType.MAP}.type).toBe("MAP"); //...base to avoid rewriting all params above as we are trying to test the Types only 
         expect({...base, type: RenderableType.OBJECT}.type).toBe("OBJECT");
         expect({...base, type: RenderableType.DECORATION}.type).toBe("DECORATION");
     });
@@ -79,13 +91,27 @@ describe("Renderable with JSON data",()=>{
 describe("Change in renderable parsed from JSON", ()=>{
 
     //test single change
+    //SPRITE CREDITS: ITCH.IO free download packages- creator Zerie
+    //simulating game server data
     it("single change parsed correctly",()=>{
-        const json= `{"index":0, "changes": [{"id": "player1", "position": [20,30]}]}`;
+        const json= `{
+        "index":0, 
+        "changes": [
+        {"id": "player1",
+         "position": [20,30],
+         "assetPath": "sprites/ship1.png",
+         "size": [1,1],
+         "type": "OBJECT",
+         "layer": 1
+         }]
+        }`;
         const parsed= JSON.parse(json) as RenderableChange;
 
         expect(parsed.index).toBe(0);
         expect(parsed.changes).toHaveLength(1);
         expect(parsed.changes[0].id).toBe("player1");
+        expect(parsed.changes[0].assetPath).toBe("/sprites/ship1.png");
+        expect(parsed.changes[0].position).toEqual([20,30]);
     });
 
     //test no changes (empty array)
@@ -94,7 +120,7 @@ describe("Change in renderable parsed from JSON", ()=>{
         expect(change.changes).toHaveLength(0);
     });
 
-    //multiple changes (e.g. Battleship target hit affects multiple tiles)
+    //multiple changes (e.g. Battleship target hit affects multiple tiles--> the hit ships disappear/ get sunk)
     it("multiple changes", ()=>{
         const change: RenderableChange={
             index:6,
