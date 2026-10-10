@@ -40,7 +40,7 @@ describe("Renderable with JSON data",()=>{
         "layer": 1,
         "assetPath": "/sprites/player1.png",
         "size": [1,1],
-        "type":"OBJECT",
+        "type":"OBJECT"
         }`;
         const parsed = JSON.parse(json) as GameRenderable; //as GameRenderable to know what format/shape to expect in JSON
 
@@ -99,7 +99,7 @@ describe("Change in renderable parsed from JSON", ()=>{
         "changes": [
         {"id": "player1",
          "position": [20,30],
-         "assetPath": "sprites/ship1.png",
+         "assetPath": "/sprites/ship1.png",
          "size": [1,1],
          "type": "OBJECT",
          "layer": 1
