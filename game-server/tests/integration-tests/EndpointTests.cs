@@ -29,7 +29,7 @@ public class EndpointTests
         var response = await _client.GetAsync("/");
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        
+
         var content = await response.Content.ReadAsStringAsync();
         Assert.That(content, Is.EqualTo("Hello World!"));
     }
