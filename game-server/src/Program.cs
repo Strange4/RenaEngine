@@ -3,7 +3,7 @@ using game_server;
 
 DotNetEnv.Env.Load();
 
-string port = Environment.GetEnvironmentVariable("GAME_SERVER_PORT") ?? "3000";
+string port = Environment.GetEnvironmentVariable("GAME_SERVER_PORT") ?? "3001";
 
 var server = GameServer.Create(args);
 
