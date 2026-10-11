@@ -6,7 +6,7 @@ on:
       - "game-server/**"
       - ".github/workflows/server-test-ci.yaml"
   push:
-    branches: [main, "51-043---setup-game-server-workflow"]
+    branches: [main]
     paths:
       - "game-server/**"
       - ".github/workflows/server-test-ci.yaml"
@@ -36,4 +36,3 @@ jobs:
 
       - name: Verify Formatting
         run: dotnet format --verify-no-changes --verbosity diagnostic
-        
