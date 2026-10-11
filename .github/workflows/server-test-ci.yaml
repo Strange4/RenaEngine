@@ -1,0 +1,37 @@
+name: Server Test CI
+
+on:
+  pull_request:
+    paths:
+      - "server/**"
+      - ".github/workflows/server-test-ci.yaml"
+  push:
+    branches: [main, "51-043---setup-game-server-workflow"]
+    paths:
+      - "server/**"
+      - ".github/workflows/server-test-ci.yaml"
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up .Net
+        uses: actions/setup-dotnet@v7
+        with:
+          dotnet-version: "10.0.x"
+          cache: true
+
+      - name: DotNet Restore
+        run: dotnet restore
+
+      - name: Build Project
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test Project
+        run: dotnet test --no-build
