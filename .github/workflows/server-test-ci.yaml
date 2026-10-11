@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up .Net
-        uses: actions/setup-dotnet@v7
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: "10.0.x"
           cache: true
