@@ -1,3 +1,5 @@
 **/.env
 src/bin
 src/obj
+tests/
+game-server.slnx
