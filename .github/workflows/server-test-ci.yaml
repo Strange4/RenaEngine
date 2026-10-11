@@ -38,4 +38,4 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Test Project
-        run: dotnet test --no-build
+        run: dotnet test --no-build --configuration Release
