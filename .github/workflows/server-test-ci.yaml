@@ -3,18 +3,21 @@ name: Server Test CI
 on:
   pull_request:
     paths:
-      - "server/**"
+      - "game-server/**"
       - ".github/workflows/server-test-ci.yaml"
   push:
     branches: [main, "51-043---setup-game-server-workflow"]
     paths:
-      - "server/**"
+      - "game-server/**"
       - ".github/workflows/server-test-ci.yaml"
 
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./game-server
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
