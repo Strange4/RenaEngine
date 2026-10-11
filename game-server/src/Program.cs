@@ -1,16 +1,11 @@
 
+using game_server;
+
 DotNetEnv.Env.Load();
 
 string port = Environment.GetEnvironmentVariable("GAME_SERVER_PORT") ?? "3000";
 
-var builder = WebApplication.CreateBuilder(args);
-
-builder.WebHost.UseUrls($"http://*:{port}");
-
-var app = builder.Build();
-
-
-app.MapGet("/", () => "Hello World!");
+var server = GameServer.Create(args);
 
 Console.WriteLine($"Server Listening on port {port}");
-app.Run();
+server.Listen(port);
