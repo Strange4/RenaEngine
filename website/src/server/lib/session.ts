@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { parseToken, type ParsedToken } from "@/shared/token";
 
-export const SESSION_COOKIE = "rena_session";
+export const SESSION_COOKIE = "session_token";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24;
 
 export const sessionCookieOptions = {
