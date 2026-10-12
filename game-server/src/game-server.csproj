@@ -13,7 +13,7 @@
   </ItemGroup>
   
   <ItemGroup>
-  <InternalsVisibleTo Include="game-server.tests" />
-</ItemGroup>
+    <InternalsVisibleTo Include="game-server.tests" />
+  </ItemGroup>
 
 </Project>
