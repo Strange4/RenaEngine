@@ -1,15 +1,15 @@
-name: Server Test CI
+name: Server Static Analysis CI
 
 on:
   pull_request:
     paths:
       - "game-server/**"
-      - ".github/workflows/server-test-ci.yaml"
+      - ".github/workflows/server-static-analysis-ci.yaml"
   push:
     branches: [main]
     paths:
       - "game-server/**"
-      - ".github/workflows/server-test-ci.yaml"
+      - ".github/workflows/server-static-analysis-ci.yaml"
 
 jobs:
   test:
