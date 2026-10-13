@@ -1,4 +1,26 @@
-import { parseToken } from "./token";
+import { homePathFor, isAdmin, parseToken, Role } from "./token";
+
+describe("isAdmin", () => {
+  it("returns true for an admin token", () => {
+    expect(isAdmin({ role: Role.Admin })).toBe(true);
+  });
+
+  it("returns false for a participant token", () => {
+    expect(isAdmin({ role: Role.Participant, participantId: 42 })).toBe(false);
+  });
+});
+
+describe("homePathFor", () => {
+  it("sends an admin to the admin page", () => {
+    expect(homePathFor({ role: Role.Admin })).toBe("/admin");
+  });
+
+  it("sends a participant to the participant page", () => {
+    expect(homePathFor({ role: Role.Participant, participantId: 42 })).toBe(
+      "/participant",
+    );
+  });
+});
 
 describe("parseToken", () => {
   it("recognizes an admin token", () => {

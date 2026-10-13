@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { buildToken } from "@/shared/credentials";
-import { parseToken } from "@/shared/token";
+import { homePathFor, isAdmin, parseToken } from "@/shared/token";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -15,7 +15,7 @@ export default function LoginForm() {
   const token = buildToken(id, password);
   const parsed = token ? parseToken(token) : null;
   const roleLabel = parsed
-    ? parsed.role === "admin"
+    ? isAdmin(parsed)
       ? "Admin"
       : `Participant #${parsed.participantId}`
     : null;
@@ -39,7 +39,7 @@ export default function LoginForm() {
       setLoading(false);
       return;
     }
-    router.replace(parsed.role === "admin" ? "/admin" : "/participant");
+    router.replace(homePathFor(parsed));
     router.refresh();
   }
 
