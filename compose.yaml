@@ -3,11 +3,12 @@ services:
   game-server:
     build:
       context: ./game-server
-      dockerfile: game-server.Dockerfile
+      dockerfile: ./docker/game-server.Dockerfile
     env_file:
-      - ./game-server/src/.env
+      - path: ./.env
+        required: true
     ports:
-      - "${GAME_SERVER_CONTAINER_PORT}:${GAME_SERVER_PORT}"
+      - "${GAME_SERVER_CONTAINER_PORT}:${RenaOptions__ServerPort}"
     networks:
       - game-server-network
 

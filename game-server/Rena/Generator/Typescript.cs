@@ -1,0 +1,62 @@
+using System.Diagnostics;
+
+namespace Rena.Generator;
+
+internal class TypescriptSDKGenerator(string tsProtoDirectory) : ILanguageSDKGenerator
+{
+    // I hate csharp sometimes
+    public static string TLanguageName => "typescript";
+    public string LanguageName => TLanguageName;
+
+    // Exceptions:
+    //      ProcessFailedException
+    public async Task GenerateSDK(ProtoTypeInformation typeInfo, string generationDirectory, string protoFilePath)
+    {
+        tsProtoDirectory = Path.GetFullPath(tsProtoDirectory);
+        string generatedTypesPath = Path.Combine(generationDirectory, "generated");
+        Directory.CreateDirectory(generatedTypesPath);
+
+        string args = $"--plugin={tsProtoDirectory}/protoc-gen-ts_proto --ts_proto_out={generatedTypesPath} --ts_proto_opt=esModuleInterop=true --proto_path={Path.GetDirectoryName(protoFilePath)} {protoFilePath}";
+        ProcessStartInfo typescriptArgs = new()
+        {
+            FileName = "protoc",
+            Arguments = args,
+        };
+
+        Process? process = Process.Start(typescriptArgs);
+        ArgumentNullException.ThrowIfNull(process);
+        await process.WaitForExitAsync();
+        int exitCode = process.ExitCode;
+        process.Close();
+        if (exitCode != 0)
+        {
+            throw new ProcessFailedException("TS Proto generation failed");
+        }
+        string defaultFileName = "gameTypes.ts";
+        string defaultFilePath = Path.Combine(generatedTypesPath, defaultFileName);
+
+        await GenerateDefaultFile(typeInfo, defaultFilePath, protoFilePath);
+
+        await EmbeddedFileIO.WriteEmbededFile(generatedTypesPath, "generated.typescript", "glue.ts");
+        await EmbeddedFileIO.WriteAllEmbeddedFiles(generationDirectory, "generated.typescript", ["main.ts", "README.md", "package.json", "package-lock.json"]);
+    }
+
+    private static async Task GenerateDefaultFile(ProtoTypeInformation typeInfo, string defaultFilePath, string protoFilePath)
+    {
+        string importPath = Path.GetFileName(protoFilePath)[..^".proto".Length];
+        string actionTypeName = typeInfo.ActionTypeName;
+        string stateTypeName = typeInfo.StateTypeName;
+        string content = $@"import {{ {actionTypeName}, {stateTypeName} }} from ""./{importPath}.ts""
+export type Action = {actionTypeName};
+export type State = {stateTypeName};
+";
+        await File.WriteAllTextAsync(defaultFilePath, content);
+    }
+}
+
+
+public class ProcessFailedException : Exception
+{
+    public ProcessFailedException() { }
+    public ProcessFailedException(string message) : base(message) { }
+}

@@ -4,11 +4,11 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>game_server</RootNamespace>
+    <RootNamespace>battleship_server</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DotNetEnv" Version="3.2.0" />
+    <ProjectReference Include="..\Rena\Rena.csproj" />
   </ItemGroup>
 
 </Project>

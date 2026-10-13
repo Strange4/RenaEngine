@@ -1,0 +1,13 @@
+[*.cs]
+
+dotnet_diagnostic.IDE0003.severity = none
+dotnet_diagnostic.IDE0005.severity = warning
+
+# Enforce 'this.' for property access
+dotnet_style_qualification_for_property = true:error
+
+# Enforce 'this.' for method access
+dotnet_style_qualification_for_method = true:error
+
+# Enforce 'this.' for event access
+dotnet_style_qualification_for_event = true:error
