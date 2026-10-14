@@ -1,6 +1,6 @@
 using Rena;
-using Rena.Generator;
 using Rena.GameEngine;
+using Rena.Generator;
 
 internal class SDKBuilder<G, S, A>
 where G : IGame<S, A>, new()
