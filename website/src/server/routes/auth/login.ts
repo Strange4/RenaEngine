@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { buildToken } from "@/shared/credentials";
-import { parseToken } from "@/shared/token";
+import { isAdmin, parseToken } from "@/shared/token";
 import { SESSION_COOKIE, sessionCookieOptions } from "@/server/lib/session";
 
 export async function POST(request: Request) {
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   // TODO: verify the token against the game server once it exposes an auth endpoint.
   const response = NextResponse.json({
     role: parsed.role,
-    id: parsed.role === "admin" ? "admin" : String(parsed.participantId),
+    id: isAdmin(parsed) ? "admin" : String(parsed.participantId),
   });
   response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
   return response;
