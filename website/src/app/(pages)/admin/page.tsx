@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import { getSession } from "@/server/lib/session";
+import { isAdmin } from "@/shared/token";
 
 export default async function AdminPage() {
   const session = await getSession();
   if (!session) redirect("/login");
-  if (session.role !== "admin") redirect("/participant");
+  if (!isAdmin(session)) redirect("/participant");
 
   return (
     <main>
