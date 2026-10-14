@@ -20,6 +20,7 @@ RUN dotnet restore ./battleship-server && dotnet restore ./Rena
 # copy building files, build, generate sdks
 COPY battleship-server/ ./battleship-server/
 COPY Rena/ ./Rena/
+
 WORKDIR /game-server/battleship-server
 ENV RenaOptions__TSProtoDirectoryPath="/sdk-tools/node_modules/ts-proto"
 ENV RenaOptions__GenerationDirectory="/sdks"

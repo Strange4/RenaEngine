@@ -1,7 +1,7 @@
 using System.Runtime.Serialization;
 using System.IO.Compression;
+
 using ProtoBuf;
-using ProtoBuf.Meta;
 
 namespace Rena.Generator;
 
@@ -69,7 +69,7 @@ internal interface ILanguageSDKGenerator
 {
     Task GenerateSDK(ProtoTypeInformation typeInfo, string generationDirectory, string protoFilePath);
     public string LanguageName { get; }
-    public abstract static string TLanguageName { get; }
+    public static abstract string TLanguageName { get; }
 }
 
 internal struct ProtoTypeInformation

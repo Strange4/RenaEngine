@@ -4,8 +4,7 @@ using Rena.GameEngine;
 
 namespace Rena.Server;
 
-
-public class RenaServer<G, S, A>
+internal class RenaServerHandlers<G, S, A>
 where G : IGame<S, A>, new()
 where S : class
 where A : class
