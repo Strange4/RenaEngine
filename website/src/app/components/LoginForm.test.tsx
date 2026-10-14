@@ -9,6 +9,7 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ replace: mockReplace, refresh: mockRefresh }),
 }));
 
+// Types the ID and password, then clicks Log In.
 function fillAndSubmit(id: string, password: string) {
   fireEvent.change(screen.getByLabelText("ID"), { target: { value: id } });
   fireEvent.change(screen.getByLabelText("Password"), {
