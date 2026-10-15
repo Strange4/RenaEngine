@@ -16,6 +16,8 @@ internal class TypescriptSDKGenerator(string tsProtoPath) : ILanguageSDKGenerato
         string generatedTypesPath = Path.Combine(generationDirectory, "generated");
         Directory.CreateDirectory(generatedTypesPath);
 
+        // protoc takes in a .proto type definition for protobuf and transforms it into a generated typescript type
+        // using ts_proto. The generated typescript file outputs to generatedTypesPath.
         ProcessStartInfo typescriptArgs = new()
         {
             FileName = "protoc",
@@ -42,6 +44,7 @@ internal class TypescriptSDKGenerator(string tsProtoPath) : ILanguageSDKGenerato
 
         await GenerateDefaultFile(typeInfo, defaultFilePath, protoFilePath);
 
+        // Takes the files embedded at build time using Rena.csproj and writes them to feal files in the file system.
         await EmbeddedFileIO.WriteEmbededFile(generatedTypesPath, "generated.typescript", "glue.ts");
         await EmbeddedFileIO.WriteAllEmbeddedFiles(generationDirectory, "generated.typescript", ["main.ts", "README.md", "package.json", "package-lock.json"]);
     }
