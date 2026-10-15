@@ -2,25 +2,28 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { parseToken } from "@/shared/token";
+import { buildToken } from "@/shared/credentials";
+import { homePathFor, isAdmin, parseToken } from "@/shared/token";
 
 export default function LoginForm() {
   const router = useRouter();
-  const [token, setToken] = useState("");
+  const [id, setId] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const parsed = parseToken(token);
+  const token = buildToken(id, password);
+  const parsed = token ? parseToken(token) : null;
   const roleLabel = parsed
-    ? parsed.role === "admin"
+    ? isAdmin(parsed)
       ? "Admin"
       : `Participant #${parsed.participantId}`
     : null;
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!parsed) {
-      setError("Invalid token format");
+    if (!token || !parsed) {
+      setError("Enter ADMIN or a participant number, and a password");
       return;
     }
     setError(null);
@@ -36,20 +39,31 @@ export default function LoginForm() {
       setLoading(false);
       return;
     }
-    router.replace(parsed.role === "admin" ? "/admin" : "/participant");
+    router.replace(homePathFor(parsed));
     router.refresh();
   }
 
   return (
     <form onSubmit={onSubmit}>
-      <label htmlFor="token">Token</label>
+      <label htmlFor="user-id">ID</label>
       <input
-        id="token"
-        type="password"
-        autoComplete="off"
-        value={token}
+        id="user-id"
+        type="text"
+        autoComplete="username"
+        value={id}
         onChange={(e) => {
-          setToken(e.target.value);
+          setId(e.target.value);
+          setError(null);
+        }}
+      />
+      <label htmlFor="user-password">Password</label>
+      <input
+        id="user-password"
+        type="password"
+        autoComplete="current-password"
+        value={password}
+        onChange={(e) => {
+          setPassword(e.target.value);
           setError(null);
         }}
       />
