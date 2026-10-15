@@ -44,7 +44,7 @@ internal class TypescriptSDKGenerator(string tsProtoPath) : ILanguageSDKGenerato
 
         await GenerateDefaultFile(typeInfo, defaultFilePath, protoFilePath);
 
-        // Takes the files embedded at build time using Rena.csproj and writes them to feal files in the file system.
+        // Takes the files embedded at build time using Rena.csproj and writes them to real files in the file system.
         await EmbeddedFileIO.WriteEmbededFile(generatedTypesPath, "generated.typescript", "glue.ts");
         await EmbeddedFileIO.WriteAllEmbeddedFiles(generationDirectory, "generated.typescript", ["main.ts", "README.md", "package.json", "package-lock.json"]);
     }
