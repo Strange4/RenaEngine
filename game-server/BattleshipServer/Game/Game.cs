@@ -2,7 +2,7 @@ using System.Runtime.Serialization;
 
 using Rena.GameEngine;
 
-namespace Battleship_server.Game;
+namespace BattleshipServer.Game;
 
 class BattleshipGame : IGame<PlayerState, PlayerAction>
 {

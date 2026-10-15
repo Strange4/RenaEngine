@@ -1,4 +1,4 @@
-using Battleship_server.Game;
+using BattleshipServer.Game;
 
 using Rena.Server;
 

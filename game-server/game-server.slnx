@@ -1,5 +1,5 @@
 <Solution>
   <Project Path="./Rena.Tests/Rena.Tests.csproj" />
   <Project Path="./Rena/Rena.csproj" />
-  <Project Path="./battleship-server/battleship-server.csproj"/>
+  <Project Path="./BattleshipServer/BattleshipServer.csproj"/>
 </Solution>

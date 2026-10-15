@@ -13,21 +13,21 @@ RUN npm ci --prefix /sdk-tools
 
 # copy csproj and restore as distinct layers
 COPY game-server.slnx .
-COPY battleship-server/battleship-server.csproj ./battleship-server/
+COPY BattleshipServer/BattleshipServer.csproj ./BattleshipServer/
 COPY Rena/Rena.csproj ./Rena/
-RUN dotnet restore ./battleship-server && dotnet restore ./Rena
+RUN dotnet restore ./BattleshipServer && dotnet restore ./Rena
 
 # copy the files for the project
-COPY battleship-server/ ./battleship-server/
+COPY BattleshipServer/ ./BattleshipServer/
 COPY Rena/ ./Rena/
 
-WORKDIR /game-server/battleship-server
+WORKDIR /game-server/BattleshipServer
 
 ARG RenaOptions__TSProtoPath
 ARG RenaOptions__GenerationDirectory
 
 RUN dotnet publish -c release -o /app --no-restore \
-    && dotnet /app/battleship-server.dll --generate
+    && dotnet /app/BattleshipServer.dll --generate
 
 # final stage/image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
