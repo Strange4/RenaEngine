@@ -19,8 +19,8 @@ message GameState {
    int32 X = 1;
 }
 message SchemaContainer_GameState_GameAction {
-   GameState s = 1;
-   GameAction a = 2;
+   GameState _s = 1;
+   GameAction _a = 2;
 }
 ";
         ProtoTypeInformation protoTypeInfo = SDKGenerator<GameState, GameAction>.GenerateProtoTypes();
