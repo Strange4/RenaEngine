@@ -1,5 +1,7 @@
 namespace Rena.Server;
 
+using System.ComponentModel.DataAnnotations;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -16,6 +18,8 @@ internal static class RenaServerSetup
     {
         RenaOptions renaOptions = new();
         builder.Configuration.GetSection(RenaOptions.SectionName).Bind(renaOptions);
+
+        Validator.ValidateObject(renaOptions, new ValidationContext(renaOptions));
 
         builder.WebHost.UseUrls($"http://*:{renaOptions.ServerPort}");
 
