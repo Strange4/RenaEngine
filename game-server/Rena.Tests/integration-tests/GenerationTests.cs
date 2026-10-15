@@ -1,13 +1,3 @@
-using System.Net;
-using System.Net.Http.Json;
-using System.Runtime.Serialization;
-
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.Configuration;
-
-using Rena.GameEngine;
-using Rena.Server;
 using Rena.Generator;
 
 namespace Rena.Tests.Integration;
@@ -15,17 +5,6 @@ namespace Rena.Tests.Integration;
 [TestFixture]
 public class SDKGenerationTests
 {
-
-    [OneTimeSetUp]
-    public async Task OneTimeSetUp()
-    {
-    }
-
-    [OneTimeTearDown]
-    public async Task OneTimeTearDown()
-    {
-    }
-
     [Test]
     [Category("SDKGeneration")]
     public async Task TypescriptGeneratesZip()
