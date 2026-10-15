@@ -21,6 +21,6 @@ where A : class
 
     public static List<string> AvailableLanguageGenerators()
     {
-        return [TypescriptSDKGenerator.TLanguageName];
+        return [TypescriptSDKGenerator.LanguageName];
     }
 }
