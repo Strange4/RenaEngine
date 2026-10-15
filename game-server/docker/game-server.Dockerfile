@@ -17,11 +17,15 @@ COPY battleship-server/battleship-server.csproj ./battleship-server/
 COPY Rena/Rena.csproj ./Rena/
 RUN dotnet restore ./battleship-server && dotnet restore ./Rena
 
-# copy building files, build, generate sdks
+# copy the files for the project
 COPY battleship-server/ ./battleship-server/
 COPY Rena/ ./Rena/
 
 WORKDIR /game-server/battleship-server
+
+# Configuration variables for docker specific stuff
+ENV RenaOptions__TSProtoPath="/sdk-tools/node_modules/ts-proto/protoc-gen-ts_proto"
+ENV RenaOptions__GenerationDirectory="/sdks"
 
 RUN dotnet publish -c release -o /app --no-restore \
     && dotnet /app/battleship-server.dll --generate
@@ -33,4 +37,5 @@ COPY --from=build /app /app/
 COPY --from=build /sdks /sdks/
 COPY docker/entrypoint.sh ./entrypoint.sh
 ENV RenaOptions__GenerationDirectory="/sdks"
+ENV RenaOptions__TSProtoPath="/sdk-tools/node_modules/ts-proto/protoc-gen-ts_proto"
 ENTRYPOINT ["./entrypoint.sh"]
