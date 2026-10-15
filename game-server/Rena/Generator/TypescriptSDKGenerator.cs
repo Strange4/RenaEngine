@@ -16,11 +16,17 @@ internal class TypescriptSDKGenerator(string tsProtoPath) : ILanguageSDKGenerato
         string generatedTypesPath = Path.Combine(generationDirectory, "generated");
         Directory.CreateDirectory(generatedTypesPath);
 
-        string args = $"--plugin=protoc-gen-ts_proto={tsProtoPath} --ts_proto_out={generatedTypesPath} --ts_proto_opt=esModuleInterop=true --proto_path={Path.GetDirectoryName(protoFilePath)} {protoFilePath}";
+        string args = $"    {protoFilePath}";
         ProcessStartInfo typescriptArgs = new()
         {
             FileName = "protoc",
-            Arguments = args,
+            ArgumentList = {
+                $"--plugin=protoc-gen-ts_proto={tsProtoPath}",
+                $"--ts_proto_out={generatedTypesPath}",
+                $"--ts_proto_opt=esModuleInterop=true",
+                $"--proto_path={Path.GetDirectoryName(protoFilePath)}",
+                protoFilePath
+            },
         };
 
         Process? process = Process.Start(typescriptArgs);
