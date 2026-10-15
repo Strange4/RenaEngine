@@ -31,7 +31,7 @@ export default function LoginForm() {
     const response = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({ id, password }),
     }).catch(() => null);
     if (!response?.ok) {
       const body = await response?.json().catch(() => null);

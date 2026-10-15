@@ -70,7 +70,7 @@ describe("LoginForm", () => {
         "/api/auth/login",
         expect.objectContaining({
           method: "POST",
-          body: JSON.stringify({ token: "PARTICIPANT-42-secret" }),
+          body: JSON.stringify({ id: "42", password: "secret" }),
         }),
       ),
     );
@@ -86,7 +86,7 @@ describe("LoginForm", () => {
       expect(mockFetch).toHaveBeenCalledWith(
         "/api/auth/login",
         expect.objectContaining({
-          body: JSON.stringify({ token: "ADMIN-secret" }),
+          body: JSON.stringify({ id: "admin", password: "secret" }),
         }),
       ),
     );
