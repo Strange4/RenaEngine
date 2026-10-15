@@ -3,11 +3,16 @@ services:
   game-server:
     build:
       context: ./game-server
-      dockerfile: game-server.Dockerfile
+      dockerfile: ./docker/game-server.Dockerfile
+      # make .env variables available during build
+      args:
+        - RenaOptions__TSProtoPath=${RenaOptions__TSProtoPath}
+        - RenaOptions__GenerationDirectory=${RenaOptions__GenerationDirectory}
+    # make .env available inside running container
     env_file:
-      - ./game-server/src/.env
+      - path: ./.env
     ports:
-      - "${GAME_SERVER_CONTAINER_PORT}:${GAME_SERVER_PORT}"
+      - "${GAME_SERVER_CONTAINER_PORT}:${RenaOptions__ServerPort}"
     networks:
       - game-server-network
 

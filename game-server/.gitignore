@@ -3,6 +3,10 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+# Specific for every developer envrionment (windows/linux)
+appsettings.json
+.zed/
+
 # dotenv files
 **/.env
 **/bin/

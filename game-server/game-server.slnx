@@ -1,8 +1,5 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/game-server.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/game-server.tests.csproj" />
-  </Folder>
+  <Project Path="./Rena.Tests/Rena.Tests.csproj" />
+  <Project Path="./Rena/Rena.csproj" />
+  <Project Path="./BattleshipServer/BattleshipServer.csproj"/>
 </Solution>

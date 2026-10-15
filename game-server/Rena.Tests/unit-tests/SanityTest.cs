@@ -1,4 +1,4 @@
-﻿namespace game_server.tests;
+﻿namespace Rena.Tests;
 
 public class Tests
 {

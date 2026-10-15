@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0": {
+      "protobuf-net": {
+        "type": "Transitive",
+        "resolved": "3.4.30",
+        "contentHash": "N49mhnY5fpWds085lO6ocppox9y4cTb1EmbHAAYVJMl/iYSYyNpz4Ohxnk80qtqv52dNZI+/6hQbaiz3+rTEwA==",
+        "dependencies": {
+          "protobuf-net.Core": "3.4.30"
+        }
+      },
+      "protobuf-net.Core": {
+        "type": "Transitive",
+        "resolved": "3.4.30",
+        "contentHash": "CZf8U6eON9OBtcPyOiXJ6Oq3Opi/lWtEiireyLCy43iof1A2oA0GEOrEHZISzmQ46s61iOC06Sa4Cs+D41t1DA=="
+      },
+      "protobuf-net.Reflection": {
+        "type": "Transitive",
+        "resolved": "3.4.30",
+        "contentHash": "uqYXX7uQur4Z/BM6ENkY5M9Yp9UrkZEpVBRBNUsD13mMuB2UtZkJPFQBXJtXKtXdyvyc1v2wObuRKSjn+0jqDA==",
+        "dependencies": {
+          "protobuf-net.Core": "3.4.30"
+        }
+      },
+      "rena": {
+        "type": "Project",
+        "dependencies": {
+          "protobuf-net": "[3.4.30, )",
+          "protobuf-net.Reflection": "[3.4.30, )"
+        }
+      }
+    }
+  }
+}
