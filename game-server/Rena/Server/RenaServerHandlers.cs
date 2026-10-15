@@ -21,7 +21,11 @@ where A : class
         {
             return Results.NotFound($"{languageName} isn't supported as a language");
         }
+
         string zipName = Path.GetFullPath(Path.Combine(options.Value.GenerationDirectory, languageName + ".zip"));
-        return Results.File(zipName, contentType: "application/zip");
+
+        return !Path.Exists(zipName)
+            ? Results.InternalServerError("Couldn't find the necessary zip file. Make sure that your game developper generated it")
+            : Results.File(zipName, contentType: "application/zip");
     }
 }
