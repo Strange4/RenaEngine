@@ -5,6 +5,7 @@
 
 # Specific for every developer envrionment (windows/linux)
 appsettings.json
+.zed/
 
 # dotenv files
 **/.env
