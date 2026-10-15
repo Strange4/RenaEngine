@@ -9,7 +9,9 @@ internal class SDKGenerator<S, A>
 where S : class
 where A : class
 {
-    // Generates an SDK for a specific language in that language directory
+    /// <summary>
+    /// Generates an SDK for a specific language in that language's directory.
+    /// </summary>
     public static async Task GenerateSDK(string generationDirectory, string zipFilePath, ILanguageSDKGenerator languageSDKGenerator)
     {
         generationDirectory = Path.GetFullPath(generationDirectory);

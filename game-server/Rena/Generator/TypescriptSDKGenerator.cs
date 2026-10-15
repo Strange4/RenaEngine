@@ -7,9 +7,15 @@ internal class TypescriptSDKGenerator(string tsProtoPath) : ILanguageSDKGenerato
     public static string LanguageName => "typescript";
     string ILanguageSDKGenerator.LanguageName => LanguageName;
 
-    // Exceptions:
-    //      ProcessFailedException
-    //      ArgumentNullException
+    /// <summary>
+    /// Generates a TypeScript SDK from the protobuf schema and embedded support files.
+    /// </summary>
+    /// <exception cref="ProcessFailedException">
+    /// protoc exits with a nonzero exit code.
+    /// </exception>
+    /// <exception cref="ArgumentNullException">
+    /// Starting protoc returns no process, or an embedded support file could not be found.
+    /// </exception>
     public async Task GenerateSDK(ProtoTypeInformation typeInfo, string generationDirectory, string protoFilePath)
     {
         tsProtoPath = Path.GetFullPath(tsProtoPath);

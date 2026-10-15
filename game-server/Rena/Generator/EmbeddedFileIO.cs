@@ -14,10 +14,12 @@ internal class EmbeddedFileIO
         await Task.WhenAll(tasks);
     }
 
-    // Writes a file that is embedded in the dll to a file in the file system.
-    // Throws ArgumentNullException if the file could not be found
-    // Exceptions:
-    //      ArgumentNullException
+    /// <summary>
+    /// Writes a file embedded in the DLL to the file system.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">
+    /// The embedded resource could not be found.
+    /// </exception>
     public static async Task WriteEmbededFile(string directory, string namespacedSourceDirectory, string sourceFileName)
     {
         var assembly = Assembly.GetExecutingAssembly();
