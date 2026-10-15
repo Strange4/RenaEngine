@@ -4,19 +4,18 @@ namespace Rena.Generator;
 
 internal class TypescriptSDKGenerator(string tsProtoPath) : ILanguageSDKGenerator
 {
-    // I hate csharp sometimes
-    public static string TLanguageName => "typescript";
-    public string LanguageName => TLanguageName;
+    public static string LanguageName => "typescript";
+    string ILanguageSDKGenerator.LanguageName => LanguageName;
 
     // Exceptions:
     //      ProcessFailedException
+    //      ArgumentNullException
     public async Task GenerateSDK(ProtoTypeInformation typeInfo, string generationDirectory, string protoFilePath)
     {
         tsProtoPath = Path.GetFullPath(tsProtoPath);
         string generatedTypesPath = Path.Combine(generationDirectory, "generated");
         Directory.CreateDirectory(generatedTypesPath);
 
-        string args = $"    {protoFilePath}";
         ProcessStartInfo typescriptArgs = new()
         {
             FileName = "protoc",

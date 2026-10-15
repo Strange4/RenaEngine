@@ -18,7 +18,7 @@ where A : class
 
         string protoFileName = "game.proto";
         string protoFilePath = Path.Combine(generationDirectory, protoFileName);
-        ProtoTypeInformation typeInfo = await SDKGenerator<S, A>.GenerateProtoFile(protoFilePath);
+        ProtoTypeInformation typeInfo = await GenerateProtoFile(protoFilePath);
 
         string specificLanguageGenerationDirectory = Path.Combine(generationDirectory, languageSDKGenerator.LanguageName);
         Directory.CreateDirectory(specificLanguageGenerationDirectory);
@@ -34,13 +34,13 @@ where A : class
 
     private static async Task<ProtoTypeInformation> GenerateProtoFile(string protoFilePath)
     {
-        ProtoTypeInformation typeInfo = SDKGenerator<S, A>.GenerateProtoTypes();
+        ProtoTypeInformation typeInfo = GenerateProtoTypes();
         string protoFileContents = typeInfo.TextContents;
         await File.WriteAllTextAsync(protoFilePath, protoFileContents);
         return typeInfo;
     }
 
-    public static ProtoTypeInformation GenerateProtoTypes()
+    internal static ProtoTypeInformation GenerateProtoTypes()
     {
         Type stateType = typeof(S);
         Type actionType = typeof(A);
@@ -69,7 +69,6 @@ internal interface ILanguageSDKGenerator
 {
     Task GenerateSDK(ProtoTypeInformation typeInfo, string generationDirectory, string protoFilePath);
     public string LanguageName { get; }
-    public static abstract string TLanguageName { get; }
 }
 
 internal struct ProtoTypeInformation

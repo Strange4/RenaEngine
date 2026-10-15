@@ -15,8 +15,9 @@ public class RenaCLI
         }
         if (args[0] != "--generate")
         {
-            throw new ArgumentException("Usage: dotnet run --generate");
+            return;
         }
+
         SDKBuilder<G, S, A>.BuildAll(options).Wait();
         Environment.Exit(0);
     }

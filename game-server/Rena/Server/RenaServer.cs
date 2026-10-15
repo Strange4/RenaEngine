@@ -24,8 +24,6 @@ where A : class
 
         RenaCLI.UseRenaCLI<G, S, A>(args, options);
 
-        builder.SetRenaServices<G, S, A>();
-
         var app = builder.Build();
 
         app.UseRenaEndpoints<G, S, A>();

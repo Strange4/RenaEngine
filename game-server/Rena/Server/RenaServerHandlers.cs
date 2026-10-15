@@ -19,7 +19,7 @@ where A : class
     {
         if (!SDKBuilder<G, S, A>.AvailableLanguageGenerators().Contains(languageName))
         {
-            return Results.NotFound("That language ain't supported cuh");
+            return Results.NotFound($"{languageName} isn't supported as a language");
         }
         string zipName = Path.GetFullPath(Path.Combine(options.Value.GenerationDirectory, languageName + ".zip"));
         return Results.File(zipName, contentType: "application/zip");

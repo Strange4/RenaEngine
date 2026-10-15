@@ -18,7 +18,7 @@ class PlayerState
     [DataMember(Order = 1)]
     List<bool> Grid;
 
-    [DataMember]
+    [DataMember(Order = 2)]
     int GridSize;
 }
 
