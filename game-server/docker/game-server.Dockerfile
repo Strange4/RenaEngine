@@ -4,7 +4,10 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /game-server
 
 RUN apt-get update \
-    && apt-get install -y protobuf-compiler nodejs npm \
+    && apt-get install -y --no-install-recommends \
+    protobuf-compiler=3.21.12-8.2ubuntu0.3 \
+    nodejs=18.19.1+dfsg-6ubuntu5 \
+    npm=9.2.0~ds1-2 \
     && rm -rf /var/lib/apt/lists/*
 
 # typescript dependencies for building .zip
