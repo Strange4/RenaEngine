@@ -23,9 +23,8 @@ COPY Rena/ ./Rena/
 
 WORKDIR /game-server/battleship-server
 
-# Configuration variables for docker specific stuff
-ENV RenaOptions__TSProtoPath="/sdk-tools/node_modules/ts-proto/protoc-gen-ts_proto"
-ENV RenaOptions__GenerationDirectory="/sdks"
+ARG RenaOptions__TSProtoPath
+ARG RenaOptions__GenerationDirectory
 
 RUN dotnet publish -c release -o /app --no-restore \
     && dotnet /app/battleship-server.dll --generate
@@ -36,6 +35,4 @@ WORKDIR /app
 COPY --from=build /app /app/
 COPY --from=build /sdks /sdks/
 COPY docker/entrypoint.sh ./entrypoint.sh
-ENV RenaOptions__GenerationDirectory="/sdks"
-ENV RenaOptions__TSProtoPath="/sdk-tools/node_modules/ts-proto/protoc-gen-ts_proto"
 ENTRYPOINT ["./entrypoint.sh"]
