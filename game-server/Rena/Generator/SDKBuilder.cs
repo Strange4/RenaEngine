@@ -10,7 +10,7 @@ where A : class
     public static async Task BuildAll(RenaOptions options)
     {
         ILanguageSDKGenerator[] generators = [
-            new TypescriptSDKGenerator(options.TSProtoDirectoryPath),
+            new TypescriptSDKGenerator(options.TSProtoPath),
         ];
         foreach (ILanguageSDKGenerator generator in generators)
         {

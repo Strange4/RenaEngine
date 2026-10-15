@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace Rena.Generator;
 
-internal class TypescriptSDKGenerator(string tsProtoDirectory) : ILanguageSDKGenerator
+internal class TypescriptSDKGenerator(string tsProtoPath) : ILanguageSDKGenerator
 {
     // I hate csharp sometimes
     public static string TLanguageName => "typescript";
@@ -12,11 +12,11 @@ internal class TypescriptSDKGenerator(string tsProtoDirectory) : ILanguageSDKGen
     //      ProcessFailedException
     public async Task GenerateSDK(ProtoTypeInformation typeInfo, string generationDirectory, string protoFilePath)
     {
-        tsProtoDirectory = Path.GetFullPath(tsProtoDirectory);
+        tsProtoPath = Path.GetFullPath(tsProtoPath);
         string generatedTypesPath = Path.Combine(generationDirectory, "generated");
         Directory.CreateDirectory(generatedTypesPath);
 
-        string args = $"--plugin={tsProtoDirectory}/protoc-gen-ts_proto --ts_proto_out={generatedTypesPath} --ts_proto_opt=esModuleInterop=true --proto_path={Path.GetDirectoryName(protoFilePath)} {protoFilePath}";
+        string args = $"--plugin={tsProtoPath} --ts_proto_out={generatedTypesPath} --ts_proto_opt=esModuleInterop=true --proto_path={Path.GetDirectoryName(protoFilePath)} {protoFilePath}";
         ProcessStartInfo typescriptArgs = new()
         {
             FileName = "protoc",

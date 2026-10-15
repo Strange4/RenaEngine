@@ -10,7 +10,7 @@ public record class RenaOptions
 
     [Required]
 #pragma warning disable CS8618
-    public string TSProtoDirectoryPath { get; set; }
+    public string TSProtoPath { get; set; }
 #pragma warning restore CS8618
 
     public string GenerationDirectory { get; set; } = "./sdks";

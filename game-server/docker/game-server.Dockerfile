@@ -22,8 +22,7 @@ COPY battleship-server/ ./battleship-server/
 COPY Rena/ ./Rena/
 
 WORKDIR /game-server/battleship-server
-ENV RenaOptions__TSProtoDirectoryPath="/sdk-tools/node_modules/ts-proto"
-ENV RenaOptions__GenerationDirectory="/sdks"
+
 RUN dotnet publish -c release -o /app --no-restore \
     && dotnet /app/battleship-server.dll --generate
 
