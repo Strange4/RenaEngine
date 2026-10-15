@@ -60,9 +60,9 @@ where A : class
     {
 #pragma warning disable CS8618, IDE0051, CS0169
         [DataMember(Order = 1)]
-        S s;
+        S _s;
         [DataMember(Order = 2)]
-        A a;
+        A _a;
 #pragma warning restore CS8618, IDE0051, CS0169
     }
 }
