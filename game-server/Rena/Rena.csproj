@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+  	<!-- Packages -->
+    <PackageReference Include="protobuf-net" Version="3.4.30" />
+    <PackageReference Include="protobuf-net.Reflection" Version="3.4.30" />
+
+    <!-- References -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+
+    <!-- Embedded files -->
+    <EmbeddedResource Include="generated\typescript\main.ts" />
+    <EmbeddedResource Include="generated\typescript\glue.ts" />
+    <EmbeddedResource Include="generated\typescript\README.md" />
+    <EmbeddedResource Include="generated\typescript\package-lock.json" />
+    <EmbeddedResource Include="generated\typescript\package.json" />
+
+    <!-- Internal Unit Testing -->
+    <InternalsVisibleTo Include="Rena.Tests" />
+  </ItemGroup>
+
+</Project>
