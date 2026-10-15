@@ -4,6 +4,7 @@ using System.Runtime.Serialization;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
 
 using Rena.GameEngine;
 using Rena.Server;
@@ -27,6 +28,9 @@ public class EndpointTests
             });
 
         builder.WebHost.UseTestServer();
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>{
+            {"RenaOptions:TSProtoPath", "TESTING"},
+        });
         builder.SetRenaServices<TestGame, GameState, GameAction>();
 
         _app = builder.Build();
