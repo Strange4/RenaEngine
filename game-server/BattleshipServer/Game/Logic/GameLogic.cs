@@ -101,9 +101,110 @@ public class GameLogic
         return result;
     }
 
-    public void ProcessShot(int playerNumber, Coordinate coordinate)
+    public ActionExecutionResult ProcessAction(int playerNumber, Coordinate coordinate)
     {
+        /*
+         * Check if the shot hits any of the opponent's ships
+         * Check if the shot sinks any of the opponent's ships
+         * Check if the shot results in a win for the player
+         * Switch turns to the other player
+         * Return the result of the shot (hit, miss, sunk, win, etc.)
+         */
 
+        ActionStatus status = this.ValidateAction(playerNumber, coordinate);
+        if (status != ActionStatus.Success) return new(status);
+
+        List<ShipState> opponentShips = playerNumber == 1 ? this.PlacedShips2 : this.PlacedShips1;
+        List<ShotRecord> shotsFired = playerNumber == 1 ? this.ShotsFired1 : this.ShotsFired2;
+
+        ShipState? hitShip = opponentShips.FirstOrDefault(ship => this.ShipOccupiesCoordinate(ship, coordinate));
+        if (hitShip == null)
+        {
+            shotsFired.Add(new ShotRecord { Coordinate = coordinate, Result = ShotResult.Miss });
+            this.IsPlayer1Turn = !this.IsPlayer1Turn; // Switch turns
+            return new(ActionStatus.Success, ShotResult.Miss);
+        }
+
+        shotsFired.Add(new ShotRecord { Coordinate = coordinate, Result = ShotResult.Hit });
+        bool isSunk = this.IsShipSunk(hitShip, shotsFired);
+        if (isSunk)
+        {
+            shotsFired[shotsFired.Count - 1] = new ShotRecord { Coordinate = coordinate, Result = ShotResult.Sunk }; // Update from hit to sunk
+            if (this.CheckWinCondition(opponentShips, shotsFired))
+            {
+                this.IsGameOver = true;
+                this.IsPlayer1Winner = playerNumber == 1;
+                return new(ActionStatus.Success, ShotResult.Sunk, IsWin: true);
+            }
+        }
+        this.IsPlayer1Turn = !this.IsPlayer1Turn; // Switch turns
+        return new(ActionStatus.Success, isSunk ? ShotResult.Sunk : ShotResult.Hit);
+
+    }
+
+    private ActionStatus ValidateAction(int playerNumber, Coordinate coordinate)
+    {
+        /* 
+         * Check if both players have placed their ships before allowing shots to be processed.
+         * Check if IsGameOver
+         * Check if it's the correct player's turn
+         * Validate the shot coordinate is within bounds
+         * Check if the shot has already been fired at that coordinate
+         */
+        if (this.PlacedShips1.Count == 0 || this.PlacedShips2.Count == 0) return ActionStatus.NotReadyToStart;
+        if (this.IsGameOver) return ActionStatus.GameOver;
+        if ((playerNumber is not (1 or 2))) return ActionStatus.InvalidPlayerNumber;
+        if (this.IsPlayer1Turn && playerNumber == 2) return ActionStatus.NotYourTurn;
+        if (!this.IsPlayer1Turn && playerNumber == 1) return ActionStatus.NotYourTurn;
+        if (coordinate == null) return ActionStatus.NullCoordinate;
+        if (coordinate.X < 0 || coordinate.X >= BoardSize || coordinate.Y < 0 || coordinate.Y >= BoardSize) return ActionStatus.OutOfBounds;
+        List<ShotRecord> shotsFired = playerNumber == 1 ? this.ShotsFired1 : this.ShotsFired2;
+        if (shotsFired.Any(s => s.Coordinate.X == coordinate.X && s.Coordinate.Y == coordinate.Y)) return ActionStatus.AlreadyFired;
+        return ActionStatus.Success;
+    }
+
+    private bool ShipOccupiesCoordinate(ShipState ship, Coordinate coordinate)
+    {
+        if (ship == null || coordinate == null) return false;
+        int size = GetShipSize(ship.Name);
+        if (size <= 0) return false;
+        bool isHorizontal = ship.Orientation == ShipOrientation.Horizontal;
+        int startX = ship.StartCoordinate.X;
+        int startY = ship.StartCoordinate.Y;
+        for (int i = 0; i < size; i++)
+        {
+            int x = isHorizontal ? startX + i : startX;
+            int y = isHorizontal ? startY : startY + i;
+            if (x == coordinate.X && y == coordinate.Y) return true;
+        }
+        return false;
+    }
+
+    private bool IsShipSunk(ShipState ship, List<ShotRecord> shotsFired)
+    {
+        if (ship == null || shotsFired == null) return false;
+        int size = GetShipSize(ship.Name);
+        if (size <= 0) return false;
+        bool isHorizontal = ship.Orientation == ShipOrientation.Horizontal;
+        int startX = ship.StartCoordinate.X;
+        int startY = ship.StartCoordinate.Y;
+        for (int i = 0; i < size; i++)
+        {
+            int x = isHorizontal ? startX + i : startX;
+            int y = isHorizontal ? startY : startY + i;
+            if (!shotsFired.Any(s => s.Coordinate.X == x && s.Coordinate.Y == y)) return false;
+        }
+        return true;
+    }
+
+    private bool CheckWinCondition(List<ShipState> opponentShips, List<ShotRecord> shotsFired)
+    {
+        if (opponentShips == null || shotsFired == null) return false;
+        foreach (var ship in opponentShips)
+        {
+            if (!this.IsShipSunk(ship, shotsFired)) return false;
+        }
+        return true;
     }
 
     // Use this instead of trusting clients to send the correct ship size.
