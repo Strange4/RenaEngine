@@ -29,3 +29,21 @@ public enum ShipName
     [EnumMember] Submarine = 4,
     [EnumMember] Destroyer = 5
 }
+
+public enum PlacementResult
+{
+    UnknownName,
+    UnknownOrientation,
+    UnknownShotResult,
+    Success,
+    InvalidPlayerNumber,
+    AlreadyPlaced,
+    OutOfBounds,
+    Overlapping,
+    InvalidFleetComposition,
+    InvalidFleetSize,
+    NullFleet,
+    NullCoordinate,
+    NullShip,
+
+}
