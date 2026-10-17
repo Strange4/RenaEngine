@@ -1,0 +1,46 @@
+ignore:
+  - "**/*Dockerfile"
+  - "**/*.dockerignore"
+  - "**/*.yml"
+  - "**/*.yaml"
+  - "**/*.json"
+  - "**/*.md"
+
+coverage:
+  status:
+    
+    project:
+      default:
+        target: 80%
+        fail_no_pass: true
+
+    patch:
+      default:
+        target: 81%
+        fail_no_pass: true
+
+
+flag_management:
+
+  default_rules:
+    carryforward: true
+    statuses:
+      - type: project
+      - type: patch
+
+  individual_flags:
+    - name: website
+      paths:
+        - website/
+
+    - name: game-server
+      paths:
+        - game-server/
+
+comment:
+  layout: " diff, flags, files"
+  behavior: default
+  require_changes: false  # if true: only post the comment if coverage changes
+  require_base: false        # [true :: must have a base report to post]
+  require_head: false       # [true :: must have a head report to post]
+  hide_project_coverage: false # [true :: only show coverage on the git diff aka patch coverage]]
