@@ -1,0 +1,38 @@
+ignore:
+  - "**/*Dockerfile"
+  - "**/*.dockerignore"
+  - "**/*.yml"
+  - "**/*.yaml"
+  - "**/*.json"
+  - "**/*.md"
+
+coverage:
+  status:
+    
+    project:
+      default:
+        target: 80%
+        fail_no_pass: true
+
+    patch:
+      default:
+        target: 81%
+        fail_no_pass: true
+
+
+flag_management:
+
+  default_rules:
+    carryforward: true
+    statuses:
+      - type: project
+      - type: patch
+
+  individual_flags:
+    - name: website
+      paths:
+        - website/
+
+    - name: game-server
+      paths:
+        - game-server/
