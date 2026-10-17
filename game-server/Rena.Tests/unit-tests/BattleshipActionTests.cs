@@ -1,6 +1,8 @@
 ﻿using BattleshipServer.Logic;
 using BattleshipServer.Game.Models;
 
+using System.Diagnostics.Contracts;
+
 namespace Rena.Tests.unit_tests;
 
 [TestFixture]
@@ -53,7 +55,7 @@ public class BattleshipActionTests
     }
 
     [Test]
-    public void TestInvalidActionSequence()
+    public void TestInvalidActionSequence_ShootTwiceInARow()
     {
         ActionExecutionResult result = _gameLogic.ProcessAction(1, new Coordinate { X = 0, Y = 0 });
         Assert.That(result.Status, Is.EqualTo(ActionStatus.Success));
@@ -87,5 +89,108 @@ public class BattleshipActionTests
         Assert.That(result.ShotResult, Is.EqualTo(ShotResult.Miss));
         Assert.That(result.IsWin, Is.False);
     }
+
+    [Test]
+    public void TestValidActionSequence_Sunk()
+    {
+        ActionExecutionResult? result = null;
+        for (int i = 1; i < 5; i++)//Player 2 will sink Player 1's Battleship (4) at i = 4
+        {
+            result = _gameLogic.ProcessAction(1, new Coordinate { X = i % 10, Y = i / 10 });
+            if (result.IsWin) break;
+            result = _gameLogic.ProcessAction(2, new Coordinate { X = i % 10, Y = i / 10 });
+            if (result.IsWin) break;
+        }
+        Assert.That(result.Status, Is.EqualTo(ActionStatus.Success));
+        Assert.That(result.ShotResult, Is.EqualTo(ShotResult.Sunk));
+        Assert.That(result.IsWin, Is.False);
+    }
+
+    [Test]
+    public void TestInvalidActionSequence_ShootWhenNotReady()
+    {
+        _gameLogic = new GameLogic();
+        ActionExecutionResult result = _gameLogic.ProcessAction(2, new Coordinate { X = 0, Y = 0 });
+        Assert.That(result.Status, Is.EqualTo(ActionStatus.NotReadyToStart));
+    }
+
+    [Test]
+    public void TestInvalidActionSequence_ShootAfterGameOver()
+    {
+        ActionExecutionResult? result = null;
+        for (int i = 0; i < 99; i++)
+        {
+            result = _gameLogic.ProcessAction(1, new Coordinate { X = i % 10, Y = i / 10 });
+            if (result.IsWin) break;
+            result = _gameLogic.ProcessAction(2, new Coordinate { X = i % 10, Y = i / 10 });
+            if (result.IsWin) break;
+        }
+        result = _gameLogic.ProcessAction(1, new Coordinate { X = 9, Y = 9 });
+        Assert.That(result.Status, Is.EqualTo(ActionStatus.GameOver));
+    }
+
+    [Test]
+    public void TestInvalidActionSequence_NonTurnPlayerShoot()
+    {
+        ActionExecutionResult result = _gameLogic.ProcessAction(2, new Coordinate { X = 9, Y = 9 });
+        Assert.That(result.Status, Is.EqualTo(ActionStatus.NotYourTurn));
+    }
+
+    [Test]
+    public void TestInvalidActionSequence_AlreadyFired()
+    {
+        _gameLogic.ProcessAction(1, new Coordinate { X = 9, Y = 9 });
+        _gameLogic.ProcessAction(2, new Coordinate { X = 9, Y = 9 });
+        ActionExecutionResult result = _gameLogic.ProcessAction(1, new Coordinate { X = 9, Y = 9 });
+        Assert.That(result.Status, Is.EqualTo(ActionStatus.AlreadyFired));
+    }
+
+    [Test]
+    public void TestInvalidActionSequence_OutOfBounds()
+    {
+        ActionExecutionResult result = _gameLogic.ProcessAction(1, new Coordinate { X = 10, Y = 10 });
+        Assert.That(result.Status, Is.EqualTo(ActionStatus.OutOfBounds));
+    }
+
+    [Test]
+    public void TestInvalidActionSequence_NullCoordinate()
+    {
+        ActionExecutionResult result = _gameLogic.ProcessAction(1, null);
+        Assert.That(result.Status, Is.EqualTo(ActionStatus.NullCoordinate));
+    }
+
+    [Test]
+    public void TestInvalidActionSequence_InvalidPlayerNumber()
+    {
+        ActionExecutionResult result = _gameLogic.ProcessAction(3, new Coordinate { X = 1, Y = 1 });
+        Assert.That(result.Status, Is.EqualTo(ActionStatus.InvalidPlayerNumber));
+    }
+
+    [Test]
+    public void TestValidShotsFiredHistory()
+    {
+        _gameLogic.ProcessAction(1, new Coordinate { X = 1, Y = 2 });
+        _gameLogic.ProcessAction(2, new Coordinate { X = 3, Y = 4 });
+        _gameLogic.ProcessAction(1, new Coordinate { X = 5, Y = 6 });
+        _gameLogic.ProcessAction(2, new Coordinate { X = 7, Y = 8 });
+
+        Assert.That(_gameLogic.ShotsFired1[0].Coordinate.X, Is.EqualTo(1));
+        Assert.That(_gameLogic.ShotsFired1[0].Coordinate.Y, Is.EqualTo(2));
+        Assert.That(_gameLogic.ShotsFired1[0].Result, Is.EqualTo(ShotResult.Hit));
+
+        Assert.That(_gameLogic.ShotsFired1[1].Coordinate.X, Is.EqualTo(5));
+        Assert.That(_gameLogic.ShotsFired1[1].Coordinate.Y, Is.EqualTo(6));
+        Assert.That(_gameLogic.ShotsFired1[1].Result, Is.EqualTo(ShotResult.Miss));
+
+        Assert.That(_gameLogic.ShotsFired2[0].Coordinate.X, Is.EqualTo(3));
+        Assert.That(_gameLogic.ShotsFired2[0].Coordinate.Y, Is.EqualTo(4));
+        Assert.That(_gameLogic.ShotsFired2[0].Result, Is.EqualTo(ShotResult.Miss));
+
+        Assert.That(_gameLogic.ShotsFired2[1].Coordinate.X, Is.EqualTo(7));
+        Assert.That(_gameLogic.ShotsFired2[1].Coordinate.Y, Is.EqualTo(8));
+        Assert.That(_gameLogic.ShotsFired2[1].Result, Is.EqualTo(ShotResult.Miss));
+
+    }
+
 
 }
