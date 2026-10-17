@@ -1,8 +1,6 @@
 ﻿using BattleshipServer.Logic;
 using BattleshipServer.Game.Models;
 
-using System.Diagnostics.Contracts;
-
 namespace Rena.Tests.unit_tests;
 
 [TestFixture]
