@@ -2,9 +2,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE } from "@/server/lib/session";
 import { isAdmin, parseToken, type ParsedToken } from "@/shared/token";
 
-// Returns true when the path is the given section or a page inside it.
-function isInSection(pathname: string, section: string): boolean {
-  return pathname === section || pathname.startsWith(`${section}/`);
+// Returns true when the path is the route itself or a page nested under it,
+// e.g. "/admin" and "/admin/users" match "/admin", but "/administrator" does not.
+function isWithinRoute(pathname: string, route: string): boolean {
+  return pathname === route || pathname.startsWith(`${route}/`);
 }
 
 // Returns the path to send the visitor to, or null when they may view the page.
@@ -13,8 +14,8 @@ function redirectPathFor(
   session: ParsedToken | null,
 ): string | null {
   if (!session) return "/login";
-  if (isInSection(pathname, "/admin") && !isAdmin(session)) return "/access-denied";
-  if (isInSection(pathname, "/participant") && isAdmin(session)) return "/admin";
+  if (isWithinRoute(pathname, "/admin") && !isAdmin(session)) return "/access-denied";
+  if (isWithinRoute(pathname, "/participant") && isAdmin(session)) return "/admin";
   return null;
 }
 
