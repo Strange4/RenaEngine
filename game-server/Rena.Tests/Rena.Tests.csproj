@@ -25,6 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BattleshipServer\BattleshipServer.csproj" />
     <ProjectReference Include="..\Rena\Rena.csproj" />
   </ItemGroup>
 
