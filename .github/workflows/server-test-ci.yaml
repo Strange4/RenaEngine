@@ -38,4 +38,11 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Test Project
-        run: dotnet test --no-build --configuration Release --filter "TestCategory!=SDKGeneration"
+        run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --filter "TestCategory!=SDKGeneration" 
+
+      - name: Upload results to Codecov
+        uses: codecov/codecov-actionv5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          files: ./Rena.Tests/TestResults/*/coverage.cobertura.xml
