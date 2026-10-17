@@ -1,9 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Application, Assets, Sprite } from "pixi.js";
+import { Application, Sprite } from "pixi.js";
+import { AssetLoader } from "@/app/viewer/assetLoader";
+import { type GameRenderable, RenderableType } from "@/shared/renderable";
 
-const TEST_SPRITE_URL = "/sprites/rena.png";
+const TEST_SPRITE: GameRenderable = {
+  id: "test-sprite",
+  position: [0, 0],
+  assetPath: "/sprites/rena.png",
+  size: [1, 1],
+  type: RenderableType.OBJECT,
+  layer: 1,
+};
 
 export default function LiveViewer() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -13,6 +22,7 @@ export default function LiveViewer() {
     if (!container) return;
 
     const app = new Application();
+    const assets = new AssetLoader();
     let initialized = false;
     let unmounted = false;
 
@@ -29,10 +39,10 @@ export default function LiveViewer() {
 
       container.appendChild(app.canvas);
 
-      const texture = await Assets.load(TEST_SPRITE_URL);
+      await assets.loadFor([TEST_SPRITE]);
       if (unmounted) return;
 
-      const sprite = new Sprite(texture);
+      const sprite = new Sprite(assets.getTexture(TEST_SPRITE.assetPath));
       sprite.anchor.set(0.5);
       const center = () => sprite.position.set(app.screen.width / 2, app.screen.height / 2);
       center();
