@@ -41,7 +41,7 @@ jobs:
         run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --filter "TestCategory!=SDKGeneration" 
 
       - name: Upload results to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
