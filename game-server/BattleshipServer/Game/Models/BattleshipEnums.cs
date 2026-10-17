@@ -34,7 +34,6 @@ public enum PlacementResult
 {
     UnknownName,
     UnknownOrientation,
-    UnknownShotResult,
     Success,
     InvalidPlayerNumber,
     AlreadyPlaced,
