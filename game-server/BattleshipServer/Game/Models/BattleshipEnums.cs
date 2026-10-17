@@ -46,3 +46,17 @@ public enum PlacementResult
     NullShip,
 
 }
+
+public enum ActionStatus
+{
+    UnknownAction,
+    Success,
+    InvalidPlayerNumber,
+    NotYourTurn,
+    AlreadyFired,
+    OutOfBounds,
+    NullCoordinate,
+    NullShotRecord,
+    NotReadyToStart,
+    GameOver
+}
