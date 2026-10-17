@@ -47,10 +47,14 @@ public class GameLogic
         HashSet<ShipName> shipNames = new HashSet<ShipName>();
         foreach (var ship in ships)
         {
-            if (ship == null) return PlacementResult.NullShip;
-            if (!Enum.IsDefined(typeof(ShipName), ship.Name) || ship.Name == ShipName.ShipNameUnknown) return PlacementResult.UnknownName;
-            if (!Enum.IsDefined(typeof(ShipOrientation), ship.Orientation) || ship.Orientation == ShipOrientation.ShipOrientationUnknown) return PlacementResult.UnknownOrientation;
-            if (!shipNames.Add(ship.Name)) return PlacementResult.InvalidFleetComposition; // If there's a duplicate, HashSet.Add will return false because HashSet does not allow duplicates
+            if (ship == null)
+                return PlacementResult.NullShip;
+            if (ship.Name is ShipName.ShipNameUnknown || !Enum.IsDefined(ship.Name))
+                return PlacementResult.UnknownName;
+            if (ship.Orientation is not (ShipOrientation.Horizontal or ShipOrientation.Vertical))
+                return PlacementResult.UnknownOrientation;
+            if (!shipNames.Add(ship.Name))  // If there's a duplicate, HashSet.Add will return false because HashSet does not allow duplicates
+                return PlacementResult.InvalidFleetComposition;
         }
         return PlacementResult.Success;
     }
