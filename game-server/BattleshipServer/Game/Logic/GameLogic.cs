@@ -103,7 +103,7 @@ public class GameLogic
         return result;
     }
 
-    public ActionExecutionResult ProcessAction(int playerNumber, Coordinate coordinate)
+    public ActionExecutionResult ProcessAction(int playerNumber, Coordinate? coordinate)
     {
         /*
          * Check if the shot hits any of the opponent's ships
