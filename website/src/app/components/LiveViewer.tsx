@@ -71,5 +71,15 @@ export default function LiveViewer() {
     };
   }, []);
 
-  return <div ref={containerRef} className="live-viewer-canvas" data-testid="live-viewer" />;
+  return (
+    <div
+      ref={containerRef}
+      className="live-viewer-canvas"
+      style={{
+        width: `${TEST_VIEWER_SETUP.resolution[0]}px`,
+        height: `${TEST_VIEWER_SETUP.resolution[1]}px`,
+      }}
+      data-testid="live-viewer"
+    />
+  );
 }
