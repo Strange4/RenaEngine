@@ -18,7 +18,7 @@ function redirectLocation(response: Response) {
 }
 
 describe("proxy", () => {
-  it.each(["/admin", "/participant", "/admin/settings", "/test-feature"])(
+  it.each(["/admin", "/participant", "/admin/settings"])(
     "redirects a visitor without a session from %s to /login",
     (path) => {
       expect(redirectLocation(proxy(requestFor(path)))).toBe("/login");
@@ -47,8 +47,6 @@ describe("proxy", () => {
     ["/admin", "ADMIN-secret"],
     ["/admin/settings", "ADMIN-secret"],
     ["/participant", "PARTICIPANT-42-secret"],
-    ["/test-feature", "PARTICIPANT-42-secret"],
-    ["/test-feature", "ADMIN-secret"],
   ])("lets %s through for token %s", (path, token) => {
     const response = proxy(requestFor(path, token));
 
@@ -63,7 +61,6 @@ describe("proxy matcher", () => {
     "/admin/settings",
     "/participant",
     "/participant/code",
-    "/test-feature",
   ])(
     "runs on %s",
     (url) => {
@@ -71,7 +68,14 @@ describe("proxy matcher", () => {
     },
   );
 
-  it.each(["/", "/login", "/access-denied", "/api/auth/me", "/administrator"])(
+  it.each([
+    "/",
+    "/login",
+    "/access-denied",
+    "/api/auth/me",
+    "/administrator",
+    "/test-feature",
+  ])(
     "does not run on %s",
     (url) => {
       expect(unstable_doesMiddlewareMatch({ config, url })).toBe(false);

@@ -1,43 +1,44 @@
 /**
  * @jest-environment node
  */
-import { PUT } from "./test-feature";
+import { PUT } from "./feature";
 
 const mockGetSession = jest.fn();
-const mockUpdateTestFeatureSetting = jest.fn();
+const mockUpdateFeatureSetting = jest.fn();
 
 jest.mock("@/server/lib/session", () => ({
   getSession: () => mockGetSession(),
 }));
 
 jest.mock("@/server/lib/game-server-settings", () => ({
-  updateTestFeatureSetting: (enabled: boolean) =>
-    mockUpdateTestFeatureSetting(enabled),
+  updateFeatureSetting: (featureKey: string, enabled: boolean) =>
+    mockUpdateFeatureSetting(featureKey, enabled),
 }));
 
-function putSetting(body: unknown) {
+function putSetting(body: unknown, featureKey = "test-feature") {
   return PUT(
-    new Request("http://localhost/api/settings/test-feature", {
+    new Request(`http://localhost/api/settings/features/${featureKey}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     }),
+    featureKey,
   );
 }
 
 beforeEach(() => {
   mockGetSession.mockReset();
-  mockUpdateTestFeatureSetting.mockReset();
+  mockUpdateFeatureSetting.mockReset();
 });
 
-describe("PUT /api/settings/test-feature", () => {
+describe("PUT /api/settings/features/[featureKey]", () => {
   it("rejects logged-out visitors", async () => {
     mockGetSession.mockResolvedValue(null);
 
     const response = await putSetting({ enabled: true });
 
     expect(response.status).toBe(401);
-    expect(mockUpdateTestFeatureSetting).not.toHaveBeenCalled();
+    expect(mockUpdateFeatureSetting).not.toHaveBeenCalled();
   });
 
   it("rejects participants", async () => {
@@ -50,7 +51,16 @@ describe("PUT /api/settings/test-feature", () => {
     const response = await putSetting({ enabled: true });
 
     expect(response.status).toBe(403);
-    expect(mockUpdateTestFeatureSetting).not.toHaveBeenCalled();
+    expect(mockUpdateFeatureSetting).not.toHaveBeenCalled();
+  });
+
+  it("rejects unknown features", async () => {
+    mockGetSession.mockResolvedValue({ role: "admin", token: "ADMIN-secret" });
+
+    const response = await putSetting({ enabled: true }, "unknown");
+
+    expect(response.status).toBe(404);
+    expect(mockUpdateFeatureSetting).not.toHaveBeenCalled();
   });
 
   it("validates the request body", async () => {
@@ -59,23 +69,23 @@ describe("PUT /api/settings/test-feature", () => {
     const response = await putSetting({ enabled: "yes" });
 
     expect(response.status).toBe(400);
-    expect(mockUpdateTestFeatureSetting).not.toHaveBeenCalled();
+    expect(mockUpdateFeatureSetting).not.toHaveBeenCalled();
   });
 
-  it("allows an admin to update the setting", async () => {
+  it("allows an admin to update a registered feature", async () => {
     mockGetSession.mockResolvedValue({ role: "admin", token: "ADMIN-secret" });
-    mockUpdateTestFeatureSetting.mockResolvedValue({ enabled: true });
+    mockUpdateFeatureSetting.mockResolvedValue({ enabled: true });
 
     const response = await putSetting({ enabled: true });
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ enabled: true });
-    expect(mockUpdateTestFeatureSetting).toHaveBeenCalledWith(true);
+    expect(mockUpdateFeatureSetting).toHaveBeenCalledWith("test-feature", true);
   });
 
   it("reports an unavailable game server", async () => {
     mockGetSession.mockResolvedValue({ role: "admin", token: "ADMIN-secret" });
-    mockUpdateTestFeatureSetting.mockResolvedValue(null);
+    mockUpdateFeatureSetting.mockResolvedValue(null);
 
     const response = await putSetting({ enabled: false });
 

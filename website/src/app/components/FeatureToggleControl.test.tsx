@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import FeatureToggleControl from "./FeatureToggleControl";
+import { TEST_FEATURE } from "@/shared/features";
 
 const mockFetch = jest.fn();
 
@@ -10,7 +11,9 @@ beforeEach(() => {
 
 describe("FeatureToggleControl", () => {
   it("shows the current setting", () => {
-    render(<FeatureToggleControl initialEnabled={false} />);
+    render(
+      <FeatureToggleControl feature={TEST_FEATURE} initialEnabled={false} />,
+    );
 
     expect(screen.getByRole("status")).toHaveTextContent(
       "Participant access: Disabled",
@@ -25,7 +28,9 @@ describe("FeatureToggleControl", () => {
       ok: true,
       json: async () => ({ enabled: true }),
     });
-    render(<FeatureToggleControl initialEnabled={false} />);
+    render(
+      <FeatureToggleControl feature={TEST_FEATURE} initialEnabled={false} />,
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Enable feature" }));
 
@@ -34,7 +39,7 @@ describe("FeatureToggleControl", () => {
         "Participant access: Enabled",
       ),
     );
-    expect(mockFetch).toHaveBeenCalledWith("/api/settings/test-feature", {
+    expect(mockFetch).toHaveBeenCalledWith("/api/settings/features/test-feature", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ enabled: true }),
@@ -46,7 +51,9 @@ describe("FeatureToggleControl", () => {
       ok: false,
       json: async () => ({ error: "Game server unavailable" }),
     });
-    render(<FeatureToggleControl initialEnabled={false} />);
+    render(
+      <FeatureToggleControl feature={TEST_FEATURE} initialEnabled={false} />,
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Enable feature" }));
 

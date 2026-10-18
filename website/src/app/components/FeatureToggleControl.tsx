@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import type { FeatureDefinition } from "@/shared/features";
 
 export default function FeatureToggleControl({
+  feature,
   initialEnabled,
 }: {
+  feature: FeatureDefinition;
   initialEnabled: boolean | null;
 }) {
   const [enabled, setEnabled] = useState(initialEnabled ?? false);
@@ -19,7 +22,7 @@ export default function FeatureToggleControl({
     setSaving(true);
     setError(null);
 
-    const response = await fetch("/api/settings/test-feature", {
+    const response = await fetch(`/api/settings/features/${feature.key}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ enabled: requestedValue }),
@@ -38,8 +41,8 @@ export default function FeatureToggleControl({
   }
 
   return (
-    <section aria-labelledby="test-feature-setting">
-      <h2 id="test-feature-setting">Test feature</h2>
+    <section aria-labelledby={`${feature.key}-setting`}>
+      <h2 id={`${feature.key}-setting`}>{feature.label}</h2>
       <p role="status">
         Participant access: {available ? (enabled ? "Enabled" : "Disabled") : "Unavailable"}
       </p>
