@@ -14,4 +14,14 @@ public record class RenaOptions
 #pragma warning restore CS8618
 
     public string GenerationDirectory { get; set; } = "./sdks";
+
+    [Required]
+#pragma warning disable CS8618
+    public string AdminToken { get; set; }
+#pragma warning restore CS8618
+
+    public Dictionary<string, bool> Features { get; set; } = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["test-feature"] = false
+    };
 }

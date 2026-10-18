@@ -30,6 +30,8 @@ public class EndpointTests
         builder.WebHost.UseTestServer();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>{
             {"RenaOptions:TSProtoPath", "TESTING"},
+            {"RenaOptions:AdminToken", "TEST-ADMIN-TOKEN"},
+            {"RenaOptions:Features:test-feature", "false"},
         });
         builder.SetRenaServices<TestGame, GameState, GameAction>();
 
@@ -70,7 +72,73 @@ public class EndpointTests
         var name = await response.Content.ReadFromJsonAsync<string>();
         Assert.That(name, Is.EqualTo("Example game"));
     }
+
+    [Test]
+    public async Task TestFeatureSetting_AdminCanEnableAndDisableIt()
+    {
+        using HttpResponseMessage initialResponse = await _client.GetAsync(
+            "/settings/features/test-feature");
+        Assert.That(initialResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        TestFeatureSettingDto? initialSetting =
+            await initialResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
+        Assert.That(initialSetting?.Enabled, Is.False);
+
+        using HttpResponseMessage unknownFeatureResponse = await _client.GetAsync(
+            "/settings/features/unknown");
+        Assert.That(unknownFeatureResponse.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+
+        using HttpResponseMessage missingTokenResponse = await _client.PutAsJsonAsync(
+            "/settings/features/test-feature",
+            new { enabled = true });
+        Assert.That(missingTokenResponse.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+
+        using HttpRequestMessage wrongTokenRequest = CreateSettingRequest(true, "WRONG-TOKEN");
+        using HttpResponseMessage wrongTokenResponse = await _client.SendAsync(wrongTokenRequest);
+        Assert.That(wrongTokenResponse.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
+
+        using HttpRequestMessage invalidBodyRequest = new(
+            HttpMethod.Put,
+            "/settings/features/test-feature")
+        {
+            Content = JsonContent.Create(new { enabled = "yes" })
+        };
+        invalidBodyRequest.Headers.Authorization = new("Bearer", "TEST-ADMIN-TOKEN");
+        using HttpResponseMessage invalidBodyResponse = await _client.SendAsync(invalidBodyRequest);
+        Assert.That(invalidBodyResponse.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+
+        using HttpRequestMessage enableRequest = CreateSettingRequest(true, "TEST-ADMIN-TOKEN");
+        using HttpResponseMessage enableResponse = await _client.SendAsync(enableRequest);
+        Assert.That(enableResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        TestFeatureSettingDto? enabledSetting =
+            await enableResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
+        Assert.That(enabledSetting?.Enabled, Is.True);
+
+        using HttpResponseMessage currentResponse = await _client.GetAsync(
+            "/settings/features/test-feature");
+        TestFeatureSettingDto? currentSetting =
+            await currentResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
+        Assert.That(currentSetting?.Enabled, Is.True);
+
+        using HttpRequestMessage disableRequest = CreateSettingRequest(false, "TEST-ADMIN-TOKEN");
+        using HttpResponseMessage disableResponse = await _client.SendAsync(disableRequest);
+        Assert.That(disableResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        TestFeatureSettingDto? disabledSetting =
+            await disableResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
+        Assert.That(disabledSetting?.Enabled, Is.False);
+    }
+
+    private static HttpRequestMessage CreateSettingRequest(bool enabled, string token)
+    {
+        HttpRequestMessage request = new(HttpMethod.Put, "/settings/features/test-feature")
+        {
+            Content = JsonContent.Create(new { enabled })
+        };
+        request.Headers.Authorization = new("Bearer", token);
+        return request;
+    }
 }
+
+public record TestFeatureSettingDto(bool Enabled);
 
 
 [DataContract]
