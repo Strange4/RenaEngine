@@ -58,5 +58,7 @@ public enum ActionStatus
     NullCoordinate,
     NullShotRecord,
     NotReadyToStart,
-    GameOver
+    GameOver,
+    InvalidPlacement,
+    InvalidAction
 }
