@@ -1,5 +1,5 @@
 import type { Container } from "pixi.js";
-import { RenderableType, type GameRenderable } from "@/shared/renderable";
+import { RenderableType, type GameRenderable, type ViewerSetup } from "@/shared/renderable";
 
 class MockSprite {
   texture: unknown;

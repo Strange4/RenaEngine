@@ -4,24 +4,29 @@ import { useEffect, useRef } from "react";
 import { Application } from "pixi.js";
 import { AssetLoader } from "@/app/viewer/assetLoader";
 import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
-import { type GameRenderable, RenderableType } from "@/shared/renderable";
+import { type GameRenderable,type ViewerSetup, RenderableType } from "@/shared/renderable";
 
 const TEST_SPRITE: GameRenderable = {
   id: "test-sprite",
-  position: [64, 64],
+  position: [2, 2],
   assetPath: "/sprites/rena.png",
-  size: [96, 96],
+  size: [3, 3],
   type: RenderableType.OBJECT,
   layer: 1,
 };
 
 const TEST_SPRITE_TWO: GameRenderable = {
   id: "test-sprite-two",
-  position: [192, 64],
+  position: [0, 0],
   assetPath: "/sprites/ship1.png",
-  size: [96, 96],
+  size: [3, 3],
   type: RenderableType.OBJECT,
   layer: 2,
+};
+
+const TEST_VIEWER_SETUP: ViewerSetup = {
+    tileSize: 32,
+    resolution: [800, 600],
 };
 
 export default function LiveViewer() {
@@ -33,12 +38,17 @@ export default function LiveViewer() {
 
     const app = new Application();
     const assets = new AssetLoader();
-    const renderer = new LiveViewRenderer(assets);
+    const renderer = new LiveViewRenderer(assets, TEST_VIEWER_SETUP);
     let initialized = false;
     let unmounted = false;
 
     (async () => {
-      await app.init({ resizeTo: container, background: "#1f2937", antialias: true });
+      await app.init({
+        width: TEST_VIEWER_SETUP.resolution[0],
+        height: TEST_VIEWER_SETUP.resolution[1],
+        background: "#1f2937",
+        antialias: true,
+      });
       initialized = true;
 
       // init is async: if we unmounted while it was running, the cleanup

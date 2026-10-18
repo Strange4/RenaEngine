@@ -1,6 +1,6 @@
 import { Container, Sprite } from 'pixi.js';
 import { RenderableType } from '@/shared/renderable';
-import type { GameRenderable } from '@/shared/renderable';
+import type { GameRenderable, ViewerSetup } from '@/shared/renderable';
 import { AssetLoader } from './assetLoader';
 
 export class LiveViewRenderer {
@@ -14,7 +14,7 @@ export class LiveViewRenderer {
 
     private assetLoader: AssetLoader;
 
-    constructor(assetLoader: AssetLoader) {
+    constructor(assetLoader: AssetLoader, private viewerSetup: ViewerSetup) {
         this.mapContainer.label = 'map';
         this.objectContainer.label = 'objects';
         this.decorationContainer.label = 'decorations';
@@ -71,15 +71,18 @@ export class LiveViewRenderer {
         const sprite = new Sprite(texture);
 
         // Set the sprite's position, size, and layer based on the renderable's properties
+        // Convert tile-based position to pixel position
         sprite.position.set(
-            renderable.position[0],
-            renderable.position[1]
+            renderable.position[0] * this.viewerSetup.tileSize,
+            renderable.position[1] * this.viewerSetup.tileSize,
         );
-
+        // Set the zIndex for layering
         sprite.zIndex = renderable.layer;
 
-        sprite.width = renderable.size[0];
-        sprite.height = renderable.size[1];
+        // Set the sprite's size based on the renderable's size and the tile size
+        // Convert tile-based size to pixel size
+        sprite.width = renderable.size[0] * this.viewerSetup.tileSize;
+        sprite.height = renderable.size[1] * this.viewerSetup.tileSize;
 
         this.getContainer(renderable.type).addChild(sprite);
         this.addSprite(renderable.id, sprite);
