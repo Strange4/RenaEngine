@@ -1,0 +1,142 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    name: Server
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: game-server
+
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+          cache: true
+          cache-dependency-path: "game-server/**/packages.lock.json"
+
+      - name: Install SonarScanner for .NET
+        run: dotnet tool install --global dotnet-sonarscanner --version 12.0.0
+
+      - name: Restore locked dependencies
+        run: dotnet restore --locked-mode
+
+      - name: Verify formatting
+        run: dotnet format --no-restore --verify-no-changes --verbosity diagnostic
+
+      - name: Begin Sonar analysis
+        run: >
+          dotnet sonarscanner begin
+          /k:"Strange4_RenaEngine"
+          /o:"renaengine"
+          /d:sonar.token="$SONAR_TOKEN"
+          /d:sonar.cs.opencover.reportsPaths="Rena.Tests/TestResults/**/coverage.opencover.xml"
+
+      - name: Build server
+        run: dotnet build --no-restore --no-incremental --configuration Release
+
+      - name: Test server with coverage
+        run: >
+          dotnet test
+          --no-build
+          --configuration Release
+          --collect:"XPlat Code Coverage;Format=cobertura,opencover"
+          --filter "TestCategory!=SDKGeneration"
+
+      - name: Complete Sonar analysis
+        run: dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+
+      - name: Locate server coverage report
+        id: server-coverage
+        run: |
+          report="$(find Rena.Tests/TestResults -name coverage.cobertura.xml -print -quit)"
+          test -n "$report"
+          echo "path=game-server/$report" >> "$GITHUB_OUTPUT"
+
+      - name: Upload server coverage
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5
+        with:
+          use_oidc: true
+          files: ${{ steps.server-coverage.outputs.path }}
+          flags: game-server
+          disable_search: true
+          fail_ci_if_error: true
+
+  website:
+    name: Website
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: website
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test website with coverage
+        run: >
+          npm test --
+          --ci
+          --coverage
+          --coverageReporters=lcov
+          --coverageReporters=text
+
+      - name: Build website
+        run: npm run build
+
+      - name: Upload website coverage
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5
+        with:
+          use_oidc: true
+          files: website/coverage/lcov.info
+          flags: website
+          disable_search: true
+          fail_ci_if_error: true
+
+  ci-gate:
+    name: CI Gate
+    if: always()
+    needs:
+      - server
+      - website
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify required jobs
+        run: |
+          test "${{ needs.server.result }}" = "success"
+          test "${{ needs.website.result }}" = "success"
