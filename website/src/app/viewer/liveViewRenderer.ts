@@ -1,10 +1,12 @@
-    import { Container } from 'pixi.js';
-    import { RenderableType } from '../../../shared/renderable';
+    import { Container, Sprite } from 'pixi.js';
+    import { RenderableType } from '@/shared/renderable';
 
     export class LiveViewRenderer {
         private mapContainer = new Container();
         private objectContainer = new Container();
         private decorationContainer = new Container();
+
+        private sprites = new Map<string, Sprite>();
 
         constructor() {
             this.mapContainer.name = 'map';
@@ -29,6 +31,14 @@
             stage.addChild(this.mapContainer);
             stage.addChild(this.objectContainer);
             stage.addChild(this.decorationContainer);
+        }
+
+        getSprite(id: string): Sprite | undefined {
+            return this.sprites.get(id);
+        }
+
+        addSprite(id: string, sprite: Sprite): void {
+            this.sprites.set(id, sprite);
         }
 
     }
