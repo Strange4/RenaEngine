@@ -17,6 +17,10 @@
             this.objectContainer.label = 'objects';
             this.decorationContainer.label = 'decorations';
 
+            this.mapContainer.sortableChildren = true;
+            this.objectContainer.sortableChildren = true;
+            this.decorationContainer.sortableChildren = true;
+
             this.assetLoader = assetLoader;
         }
 
@@ -63,6 +67,8 @@
                 renderable.position[0],
                 renderable.position[1]
             );
+
+            sprite.zIndex = renderable.layer;
 
             sprite.width = renderable.size[0];
             sprite.height = renderable.size[1];
