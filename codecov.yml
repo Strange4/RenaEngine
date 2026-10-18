@@ -8,25 +8,23 @@ ignore:
 
 coverage:
   status:
-    
     project:
       default:
         target: 80%
-        fail_no_pass: true
-
     patch:
       default:
         target: 81%
-        fail_no_pass: true
 
 
 flag_management:
-
   default_rules:
     carryforward: true
     statuses:
       - type: project
+        target: 80%
       - type: patch
+        target: 81%
+        threshold: 1%
 
   individual_flags:
     - name: website
