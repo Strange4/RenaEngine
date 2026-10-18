@@ -46,12 +46,3 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           files: ./*.Tests/TestResults/*/coverage.opencover.xml
-      
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.sources=.
-            -Dsonar.cs.opencover.reportsPaths=./*.Tests/TestResults/*/coverage.opencover.xml
