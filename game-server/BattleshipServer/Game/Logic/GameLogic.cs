@@ -9,6 +9,8 @@ public class GameLogic
     public List<ShipState> PlacedShips2 { get; } = new List<ShipState>();
     public List<ShotRecord> ShotsFired1 { get; } = new List<ShotRecord>();
     public List<ShotRecord> ShotsFired2 { get; } = new List<ShotRecord>();
+    public List<ShipState> SunkShips1 { get; } = new List<ShipState>();
+    public List<ShipState> SunkShips2 { get; } = new List<ShipState>();
     public bool IsPlayer1Turn { get; private set; } = true;
     public bool IsGameOver { get; private set; } = false;
     public bool IsPlayer1Winner { get; private set; } = false;
@@ -116,6 +118,7 @@ public class GameLogic
 
         List<ShipState> opponentShips = playerNumber == 1 ? this.PlacedShips2 : this.PlacedShips1;
         List<ShotRecord> shotsFired = playerNumber == 1 ? this.ShotsFired1 : this.ShotsFired2;
+        List<ShipState> opponentsSunkShips = playerNumber == 1 ? this.SunkShips2 : this.SunkShips1;
 
         ShipState? hitShip = opponentShips.FirstOrDefault(ship => this.ShipOccupiesCoordinate(ship, coordinate));
         if (hitShip == null)
@@ -130,6 +133,7 @@ public class GameLogic
         if (isSunk)
         {
             shotsFired[shotsFired.Count - 1] = new ShotRecord { Coordinate = coordinate, Result = ShotResult.Sunk }; // Update from hit to sunk
+            opponentsSunkShips.Add(hitShip);
             if (this.CheckWinCondition(opponentShips, shotsFired))
             {
                 this.IsGameOver = true;
