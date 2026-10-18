@@ -1,5 +1,5 @@
-﻿using BattleshipServer.Logic;
-using BattleshipServer.Game.Models;
+﻿using BattleshipServer.Game.Models;
+using BattleshipServer.Logic;
 
 namespace Rena.Tests.unit_tests;
 
