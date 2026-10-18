@@ -48,7 +48,10 @@ export default function LiveViewer() {
       center();
       app.renderer.on("resize", center);
       app.stage.addChild(sprite);
-    })();
+    })().catch(e => {
+      console.log(e);
+      // TODO put actual error handling here
+    });
 
     return () => {
       unmounted = true;
