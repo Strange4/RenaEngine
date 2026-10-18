@@ -237,7 +237,7 @@ public class GameLogic
 
         return new PlayerState
         {
-            GridSize = GameLogic.BoardSize,
+            GridSize = BoardSize,
             ShipStates = yourShips,
             SunkShips = sunkShips,
             ShotsFired = shotsFired,
