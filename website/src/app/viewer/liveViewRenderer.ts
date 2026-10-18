@@ -78,4 +78,14 @@ export class LiveViewRenderer {
 
         return sprite;
     }
+
+    async renderScene(renderables: GameRenderable[]): Promise<void> {
+        // Load the assets before creating sprites
+        await this.assetLoader.loadFor(renderables);
+
+        // Create a sprite for each renderable
+        for (const renderable of renderables) {
+            this.addGameRenderable(renderable);
+        }
+    }
 }
