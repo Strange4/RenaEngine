@@ -225,5 +225,28 @@ public class GameLogic
         };
     }
 
+    public PlayerState GetPlayerState(int playerNumber)
+    {
+        List<ShipState> yourShips = playerNumber is 1 ? this.PlacedShips1 : this.PlacedShips2;
+        List<ShipState> sunkShips = playerNumber is 1 ? this.SunkShips2 : this.SunkShips1;
+        List<ShotRecord> shotsFired = playerNumber == 1 ? this.ShotsFired1 : this.ShotsFired2;
+        bool isYourTurn = playerNumber == 1 ? this.IsPlayer1Turn : !this.IsPlayer1Turn;
+        bool isGameOver = this.IsGameOver;
+        bool isWinner = playerNumber == 1 ? this.IsPlayer1Winner : !this.IsPlayer1Winner;
+        bool isPlaceShips = yourShips.Count == 5;
+
+        return new PlayerState
+        {
+            GridSize = GameLogic.BoardSize,
+            ShipStates = yourShips,
+            SunkShips = sunkShips,
+            ShotsFired = shotsFired,
+            isYourTurn = isYourTurn && !isGameOver,
+            isGameOver = isGameOver,
+            isWinner = isWinner && isGameOver,
+            isPlaceShips = isPlaceShips
+
+        };
+    }
 
 }
