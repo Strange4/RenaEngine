@@ -233,7 +233,7 @@ public class GameLogic
         bool isYourTurn = playerNumber == 1 ? this.IsPlayer1Turn : !this.IsPlayer1Turn;
         bool isGameOver = this.IsGameOver;
         bool isWinner = playerNumber == 1 ? this.IsPlayer1Winner : !this.IsPlayer1Winner;
-        bool isPlaceShips = yourShips.Count == 5;
+        bool isPlacementPhase = yourShips.Count < 5;
 
         return new PlayerState
         {
@@ -244,7 +244,7 @@ public class GameLogic
             isYourTurn = isYourTurn && !isGameOver,
             isGameOver = isGameOver,
             isWinner = isWinner && isGameOver,
-            isPlaceShips = isPlaceShips
+            isPlacementPhase = isPlacementPhase
 
         };
     }
