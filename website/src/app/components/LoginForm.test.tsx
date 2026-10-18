@@ -4,6 +4,11 @@ import LoginForm from "./LoginForm";
 const mockReplace = jest.fn();
 const mockRefresh = jest.fn();
 const mockFetch = jest.fn();
+const mockAuthRefresh = jest.fn();
+
+jest.mock("./AuthProvider", () => ({
+  useAuth: () => ({ refresh: mockAuthRefresh }),
+}));
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ replace: mockReplace, refresh: mockRefresh }),
@@ -22,7 +27,8 @@ beforeEach(() => {
   mockReplace.mockReset();
   mockRefresh.mockReset();
   mockFetch.mockReset();
-  mockFetch.mockResolvedValue({ ok: true, json: async () => ({}) });
+  mockAuthRefresh.mockReset();
+  mockAuthRefresh.mockResolvedValue(undefined);  mockFetch.mockResolvedValue({ ok: true, json: async () => ({}) });
   global.fetch = mockFetch as unknown as typeof fetch;
 });
 

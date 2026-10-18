@@ -4,9 +4,11 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { buildToken } from "@/shared/credentials";
 import { homePathFor, isAdmin, parseToken } from "@/shared/token";
+import { useAuth } from "./AuthProvider";
 
 export default function LoginForm() {
   const router = useRouter();
+  const { refresh } = useAuth();
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +41,7 @@ export default function LoginForm() {
       setLoading(false);
       return;
     }
+    await refresh();
     router.replace(homePathFor(parsed));
     router.refresh();
   }
