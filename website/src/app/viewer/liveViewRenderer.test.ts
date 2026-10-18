@@ -58,11 +58,16 @@ const { AssetLoader } = require("./assetLoader") as
 
 const textureFor = (path: string) => ({ path });
 
+const viewerSetup: ViewerSetup = {
+  tileSize: 32,
+  resolution: [800, 600],
+};
+
 const baseRenderable: GameRenderable = {
   id: "renderable-1",
-  position: [10, 20],
+  position: [2, 3],
   assetPath: "/sprites/test.png",
-  size: [80, 60],
+  size: [4, 5],
   type: RenderableType.OBJECT,
   layer: 3,
 };
@@ -81,7 +86,7 @@ function createRenderer() {
 
   return {
     assetLoader,
-    renderer: new LiveViewRenderer(assetLoader),
+    renderer: new LiveViewRenderer(assetLoader, viewerSetup),
   };
 }
 
@@ -123,10 +128,10 @@ describe("LiveViewRenderer", () => {
       "/sprites/test.png",
     );
     expect(sprite.texture).toEqual({ path: "/sprites/test.png" });
-    expect(sprite.position.x).toBe(10);
-    expect(sprite.position.y).toBe(20);
-    expect(sprite.width).toBe(80);
-    expect(sprite.height).toBe(60);
+    expect(sprite.position.x).toBe(64);
+    expect(sprite.position.y).toBe(96);
+    expect(sprite.width).toBe(128);
+    expect(sprite.height).toBe(160);
     expect(sprite.zIndex).toBe(3);
 
     expect(
@@ -211,8 +216,8 @@ describe("LiveViewRenderer", () => {
       renderer.getContainer(RenderableType.OBJECT).children,
     ).toHaveLength(1);
 
-    expect(second.position.x).toBe(10);
-    expect(second.position.y).toBe(20);
+    expect(second.position.x).toBe(64);
+    expect(second.position.y).toBe(96);
   });
 
   it("adds all category containers to the stage in order", () => {
