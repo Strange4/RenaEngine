@@ -4,10 +4,12 @@ import type { GameRenderable } from '@/shared/renderable';
 import { AssetLoader } from './assetLoader';
 
 export class LiveViewRenderer {
+    // Containers for different types of renderables
     private mapContainer = new Container();
     private objectContainer = new Container();
     private decorationContainer = new Container();
 
+    // Map to keep track of sprites by their IDs
     private sprites = new Map<string, Sprite>();
 
     private assetLoader: AssetLoader;
@@ -17,6 +19,7 @@ export class LiveViewRenderer {
         this.objectContainer.label = 'objects';
         this.decorationContainer.label = 'decorations';
 
+        // Enable sorting of children for proper layering
         this.mapContainer.sortableChildren = true;
         this.objectContainer.sortableChildren = true;
         this.decorationContainer.sortableChildren = true;
@@ -37,16 +40,19 @@ export class LiveViewRenderer {
         }
     }
 
+    // Add all containers to the main stage
     addContainerToStage(stage: Container): void {
         stage.addChild(this.mapContainer);
         stage.addChild(this.objectContainer);
         stage.addChild(this.decorationContainer);
     }
 
+    // Retrieve a sprite by its ID
     getSprite(id: string): Sprite | undefined {
         return this.sprites.get(id);
     }
 
+    // Add a sprite to so it can be retrieved later by its ID
     addSprite(id: string, sprite: Sprite): void {
         this.sprites.set(id, sprite);
     }
@@ -59,10 +65,12 @@ export class LiveViewRenderer {
             return existingSprite; 
         }
 
+        // Load the texture for the renderable's asset path
         const texture = this.assetLoader.getTexture(renderable.assetPath);
 
         const sprite = new Sprite(texture);
 
+        // Set the sprite's position, size, and layer based on the renderable's properties
         sprite.position.set(
             renderable.position[0],
             renderable.position[1]
