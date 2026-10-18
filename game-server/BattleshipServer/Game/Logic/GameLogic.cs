@@ -146,7 +146,7 @@ public class GameLogic
 
     }
 
-    private ActionStatus ValidateAction(int playerNumber, Coordinate coordinate)
+    private ActionStatus ValidateAction(int playerNumber, Coordinate? coordinate)
     {
         /* 
          * Check if both players have placed their ships before allowing shots to be processed.

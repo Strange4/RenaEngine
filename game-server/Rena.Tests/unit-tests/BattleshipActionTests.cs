@@ -72,6 +72,7 @@ public class BattleshipActionTests
             result = _gameLogic.ProcessAction(2, new Coordinate { X = i % 10, Y = i / 10 });
             if (result.IsWin) break;
         }
+        Assert.That(result, Is.Not.Null);
         Assert.That(result.Status, Is.EqualTo(ActionStatus.Success));
         Assert.That(result.ShotResult, Is.EqualTo(ShotResult.Sunk));
         Assert.That(result.IsWin, Is.True);
@@ -99,6 +100,7 @@ public class BattleshipActionTests
             result = _gameLogic.ProcessAction(2, new Coordinate { X = i % 10, Y = i / 10 });
             if (result.IsWin) break;
         }
+        Assert.That(result, Is.Not.Null);
         Assert.That(result.Status, Is.EqualTo(ActionStatus.Success));
         Assert.That(result.ShotResult, Is.EqualTo(ShotResult.Sunk));
         Assert.That(result.IsWin, Is.False);
