@@ -64,7 +64,7 @@ public class BattleshipActionTests
     [Test]
     public void TestValidActionSequence_WinCondition()
     {
-        ActionExecutionResult? result = null;
+        ActionExecutionResult result = null!;
         for (int i = 0; i < 99; i++)
         {
             result = _gameLogic.ProcessAction(1, new Coordinate { X = i % 10, Y = i / 10 });
@@ -92,7 +92,7 @@ public class BattleshipActionTests
     [Test]
     public void TestValidActionSequence_Sunk()
     {
-        ActionExecutionResult? result = null;
+        ActionExecutionResult result = null!;
         for (int i = 1; i < 5; i++)//Player 2 will sink Player 1's Battleship (4) at i = 4
         {
             result = _gameLogic.ProcessAction(1, new Coordinate { X = i % 10, Y = i / 10 });
@@ -117,7 +117,7 @@ public class BattleshipActionTests
     [Test]
     public void TestInvalidActionSequence_ShootAfterGameOver()
     {
-        ActionExecutionResult? result = null;
+        ActionExecutionResult result = null!;
         for (int i = 0; i < 99; i++)
         {
             result = _gameLogic.ProcessAction(1, new Coordinate { X = i % 10, Y = i / 10 });
@@ -155,7 +155,7 @@ public class BattleshipActionTests
     [Test]
     public void TestInvalidActionSequence_NullCoordinate()
     {
-        ActionExecutionResult result = _gameLogic.ProcessAction(1, null);
+        ActionExecutionResult result = _gameLogic.ProcessAction(1, null!);
         Assert.That(result.Status, Is.EqualTo(ActionStatus.NullCoordinate));
     }
 

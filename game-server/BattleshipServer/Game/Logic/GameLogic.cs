@@ -17,7 +17,8 @@ public class GameLogic
 
     public PlacementResult IsOutsideBoard(ShipState ship)
     {
-        if (ship?.StartCoordinate == null) return PlacementResult.NullCoordinate;
+        if (ship == null) return PlacementResult.NullCoordinate;
+        if (ship.StartCoordinate == null) return PlacementResult.NullCoordinate;
         int size = GetShipSize(ship.Name);
         if (size <= 0) return PlacementResult.OutOfBounds;
         if (ship.StartCoordinate.X < 0) return PlacementResult.OutOfBounds;
@@ -96,14 +97,14 @@ public class GameLogic
     public PlacementResult ProcessShipPlacement(int playerNumber, List<ShipState> ships)
     {
         if (playerNumber is not (1 or 2)) return PlacementResult.InvalidPlayerNumber;
-        List<ShipState>? targetShips = playerNumber is 1 ? this.PlacedShips1 : this.PlacedShips2;
+        List<ShipState> targetShips = playerNumber is 1 ? this.PlacedShips1 : this.PlacedShips2;
         if (targetShips.Count > 0) return PlacementResult.AlreadyPlaced;
         PlacementResult result = this.ValidateShipPlacement(ships);
         if (result == PlacementResult.Success) targetShips.AddRange(ships);
         return result;
     }
 
-    public ActionExecutionResult ProcessAction(int playerNumber, Coordinate? coordinate)
+    public ActionExecutionResult ProcessAction(int playerNumber, Coordinate coordinate)
     {
         /*
          * Check if the shot hits any of the opponent's ships
@@ -123,16 +124,16 @@ public class GameLogic
         ShipState? hitShip = opponentShips.FirstOrDefault(ship => this.ShipOccupiesCoordinate(ship, coordinate));
         if (hitShip == null)
         {
-            shotsFired.Add(new ShotRecord { Coordinate = coordinate, Result = ShotResult.Miss });
+            shotsFired.Add(new ShotRecord { Coordinate = coordinate!, Result = ShotResult.Miss });
             this.IsPlayer1Turn = !this.IsPlayer1Turn; // Switch turns
             return new(ActionStatus.Success, ShotResult.Miss);
         }
 
-        shotsFired.Add(new ShotRecord { Coordinate = coordinate, Result = ShotResult.Hit });
+        shotsFired.Add(new ShotRecord { Coordinate = coordinate!, Result = ShotResult.Hit });
         bool isSunk = this.IsShipSunk(hitShip, shotsFired);
         if (isSunk)
         {
-            shotsFired[shotsFired.Count - 1] = new ShotRecord { Coordinate = coordinate, Result = ShotResult.Sunk }; // Update from hit to sunk
+            shotsFired[shotsFired.Count - 1] = new ShotRecord { Coordinate = coordinate!, Result = ShotResult.Sunk }; // Update from hit to sunk
             opponentsSunkShips.Add(hitShip);
             if (this.CheckWinCondition(opponentShips, shotsFired))
             {
@@ -146,7 +147,7 @@ public class GameLogic
 
     }
 
-    private ActionStatus ValidateAction(int playerNumber, Coordinate? coordinate)
+    private ActionStatus ValidateAction(int playerNumber, Coordinate coordinate)
     {
         /* 
          * Check if both players have placed their ships before allowing shots to be processed.
@@ -249,7 +250,7 @@ public class GameLogic
         };
     }
 
-    public ActionStatus ProcessPlayerAction(int playerNumber, PlayerAction? action)
+    public ActionStatus ProcessPlayerAction(int playerNumber, PlayerAction action)
     {
         if (action == null) return ActionStatus.InvalidAction;
         if (action.PlaceShips != null && action.PlaceShips.Count > 0)
