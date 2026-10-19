@@ -38,4 +38,5 @@ WORKDIR /app
 COPY --from=build /app /app/
 COPY --from=build /sdks /sdks/
 COPY docker/entrypoint.sh ./entrypoint.sh
+USER app
 ENTRYPOINT ["./entrypoint.sh"]
