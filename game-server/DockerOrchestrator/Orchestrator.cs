@@ -1,9 +1,9 @@
+using Docker.DotNet;
+using Docker.DotNet.Models;
+
 using LanguageExt;
 
 using static LanguageExt.Prelude;
-
-using Docker.DotNet;
-using Docker.DotNet.Models;
 
 namespace DockerOrchestrator;
 
@@ -146,6 +146,27 @@ class Orchestrator(DockerClient dockerClient)
         {
             Console.WriteLine($"[Unexpected Error] {ex.Message}");
             return Option<CreateContainerResponse>.None;
+        }
+    }
+
+    public async Task<bool> DeleteContainer(string id, Option<ContainerRemoveParameters> parameters = default)
+    {
+        try
+        {
+            Option<ContainerListResponse> container = await this.FindContainerById(id, false);
+            return await container.Match(
+                Some: async c =>
+                {
+                    await this._client.Containers.RemoveContainerAsync(id, parameters.IfNone(new ContainerRemoveParameters()));
+                    return true;
+                },
+                None: () => Task.FromResult(false)
+            );
+        }
+        catch (DockerApiException ex)
+        {
+            Console.WriteLine($"[Docker API Error] Status: {ex.StatusCode} | Message: {ex.Message} | Body: {ex.ResponseBody}");
+            return false;
         }
     }
 }
