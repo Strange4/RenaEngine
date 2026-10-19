@@ -51,6 +51,7 @@ export default function LiveViewer() {
     })().catch(e => {
       console.log(e);
       // TODO put actual error handling here
+      // If you change the console.log, make sure to update the relevant test
     });
 
     return () => {
