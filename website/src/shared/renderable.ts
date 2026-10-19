@@ -21,9 +21,9 @@ export enum RenderableType{
 //any renderable change should lookup the id!!! (for proper game linking)
 export interface GameRenderable{
     id: string; 
-    position: [number, number];
+    position: [number, number]; // [x,y] position of the object in the game world
     assetPath:string; 
-    size:[number, number]; //how big the object is tile-wise
+    size:[number, number]; //how big the object is tile-wise [width, height]
     type:RenderableType; 
     layer:number; //zIndex for the Z Algorithm drawing the layers (graphics)
     removed?: boolean; //optional, might need this for games like Battleship where elements get removed
@@ -46,5 +46,5 @@ Game Texture setup (no actions, just visuals)
 */
 export interface ViewerSetup{
     tileSize: number;
-    resolution: [number,number]; //game host can personalize the size of the pixiJs Canvas showing the game rendering
+    resolution: [number,number]; //game host can personalize the size of the pixiJs Canvas showing the game rendering [width, height]
 }
