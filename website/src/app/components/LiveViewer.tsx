@@ -63,7 +63,11 @@ export default function LiveViewer() {
 
       await renderer.renderScene([TEST_SPRITE, TEST_SPRITE_TWO]);
       if (unmounted) return;
-    })();
+    })().catch(e => {
+      console.log(e);
+      // TODO put actual error handling here
+      // If you change the console.log, make sure to update the relevant test
+    });
 
     return () => {
       unmounted = true;
