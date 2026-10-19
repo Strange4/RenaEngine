@@ -6,7 +6,6 @@ services:
       args:
         RenaOptions__TSProtoPath: ${RenaOptions__TSProtoPath:-/sdk-tools/node_modules/ts-proto/protoc-gen-ts_proto}
         RenaOptions__GenerationDirectory: /sdks
-        RenaOptions__AdminToken: ${ADMIN_TOKEN:-ADMIN-change-me}
     environment:
       RenaOptions__TSProtoPath: ${RenaOptions__TSProtoPath:-/unused}
       RenaOptions__GenerationDirectory: /sdks

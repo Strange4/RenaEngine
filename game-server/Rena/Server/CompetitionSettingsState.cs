@@ -39,4 +39,4 @@ internal sealed class CompetitionSettingsState
 
 internal record FeatureSettingResponse(bool Enabled);
 
-internal record UpdateFeatureSettingRequest(bool Enabled);
+internal record UpdateFeatureSettingRequest(bool? Enabled);

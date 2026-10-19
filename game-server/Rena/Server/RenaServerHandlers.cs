@@ -66,8 +66,13 @@ where A : class
             return Results.StatusCode(StatusCodes.Status403Forbidden);
         }
 
-        return settings.TrySetFeature(featureKey, request.Enabled)
-            ? Results.Ok(new FeatureSettingResponse(request.Enabled))
+        if (request.Enabled is not bool enabled)
+        {
+            return Results.BadRequest("enabled must be a boolean");
+        }
+
+        return settings.TrySetFeature(featureKey, enabled)
+            ? Results.Ok(new FeatureSettingResponse(enabled))
             : Results.NotFound();
     }
 

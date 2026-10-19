@@ -106,6 +106,22 @@ public class EndpointTests
         using HttpResponseMessage invalidBodyResponse = await _client.SendAsync(invalidBodyRequest);
         Assert.That(invalidBodyResponse.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
 
+        using HttpRequestMessage missingEnabledRequest = new(
+            HttpMethod.Put,
+            "/settings/features/test-feature")
+        {
+            Content = JsonContent.Create(new Dictionary<string, bool>())
+        };
+        missingEnabledRequest.Headers.Authorization = new("Bearer", "TEST-ADMIN-TOKEN");
+        using HttpResponseMessage missingEnabledResponse = await _client.SendAsync(missingEnabledRequest);
+        Assert.That(missingEnabledResponse.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+
+        using HttpResponseMessage unchangedResponse = await _client.GetAsync(
+            "/settings/features/test-feature");
+        TestFeatureSettingDto? unchangedSetting =
+            await unchangedResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
+        Assert.That(unchangedSetting?.Enabled, Is.False);
+
         using HttpRequestMessage enableRequest = CreateSettingRequest(true, "TEST-ADMIN-TOKEN");
         using HttpResponseMessage enableResponse = await _client.SendAsync(enableRequest);
         Assert.That(enableResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));

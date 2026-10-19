@@ -28,10 +28,10 @@ WORKDIR /game-server/BattleshipServer
 
 ARG RenaOptions__TSProtoPath
 ARG RenaOptions__GenerationDirectory
-ARG RenaOptions__AdminToken=ADMIN-change-me
 
 RUN dotnet publish -c release -o /app --no-restore \
-    && dotnet /app/BattleshipServer.dll --generate
+    && RenaOptions__AdminToken=BUILD-ONLY-NOT-A-SECRET \
+        dotnet /app/BattleshipServer.dll --generate
 
 # final stage/image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
