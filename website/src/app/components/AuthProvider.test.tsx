@@ -135,6 +135,42 @@ describe("AuthProvider", () => {
       resolve({ ok: true, json: async () => ({ role: Role.Admin }) });
     });
   });
+
+  it("does not let a slow initial check overwrite a newer refresh", async () => {
+    let resolveInitial: (value: unknown) => void = () => {};
+    mockFetch.mockReturnValueOnce(new Promise((r) => (resolveInitial = r)));
+    renderProbe();
+
+    respondWith(true, { role: Role.Admin });
+    await act(async () => {
+      screen.getByText("refresh").click();
+    });
+    expect(screen.getByTestId("status")).toHaveTextContent(/^authenticated$/);
+
+    await act(async () => {
+      resolveInitial({ ok: false, json: async () => ({}) });
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(screen.getByTestId("status")).toHaveTextContent(/^authenticated$/);
+  });
+
+  it("does not let a late authenticated response undo clear", async () => {
+    let resolveInitial: (value: unknown) => void = () => {};
+    mockFetch.mockReturnValueOnce(new Promise((r) => (resolveInitial = r)));
+    renderProbe();
+
+    act(() => {
+      screen.getByText("clear").click();
+    });
+    expect(screen.getByTestId("status")).toHaveTextContent(/^unauthenticated$/);
+
+    await act(async () => {
+      resolveInitial({ ok: true, json: async () => ({ role: Role.Admin }) });
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(screen.getByTestId("status")).toHaveTextContent(/^unauthenticated$/);
+    expect(screen.getByTestId("user")).toHaveTextContent("none");
+  });
 });
 
 describe("useAuth", () => {

@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -39,8 +40,13 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     user: null,
   });
 
+  // Incremented by every refresh/clear/unmount so older responses are ignored.
+  const requestId = useRef(0);
+
   const refresh = useCallback(async () => {
+    const id = ++requestId.current;
     const user = await fetchUser();
+    if (id !== requestId.current) return;
     setState(
       user
         ? { status: "authenticated", user }
@@ -49,23 +55,16 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clear = useCallback(() => {
+    requestId.current++;
     setState({ status: "unauthenticated", user: null });
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    fetchUser().then((user) => {
-      if (cancelled) return;
-      setState(
-        user
-          ? { status: "authenticated", user }
-          : { status: "unauthenticated", user: null },
-      );
-    });
+    void refresh();
     return () => {
-      cancelled = true;
+      requestId.current++;
     };
-  }, []);
+  }, [refresh]);
 
   const value = useMemo(
     () => ({ ...state, refresh, clear }),
