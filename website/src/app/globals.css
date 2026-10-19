@@ -63,8 +63,7 @@ button {
 }
 
 .live-viewer-canvas {
-  aspect-ratio: 16 / 9;
-  width: 100%;
+  margin-inline: auto;
   overflow: hidden;
   border: 1px solid #374151;
   border-radius: 6px;
@@ -72,4 +71,6 @@ button {
 
 .live-viewer-canvas canvas {
   display: block;
+  width: 100%;
+  height: 100%;
 }
