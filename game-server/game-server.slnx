@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="./Rena.Tests/Rena.Tests.csproj" />
   <Project Path="./Rena/Rena.csproj" />
-  <Project Path="./BattleshipServer/BattleshipServer.csproj"/>
+  <Project Path="./BattleshipServer/BattleshipServer.csproj" />
+  <Project Path="./DockerOrchestrator/DockerOrchestrator.csproj" />
 </Solution>

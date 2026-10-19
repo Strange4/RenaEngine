@@ -68,6 +68,14 @@
           "System.Diagnostics.EventLog": "6.0.0"
         }
       },
+      "Docker.DotNet": {
+        "type": "Transitive",
+        "resolved": "3.125.15",
+        "contentHash": "XN8FKxVv8Mjmwu104/Hl9lM61pLY675s70gzwSj8KR5pwblo8HfWLcCuinh9kYsqujBkMH4HVRCEcRuU6al4BQ==",
+        "dependencies": {
+          "Newtonsoft.Json": "13.0.1"
+        }
+      },
       "Microsoft.ApplicationInsights": {
         "type": "Transitive",
         "resolved": "2.22.0",
@@ -457,6 +465,7 @@
       "rena": {
         "type": "Project",
         "dependencies": {
+          "Docker.DotNet": "[3.125.15, )",
           "protobuf-net": "[3.4.30, )",
           "protobuf-net.Reflection": "[3.4.30, )"
         }
