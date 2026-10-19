@@ -87,8 +87,65 @@ class Orchestrator(DockerClient dockerClient)
         return Optional((await this.FindContainers(filterParams)).FirstOrDefault());
     }
 
-    public async Task<IList<ImagesListResponse>> GetAllImages(Option<ImagesListParameters> parameters)
+    public async Task<IList<ImagesListResponse>> GetAllImages(Option<ImagesListParameters> parameters = default)
     {
-        return Optional(await this._client.Images.ListImagesAsync(parameters.IfNone(new ImagesListParameters()))).IfNone([]);
+        try { return Optional(await this._client.Images.ListImagesAsync(parameters.IfNone(new ImagesListParameters()))).IfNone([]); }
+        catch (DockerApiException ex)
+        {
+            Console.WriteLine($"[Docker API Error] Status: {ex.StatusCode} | Message: {ex.Message} | Body: {ex.ResponseBody}");
+            return [];
+        }
+    }
+
+    async Task<Option<ImagesListResponse>> FindImageById(string id)
+    {
+        IList<ImagesListResponse> result = await this.GetAllImages(new ImagesListParameters());
+        return result.Find(_ => _.ID == id || _.ID.Contains(id));
+    }
+
+    async Task<Option<ImagesListResponse>> FindImageByName(string name)
+    {
+        IDictionary<string, IDictionary<string, bool>> nameFilter = new Dictionary<string, IDictionary<string, bool>>()
+        {
+            ["reference"] = new Dictionary<string, bool>()
+            {
+                { name, true }
+            }
+        };
+        IList<ImagesListResponse> result = await this.GetAllImages(new ImagesListParameters() { Filters = nameFilter, All = true });
+        return Optional(result.FirstOrDefault());
+    }
+
+    public async Task<Option<ImagesListResponse>> GetImageById(string id)
+    {
+        return await this.FindImageById(id);
+    }
+
+    public async Task<Option<ImagesListResponse>> GetImageByName(string name)
+    {
+        return await this.FindImageByName(name);
+    }
+
+    public async Task<Option<CreateContainerResponse>> CreateContainer(string imageId, string containerName, Option<CreateContainerParameters> parameters = default)
+    {
+        try
+        {
+            var createParams = parameters.IfNone(new CreateContainerParameters());
+            createParams.Image = imageId;
+            createParams.Name = containerName;
+
+            var response = await this._client.Containers.CreateContainerAsync(createParams);
+            return Optional(response);
+        }
+        catch (DockerApiException ex)
+        {
+            Console.WriteLine($"[Docker API Error] Status: {ex.StatusCode} | Message: {ex.Message} | Body: {ex.ResponseBody}");
+            return Option<CreateContainerResponse>.None;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Unexpected Error] {ex.Message}");
+            return Option<CreateContainerResponse>.None;
+        }
     }
 }
