@@ -4,6 +4,11 @@ import LoginForm from "./LoginForm";
 const mockReplace = jest.fn();
 const mockRefresh = jest.fn();
 const mockFetch = jest.fn();
+const mockAuthRefresh = jest.fn();
+
+jest.mock("./AuthProvider", () => ({
+  useAuth: () => ({ refresh: mockAuthRefresh }),
+}));
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ replace: mockReplace, refresh: mockRefresh }),
@@ -22,6 +27,8 @@ beforeEach(() => {
   mockReplace.mockReset();
   mockRefresh.mockReset();
   mockFetch.mockReset();
+  mockAuthRefresh.mockReset();
+  mockAuthRefresh.mockResolvedValue(undefined);
   mockFetch.mockResolvedValue({ ok: true, json: async () => ({}) });
   global.fetch = mockFetch as unknown as typeof fetch;
 });
@@ -75,6 +82,10 @@ describe("LoginForm", () => {
       ),
     );
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith("/participant"));
+    expect(mockAuthRefresh).toHaveBeenCalledTimes(1);
+    expect(mockAuthRefresh.mock.invocationCallOrder[0]).toBeLessThan(
+      mockReplace.mock.invocationCallOrder[0],
+    );
   });
 
   it("logs in an admin and redirects to the admin page", async () => {
@@ -91,6 +102,10 @@ describe("LoginForm", () => {
       ),
     );
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith("/admin"));
+    expect(mockAuthRefresh).toHaveBeenCalledTimes(1);
+    expect(mockAuthRefresh.mock.invocationCallOrder[0]).toBeLessThan(
+      mockReplace.mock.invocationCallOrder[0],
+    );
   });
 
   it("shows the detected role while typing", () => {
@@ -115,5 +130,6 @@ describe("LoginForm", () => {
 
     expect(await screen.findByText("Wrong credentials")).toBeInTheDocument();
     expect(mockReplace).not.toHaveBeenCalled();
+    expect(mockAuthRefresh).not.toHaveBeenCalled();
   });
 });
