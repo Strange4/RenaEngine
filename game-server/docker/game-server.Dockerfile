@@ -30,8 +30,7 @@ ARG RenaOptions__TSProtoPath
 ARG RenaOptions__GenerationDirectory
 
 RUN dotnet publish -c release -o /app --no-restore \
-    && RenaOptions__AdminToken=BUILD-ONLY-NOT-A-SECRET \
-        dotnet /app/BattleshipServer.dll --generate
+    && dotnet /app/BattleshipServer.dll --generate
 
 # final stage/image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
