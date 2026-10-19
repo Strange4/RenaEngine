@@ -1,5 +1,5 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
-import { Application, Sprite } from "pixi.js";
+import { Application, Sprite, Container } from "pixi.js";
 import { AssetLoader } from "@/app/viewer/assetLoader";
 import LiveViewer from "./LiveViewer";
 
@@ -7,7 +7,19 @@ const mockInit = jest.fn();
 
 jest.mock("pixi.js", () => {
   const appInstances: any[] = [];
+  const containerInstances: any[] = [];
   const spriteInstances: any[] = [];
+
+  const MockContainer = jest.fn().mockImplementation(() => {
+    const container = {
+      label: "",
+      sortableChildren: false,
+      addChild: jest.fn(),
+    };
+
+    containerInstances.push(container);
+    return container;
+  });
 
   const MockApplication = jest.fn().mockImplementation(() => {
     const app = {
@@ -15,13 +27,8 @@ jest.mock("pixi.js", () => {
       screen: { width: 800, height: 600 },
       init: mockInit,
       destroy: jest.fn(),
-      renderer: {
-        on: jest.fn(),
-      },
-      stage: {
-        addChild: jest.fn(),
-      }
-    }
+      stage: new MockContainer(),
+    };
 
     appInstances.push(app);
     return app;
@@ -30,8 +37,11 @@ jest.mock("pixi.js", () => {
   const MockSprite = jest.fn().mockImplementation((texture) => {
     const sprite = {
       texture,
-      anchor: { set: jest.fn() },
       position: { set: jest.fn() },
+      anchor: { set: jest.fn() },
+      zIndex: 0,
+      width: 0,
+      height: 0,
     };
 
     spriteInstances.push(sprite);
@@ -40,8 +50,10 @@ jest.mock("pixi.js", () => {
 
   return {
     Application: MockApplication,
+    Container: MockContainer,
     Sprite: MockSprite,
     __appInstances: appInstances,
+    __containerInstances: containerInstances,
     __spriteInstances: spriteInstances,
   };
 });
@@ -63,27 +75,44 @@ const getPixiMocks = () =>
       renderer: { on: jest.Mock };
       stage: { addChild: jest.Mock };
     }>;
+    __containerInstances: Array<{
+      label: string;
+      sortableChildren: boolean;
+      addChild: jest.Mock;
+    }>;
     __spriteInstances: Array<{
       texture: unknown;
-      anchor: { set: jest.Mock };
       position: { set: jest.Mock };
+      anchor: { set: jest.Mock };
+      zIndex: number;
+      width: number;
+      height: number;
     }>;
   };
 
 describe("LiveViewer", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    getPixiMocks().__appInstances.length = 0;
-    getPixiMocks().__spriteInstances.length = 0;
+    
+    const mocks = getPixiMocks();
+    mocks.__appInstances.length = 0;
+    mocks.__containerInstances.length = 0;
+    mocks.__spriteInstances.length = 0;
+
+    mockInit.mockResolvedValue(undefined);
   });
 
   it("renders the viewer container", () => {
     render(<LiveViewer />);
 
-    expect(screen.getByTestId("live-viewer")).toBeInTheDocument();
-    expect(screen.getByTestId("live-viewer")).toHaveClass(
-      "live-viewer-canvas",
-    );
+    const viewer = screen.getByTestId("live-viewer");
+
+    expect(viewer).toBeInTheDocument();
+    expect(viewer).toHaveClass("live-viewer-canvas");
+    expect(viewer).toHaveStyle({
+      width: "800px",
+      height: "600px",
+    });
   });
 
   it("initializes PixiJS and adds a centered sprite", async () => {
@@ -95,58 +124,63 @@ describe("LiveViewer", () => {
       expect(viewer.querySelector("canvas")).not.toBeNull();
     });
 
-    const { __appInstances, __spriteInstances } = getPixiMocks();
+    const { __appInstances, __spriteInstances, __containerInstances } = getPixiMocks();
     const app = __appInstances[0];
-    const sprite = __spriteInstances[0];
+    const stage = app.stage;
+
+    const [mapContainer, objectContainer, decorationContainer] =
+    __containerInstances.slice(1);
 
     expect(app.init).toHaveBeenCalledWith({
-      resizeTo: viewer,
+      width: 800,
+      height: 600,
       background: "#1f2937",
       antialias: true,
     });
 
     expect(viewer).toContainElement(app.canvas);
+    expect(container).toContainElement(viewer);
 
     expect(AssetLoader).toHaveBeenCalledTimes(1);
+    expect(Container).toHaveBeenCalledTimes(4);
 
-    expect(Sprite).toHaveBeenCalledWith("mock-texture");
-    expect(sprite.anchor.set).toHaveBeenCalledWith(0.5);
-    expect(sprite.position.set).toHaveBeenCalledWith(400, 300);
-    expect(app.renderer.on).toHaveBeenCalledWith(
-      "resize",
-      expect.any(Function),
-    );
-    expect(app.stage.addChild).toHaveBeenCalledWith(sprite);
+    expect(mapContainer.label).toBe("map");
+    expect(objectContainer.label).toBe("objects");
+    expect(decorationContainer.label).toBe("decorations");
 
-    expect(container).toContainElement(viewer);
-  });
+    expect(mapContainer.sortableChildren).toBe(true);
+    expect(objectContainer.sortableChildren).toBe(true);
+    expect(decorationContainer.sortableChildren).toBe(true);
 
-  it("recenters the sprite when the renderer resizes", async () => {
-    render(<LiveViewer />);
+    expect(stage.addChild).toHaveBeenCalledTimes(3);
+    expect(stage.addChild).toHaveBeenNthCalledWith(1, mapContainer);
+    expect(stage.addChild).toHaveBeenNthCalledWith(2, objectContainer);
+    expect(stage.addChild).toHaveBeenNthCalledWith(3, decorationContainer);
 
-    const { __appInstances, __spriteInstances } = getPixiMocks();
+    expect(Sprite).toHaveBeenCalledTimes(2);
 
-    await waitFor(() => {
-      expect(__spriteInstances).toHaveLength(1);
-    });
+    expect(__spriteInstances).toHaveLength(2);
 
-    const app = __appInstances[0];
-    const sprite = __spriteInstances[0];
+    const [spriteOne, spriteTwo] = __spriteInstances;
 
-    const resizeHandler = app.renderer.on.mock.calls.find(
-      ([event]) => event === "resize",
-    )?.[1] as (() => void) | undefined;
+    expect(spriteOne.texture).toBe("mock-texture");
+    expect(spriteOne.position.set).toHaveBeenCalledWith(64, 64);
+    expect(spriteOne.zIndex).toBe(1);
+    expect(spriteOne.width).toBe(96);
+    expect(spriteOne.height).toBe(96);
 
-    expect(resizeHandler).toBeDefined();
+    expect(spriteTwo.texture).toBe("mock-texture");
+    expect(spriteTwo.position.set).toHaveBeenCalledWith(0, 0);
+    expect(spriteTwo.zIndex).toBe(2);
+    expect(spriteTwo.width).toBe(96);
+    expect(spriteTwo.height).toBe(96);
 
-    app.screen.width = 1200;
-    app.screen.height = 900;
+    expect(objectContainer.addChild).toHaveBeenCalledTimes(2);
+    expect(objectContainer.addChild).toHaveBeenNthCalledWith(1, spriteOne);
+    expect(objectContainer.addChild).toHaveBeenNthCalledWith(2, spriteTwo);
 
-    act(() => {
-      resizeHandler!();
-    });
-
-    expect(sprite.position.set).toHaveBeenLastCalledWith(600, 450);
+    expect(mapContainer.addChild).not.toHaveBeenCalled();
+    expect(decorationContainer.addChild).not.toHaveBeenCalled();
   });
 
   it("destroys the application when unmounted", async () => {
@@ -155,7 +189,7 @@ describe("LiveViewer", () => {
     const { __appInstances } = getPixiMocks();
 
     await waitFor(() => {
-      expect(__appInstances[0].stage.addChild).toHaveBeenCalledTimes(1);
+      expect(__appInstances[0].stage.addChild).toHaveBeenCalledTimes(3);
     });
 
     unmount();
@@ -172,12 +206,11 @@ describe("LiveViewer", () => {
       resolveInit = resolve;
     });
 
-    const { __appInstances } = getPixiMocks();
-
     mockInit.mockReturnValue(initPromise);
 
     const { unmount } = render(<LiveViewer />);
 
+    const { __appInstances } = getPixiMocks();
     const app = __appInstances[0];
 
     unmount();
@@ -192,6 +225,8 @@ describe("LiveViewer", () => {
         children: true,
       });
     });
+
+    expect(app.stage.addChild).not.toHaveBeenCalled();
   });
 
   it("logs an error when PixiJS initialization fails", async () => {
@@ -207,11 +242,13 @@ describe("LiveViewer", () => {
         expect(logSpy).toHaveBeenCalledWith(error);
       });
 
-      const { __appInstances } = getPixiMocks();
+      const { __appInstances, __containerInstances } = getPixiMocks();
       const app = __appInstances[0];
 
       expect(app.init).toHaveBeenCalledTimes(1);
       expect(app.stage.addChild).not.toHaveBeenCalled();
+
+      expect(__containerInstances).toHaveLength(4);
     } finally {
       logSpy.mockRestore();
     }
