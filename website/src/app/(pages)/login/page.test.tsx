@@ -7,6 +7,10 @@ jest.mock("@/server/lib/session", () => ({
   getSession: () => mockGetSession(),
 }));
 
+jest.mock("../../components/AuthProvider", () => ({
+  useAuth: () => ({ refresh: jest.fn() }),
+}));
+
 jest.mock("next/navigation", () => ({
   redirect: (url: string) => {
     throw new Error(`REDIRECT:${url}`);
