@@ -64,6 +64,7 @@ public class GameLogic
         {
             if (ship == null)
                 return PlacementResult.NullShip;
+            if (ship.StartCoordinate == null) return PlacementResult.NullCoordinate;
             if (ship.Name is ShipName.ShipNameUnknown || !Enum.IsDefined(ship.Name))
                 return PlacementResult.UnknownName;
             if (ship.Orientation is not (ShipOrientation.Horizontal or ShipOrientation.Vertical))

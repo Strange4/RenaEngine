@@ -120,6 +120,7 @@ public class BattleshipPlayerActionTests
         _gameLogic.ProcessShipPlacement(1, _validFleet1);
         _gameLogic.ProcessShipPlacement(2, _validFleet2);
 
+        // Player 2 wins first in this for loop because they have a grid that has a lower y value than all of player 1's.
         for (int i = 0; i < 99; i++)
         {
             ActionExecutionResult result1 = _gameLogic.ProcessAction(1, new Coordinate { X = i % 10, Y = i / 10 });
@@ -135,9 +136,9 @@ public class BattleshipPlayerActionTests
         Assert.That(statePlayer2.isGameOver, Is.True);
         Assert.That(statePlayer1.isYourTurn, Is.False);
         Assert.That(statePlayer2.isYourTurn, Is.False);
-        Assert.That(statePlayer1.isWinner, Is.True);
-        Assert.That(statePlayer2.isWinner, Is.False);
-        Assert.That(statePlayer1.SunkShips, Has.Count.EqualTo(5));
+        Assert.That(statePlayer1.isWinner, Is.False);
+        Assert.That(statePlayer2.isWinner, Is.True);
+        Assert.That(statePlayer2.SunkShips, Has.Count.EqualTo(5));
     }
 
     [Test]
