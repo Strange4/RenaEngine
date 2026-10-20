@@ -5,17 +5,17 @@ namespace BattleshipServer.Game.Logic;
 public class GameLogic
 {
     public const int BoardSize = 10;
-    public List<ShipState> PlacedShips1 { get; } = new List<ShipState>();
-    public List<ShipState> PlacedShips2 { get; } = new List<ShipState>();
+    public List<Ship> PlacedShips1 { get; } = new List<Ship>();
+    public List<Ship> PlacedShips2 { get; } = new List<Ship>();
     public List<ShotRecord> ShotsFired1 { get; } = new List<ShotRecord>();
     public List<ShotRecord> ShotsFired2 { get; } = new List<ShotRecord>();
-    public List<ShipState> SunkShips1 { get; } = new List<ShipState>();
-    public List<ShipState> SunkShips2 { get; } = new List<ShipState>();
+    public List<Ship> SunkShips1 { get; } = new List<Ship>();
+    public List<Ship> SunkShips2 { get; } = new List<Ship>();
     public bool IsPlayer1Turn { get; private set; } = true;
     public bool IsGameOver { get; private set; } = false;
     public bool IsPlayer1Winner { get; private set; } = false;
 
-    public PlacementResult IsOutsideBoard(ShipState ship)
+    public PlacementResult IsOutsideBoard(Ship ship)
     {
         if (ship == null) return PlacementResult.NullCoordinate;
         if (ship.StartCoordinate == null) return PlacementResult.NullCoordinate;
@@ -43,7 +43,7 @@ public class GameLogic
         return PlacementResult.Success;
     }
 
-    public PlacementResult ValidateFleetComposition(List<ShipState> ships)
+    public PlacementResult ValidateFleetComposition(List<Ship> ships)
     {
         if (ships == null) return PlacementResult.NullFleet;
         if (ships.Count != 5) return PlacementResult.InvalidFleetSize;
@@ -67,7 +67,7 @@ public class GameLogic
         return (y * BoardSize) + x;
     }
 
-    public PlacementResult ValidateShipPlacement(List<ShipState> ships)
+    public PlacementResult ValidateShipPlacement(List<Ship> ships)
     {
         bool[] isOccupied = new bool[BoardSize * BoardSize];
         PlacementResult fleetResult = this.ValidateFleetComposition(ships);
@@ -75,7 +75,7 @@ public class GameLogic
 
         for (int i = 0; i < ships.Count; i++)
         {
-            ShipState ship = ships[i];
+            Ship ship = ships[i];
             PlacementResult result = this.IsOutsideBoard(ship);
             if (result != PlacementResult.Success) return result;
 
@@ -94,10 +94,10 @@ public class GameLogic
         return PlacementResult.Success;
     }
 
-    public PlacementResult ProcessShipPlacement(int playerNumber, List<ShipState> ships)
+    public PlacementResult ProcessShipPlacement(int playerNumber, List<Ship> ships)
     {
         if (playerNumber is not (1 or 2)) return PlacementResult.InvalidPlayerNumber;
-        List<ShipState> targetShips = playerNumber is 1 ? this.PlacedShips1 : this.PlacedShips2;
+        List<Ship> targetShips = playerNumber is 1 ? this.PlacedShips1 : this.PlacedShips2;
         if (targetShips.Count > 0) return PlacementResult.AlreadyPlaced;
         PlacementResult result = this.ValidateShipPlacement(ships);
         if (result == PlacementResult.Success) targetShips.AddRange(ships);
@@ -117,11 +117,11 @@ public class GameLogic
         ActionStatus status = this.ValidateAction(playerNumber, coordinate);
         if (status != ActionStatus.Success) return new(status);
 
-        List<ShipState> opponentShips = playerNumber == 1 ? this.PlacedShips2 : this.PlacedShips1;
+        List<Ship> opponentShips = playerNumber == 1 ? this.PlacedShips2 : this.PlacedShips1;
         List<ShotRecord> shotsFired = playerNumber == 1 ? this.ShotsFired1 : this.ShotsFired2;
-        List<ShipState> opponentsSunkShips = playerNumber == 1 ? this.SunkShips2 : this.SunkShips1;
+        List<Ship> opponentsSunkShips = playerNumber == 1 ? this.SunkShips2 : this.SunkShips1;
 
-        ShipState? hitShip = opponentShips.FirstOrDefault(ship => this.ShipOccupiesCoordinate(ship, coordinate));
+        Ship? hitShip = opponentShips.FirstOrDefault(ship => this.ShipOccupiesCoordinate(ship, coordinate));
         if (hitShip == null)
         {
             shotsFired.Add(new ShotRecord { Coordinate = coordinate!, Result = ShotResult.Miss });
@@ -168,7 +168,7 @@ public class GameLogic
         return ActionStatus.Success;
     }
 
-    private bool ShipOccupiesCoordinate(ShipState ship, Coordinate coordinate)
+    private bool ShipOccupiesCoordinate(Ship ship, Coordinate coordinate)
     {
         if (ship == null || coordinate == null) return false;
         int size = GetShipSize(ship.Name);
@@ -185,7 +185,7 @@ public class GameLogic
         return false;
     }
 
-    private bool IsShipSunk(ShipState ship, List<ShotRecord> shotsFired)
+    private bool IsShipSunk(Ship ship, List<ShotRecord> shotsFired)
     {
         if (ship == null || shotsFired == null) return false;
         int size = GetShipSize(ship.Name);
@@ -202,7 +202,7 @@ public class GameLogic
         return true;
     }
 
-    private bool CheckWinCondition(List<ShipState> opponentShips, List<ShotRecord> shotsFired)
+    private bool CheckWinCondition(List<Ship> opponentShips, List<ShotRecord> shotsFired)
     {
         if (opponentShips == null || shotsFired == null) return false;
         foreach (var ship in opponentShips)
@@ -214,8 +214,8 @@ public class GameLogic
 
     public PlayerState GetPlayerState(int playerNumber)
     {
-        List<ShipState> yourShips = playerNumber is 1 ? this.PlacedShips1 : this.PlacedShips2;
-        List<ShipState> sunkShips = playerNumber is 1 ? this.SunkShips2 : this.SunkShips1;
+        List<Ship> yourShips = playerNumber is 1 ? this.PlacedShips1 : this.PlacedShips2;
+        List<Ship> sunkShips = playerNumber is 1 ? this.SunkShips2 : this.SunkShips1;
         List<ShotRecord> shotsFired = playerNumber == 1 ? this.ShotsFired1 : this.ShotsFired2;
         bool isYourTurn = playerNumber == 1 ? this.IsPlayer1Turn : !this.IsPlayer1Turn;
         bool isGameOver = this.IsGameOver;
@@ -225,7 +225,7 @@ public class GameLogic
         return new PlayerState
         {
             GridSize = BoardSize,
-            ShipStates = yourShips,
+            Ships = yourShips,
             SunkShips = sunkShips,
             ShotsFired = shotsFired,
             isYourTurn = isYourTurn && !isGameOver,

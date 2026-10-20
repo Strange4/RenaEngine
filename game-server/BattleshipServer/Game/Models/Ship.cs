@@ -3,7 +3,7 @@
 namespace BattleshipServer.Game.Models;
 
 [DataContract]
-public class ShipState
+public class Ship
 {
     [DataMember(Order = 1)] public ShipName Name { get; init; } = ShipName.ShipNameUnknown;
     [DataMember(Order = 2)] public ShipOrientation Orientation { get; init; } = ShipOrientation.ShipOrientationUnknown;
