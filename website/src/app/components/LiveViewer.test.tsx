@@ -1,7 +1,33 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import { Application, Sprite, Container } from "pixi.js";
 import { AssetLoader } from "@/app/viewer/assetLoader";
+import { getSceneSource } from "@/app/viewer/sceneSource";
+import { RenderableType, type GameRenderable, type ViewerSetup } from "@/shared/renderable";
 import LiveViewer from "./LiveViewer";
+
+const TEST_VIEWER_SETUP: ViewerSetup = {
+  tileSize: 32,
+  resolution: [800, 600],
+};
+
+const TEST_SCENE: GameRenderable[] = [
+  {
+    id: "test-sprite",
+    position: [2, 2],
+    assetPath: "/sprites/rena.png",
+    size: [3, 3],
+    type: RenderableType.OBJECT,
+    layer: 1,
+  },
+  {
+    id: "test-sprite-two",
+    position: [0, 0],
+    assetPath: "/sprites/ship1.png",
+    size: [3, 3],
+    type: RenderableType.OBJECT,
+    layer: 2,
+  },
+];
 
 const mockInit = jest.fn();
 
@@ -65,6 +91,12 @@ jest.mock("@/app/viewer/assetLoader", () => ({
   })),
 }));
 
+const mockGetInitialScene = jest.fn();
+
+jest.mock("@/app/viewer/sceneSource", () => ({
+  getSceneSource: jest.fn(() => ({ getInitialScene: mockGetInitialScene })),
+}));
+
 const getPixiMocks = () =>
   jest.requireMock("pixi.js") as {
     __appInstances: Array<{
@@ -100,23 +132,63 @@ describe("LiveViewer", () => {
     mocks.__spriteInstances.length = 0;
 
     mockInit.mockResolvedValue(undefined);
+    mockGetInitialScene.mockResolvedValue({
+      setup: TEST_VIEWER_SETUP,
+      renderables: TEST_SCENE,
+    });
   });
 
-  it("renders the viewer container", () => {
-    render(<LiveViewer />);
+  it("renders the viewer container sized to the scene", async () => {
+    render(<LiveViewer gameId="1" />);
 
     const viewer = screen.getByTestId("live-viewer");
 
     expect(viewer).toBeInTheDocument();
     expect(viewer).toHaveClass("live-viewer-canvas");
-    expect(viewer).toHaveStyle({
-      width: "800px",
-      height: "600px",
+
+    await waitFor(() => {
+      expect(viewer).toHaveStyle({
+        width: "800px",
+        height: "600px",
+      });
     });
   });
 
+  it("loads the initial scene from the game's scene source", async () => {
+    render(<LiveViewer gameId="42" />);
+
+    await waitFor(() => {
+      expect(mockGetInitialScene).toHaveBeenCalledTimes(1);
+    });
+
+    expect(getSceneSource).toHaveBeenCalledWith("42");
+  });
+
+  it("does not set up PixiJS if unmounted while the scene is loading", async () => {
+    let resolveScene!: (scene: unknown) => void;
+
+    mockGetInitialScene.mockReturnValue(
+      new Promise((resolve) => {
+        resolveScene = resolve;
+      }),
+    );
+
+    const { unmount } = render(<LiveViewer gameId="1" />);
+    const app = getPixiMocks().__appInstances[0];
+
+    unmount();
+
+    await act(async () => {
+      resolveScene({ setup: TEST_VIEWER_SETUP, renderables: TEST_SCENE });
+    });
+
+    expect(app.init).not.toHaveBeenCalled();
+    expect(app.destroy).not.toHaveBeenCalled();
+    expect(Container).toHaveBeenCalledTimes(1);
+  });
+
   it("initializes PixiJS and adds a centered sprite", async () => {
-    const { container } = render(<LiveViewer />);
+    const { container } = render(<LiveViewer gameId="1" />);
 
     const viewer = screen.getByTestId("live-viewer");
 
@@ -184,7 +256,7 @@ describe("LiveViewer", () => {
   });
 
   it("destroys the application when unmounted", async () => {
-    const { unmount } = render(<LiveViewer />);
+    const { unmount } = render(<LiveViewer gameId="1" />);
 
     const { __appInstances } = getPixiMocks();
 
@@ -208,10 +280,15 @@ describe("LiveViewer", () => {
 
     mockInit.mockReturnValue(initPromise);
 
-    const { unmount } = render(<LiveViewer />);
+    const { unmount } = render(<LiveViewer gameId="1" />);
 
     const { __appInstances } = getPixiMocks();
     const app = __appInstances[0];
+
+    // init only starts once the scene has loaded
+    await waitFor(() => {
+      expect(app.init).toHaveBeenCalled();
+    });
 
     unmount();
 
@@ -236,7 +313,7 @@ describe("LiveViewer", () => {
     mockInit.mockRejectedValueOnce(error);
 
     try {
-      render(<LiveViewer />);
+      render(<LiveViewer gameId="1" />);
 
       await waitFor(() => {
         expect(logSpy).toHaveBeenCalledWith(error);
