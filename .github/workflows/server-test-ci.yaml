@@ -38,4 +38,12 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Test Project
-        run: dotnet test --no-build --configuration Release --filter "TestCategory!=SDKGeneration"
+        run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --filter "TestCategory!=SDKGeneration" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          files: ./*.Tests/TestResults/*/coverage.opencover.xml
+          flags: game-server

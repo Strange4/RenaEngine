@@ -26,6 +26,14 @@ jobs:
         with:
           node-version: "22"
 
-      - run: npm ci
-      - run: npm test -- --ci
+      - run: npm ci --ignore-scripts
+      - run: npm test -- --ci --coverage
       - run: npm run build
+    
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          files: ./coverage/lcov.info
+          flags: website
