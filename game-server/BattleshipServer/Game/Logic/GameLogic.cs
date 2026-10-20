@@ -43,7 +43,7 @@ public class GameLogic
         return PlacementResult.Success;
     }
 
-    public PlacementResult HasInvalidFleetComposition(List<ShipState> ships)
+    public PlacementResult ValidateFleetComposition(List<ShipState> ships)
     {
         if (ships == null) return PlacementResult.NullFleet;
         if (ships.Count != 5) return PlacementResult.InvalidFleetSize;
@@ -70,7 +70,7 @@ public class GameLogic
     public PlacementResult ValidateShipPlacement(List<ShipState> ships)
     {
         bool[] isOccupied = new bool[BoardSize * BoardSize];
-        PlacementResult fleetResult = this.HasInvalidFleetComposition(ships);
+        PlacementResult fleetResult = this.ValidateFleetComposition(ships);
         if (fleetResult != PlacementResult.Success) return fleetResult;
 
         for (int i = 0; i < ships.Count; i++)
