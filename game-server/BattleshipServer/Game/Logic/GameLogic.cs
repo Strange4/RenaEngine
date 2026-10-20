@@ -2,15 +2,18 @@
 
 namespace BattleshipServer.Game.Logic;
 
+public class Player
+{
+    public List<Ship> PlacedShips { get; } = new();
+    public List<ShotRecord> ShotsFired { get; } = new();
+    public List<Ship> SunkShips { get; } = new();
+}
+
 public class GameLogic
 {
     public const int BoardSize = 10;
-    public List<Ship> PlacedShips1 { get; } = new List<Ship>();
-    public List<Ship> PlacedShips2 { get; } = new List<Ship>();
-    public List<ShotRecord> ShotsFired1 { get; } = new List<ShotRecord>();
-    public List<ShotRecord> ShotsFired2 { get; } = new List<ShotRecord>();
-    public List<Ship> SunkShips1 { get; } = new List<Ship>();
-    public List<Ship> SunkShips2 { get; } = new List<Ship>();
+    public Player Player1 = new();
+    public Player Player2 = new();
     public bool IsPlayer1Turn { get; private set; } = true;
     public bool IsGameOver { get; private set; } = false;
     public bool IsPlayer1Winner { get; private set; } = false;
@@ -57,33 +60,6 @@ public class GameLogic
         };
     }
 
-    internal PlacementResult IsOutsideBoard(Ship ship)
-    {
-        if (ship == null) return PlacementResult.NullCoordinate;
-        if (ship.StartCoordinate == null) return PlacementResult.NullCoordinate;
-        int size = ship.Size;
-        if (size <= 0) return PlacementResult.OutOfBounds;
-        if (ship.StartCoordinate.X < 0) return PlacementResult.OutOfBounds;
-        if (ship.StartCoordinate.Y < 0) return PlacementResult.OutOfBounds;
-        if (ship.Orientation == ShipOrientation.ShipOrientationUnknown) return PlacementResult.UnknownOrientation;
-
-        // Convention: Horizontal ships are placed from left to right, vertical ships are placed from top to bottom
-        if (ship.Orientation == ShipOrientation.Horizontal)
-        {
-            if (ship.StartCoordinate.X + size > BoardSize) return PlacementResult.OutOfBounds;
-            if (ship.StartCoordinate.Y >= BoardSize) return PlacementResult.OutOfBounds;
-        }
-        else if (ship.Orientation == ShipOrientation.Vertical)
-        {
-            if (ship.StartCoordinate.X >= BoardSize) return PlacementResult.OutOfBounds;
-            if (ship.StartCoordinate.Y + size > BoardSize) return PlacementResult.OutOfBounds;
-        }
-        else
-        {
-            return PlacementResult.UnknownOrientation;
-        }
-        return PlacementResult.Success;
-    }
 
     internal PlacementResult ValidateFleetComposition(List<Ship> ships)
     {

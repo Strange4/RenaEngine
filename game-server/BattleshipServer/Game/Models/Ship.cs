@@ -26,4 +26,20 @@ public class Ship
             _ => 0
         };
     }
+
+    public bool IsOutsideBoard(int boardSize)
+    {
+        // Convention: Horizontal ships are placed from left to right, vertical ships are placed from top to bottom
+        if (this.Size == 0) return true;
+        if (this.StartCoordinate.X < 0 || this.StartCoordinate.Y < 0) return true;
+        if (this.Orientation == ShipOrientation.Horizontal)
+        {
+            return (this.StartCoordinate.X + this.Size > boardSize) || (this.StartCoordinate.Y >= boardSize);
+        }
+        if (this.Orientation == ShipOrientation.Vertical)
+        {
+            return (this.StartCoordinate.X >= boardSize) || (this.StartCoordinate.Y + this.Size > boardSize);
+        }
+        return true;
+    }
 }
