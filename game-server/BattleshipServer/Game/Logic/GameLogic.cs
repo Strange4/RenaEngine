@@ -73,9 +73,8 @@ public class GameLogic
         PlacementResult fleetResult = this.ValidateFleetComposition(ships);
         if (fleetResult != PlacementResult.Success) return fleetResult;
 
-        for (int i = 0; i < ships.Count; i++)
+        foreach (Ship ship in ships)
         {
-            Ship ship = ships[i];
             PlacementResult result = this.IsOutsideBoard(ship);
             if (result != PlacementResult.Success) return result;
 
