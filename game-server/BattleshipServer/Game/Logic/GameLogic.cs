@@ -19,7 +19,7 @@ public class GameLogic
     {
         if (ship == null) return PlacementResult.NullCoordinate;
         if (ship.StartCoordinate == null) return PlacementResult.NullCoordinate;
-        int size = GetShipSize(ship.Name);
+        int size = ship.Size;
         if (size <= 0) return PlacementResult.OutOfBounds;
         if (ship.StartCoordinate.X < 0) return PlacementResult.OutOfBounds;
         if (ship.StartCoordinate.Y < 0) return PlacementResult.OutOfBounds;
@@ -83,7 +83,7 @@ public class GameLogic
             int x = ship.StartCoordinate.X;
             int y = ship.StartCoordinate.Y;
 
-            int size = GetShipSize(ship.Name);
+            int size = ship.Size;
             for (int j = 0; j < size; j++)
             {
                 int index = isHorizontal ? this.GetIndex(x + j, y) : this.GetIndex(x, y + j);
@@ -171,7 +171,7 @@ public class GameLogic
     private bool ShipOccupiesCoordinate(Ship ship, Coordinate coordinate)
     {
         if (ship == null || coordinate == null) return false;
-        int size = GetShipSize(ship.Name);
+        int size = ship.Size;
         if (size <= 0) return false;
         bool isHorizontal = ship.Orientation == ShipOrientation.Horizontal;
         int startX = ship.StartCoordinate.X;
@@ -188,7 +188,7 @@ public class GameLogic
     private bool IsShipSunk(Ship ship, List<ShotRecord> shotsFired)
     {
         if (ship == null || shotsFired == null) return false;
-        int size = GetShipSize(ship.Name);
+        int size = ship.Size;
         if (size <= 0) return false;
         bool isHorizontal = ship.Orientation == ShipOrientation.Horizontal;
         int startX = ship.StartCoordinate.X;
