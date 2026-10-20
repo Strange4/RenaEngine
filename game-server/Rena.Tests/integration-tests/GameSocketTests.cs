@@ -1,11 +1,11 @@
 using System.Net.WebSockets;
+using System.Text;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 
 using Rena.Server;
-using System.Text;
 
 namespace Rena.Tests.Integration;
 
@@ -60,17 +60,17 @@ public class GameSocketTests
 
         var messageToSend = "Hello Integration Test";
         var sendBuffer = Encoding.UTF8.GetBytes(messageToSend);
-        
+
         await webSocket.SendAsync(
-            new ArraySegment<byte>(sendBuffer), 
-            WebSocketMessageType.Text, 
-            endOfMessage: true, 
+            new ArraySegment<byte>(sendBuffer),
+            WebSocketMessageType.Text,
+            endOfMessage: true,
             CancellationToken.None
         );
 
         var receiveBuffer = new byte[1024];
         var receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(receiveBuffer), CancellationToken.None);
-        
+
         string serverResponse = Encoding.UTF8.GetString(receiveBuffer, 0, receiveResult.Count);
 
         Assert.That(serverResponse, Is.EqualTo($"Echo: {messageToSend}\n"));
@@ -78,7 +78,7 @@ public class GameSocketTests
         await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing test", CancellationToken.None);
     }
 
-    
+
 }
 
 

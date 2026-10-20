@@ -1,7 +1,9 @@
-using Microsoft.AspNetCore.Connections;
 using System.IO.Pipelines;
 using System.Net.WebSockets;
 using System.Text;
+
+using Microsoft.AspNetCore.Connections;
+
 using NSubstitute;
 
 using Rena.GameEngine;
@@ -51,19 +53,19 @@ public class GameSocketConnectionTests
     public async Task HandleConnection_ReadsMessage_AndEchoesCorrectly()
     {
         var playerId = "player-123";
-        
+
         _mockWebSocket.State.Returns(WebSocketState.Open);
 
         var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(
-            _connectionContext, 
-            _mockWebSocket, 
+            _connectionContext,
+            _mockWebSocket,
             playerId
         );
 
         Assert.That(socketConnection.PlayerId, Is.EqualTo(playerId));
 
         var testMessage = "Hello Game Server";
-        
+
         await _clientToServerPipe.Writer.WriteAsync(Encoding.UTF8.GetBytes(testMessage));
         await _clientToServerPipe.Writer.CompleteAsync();
 
@@ -79,17 +81,17 @@ public class GameSocketConnectionTests
     public async Task HandleConnection_ClosesConnection_OnWebSocketClose()
     {
         var playerId = "player-who-is-done";
-        
+
         _mockWebSocket.State.Returns(WebSocketState.CloseReceived);
 
         var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(
-            _connectionContext, 
-            _mockWebSocket, 
+            _connectionContext,
+            _mockWebSocket,
             playerId
         );
 
         var testMessage = "Hello Game Server";
-        
+
         await _clientToServerPipe.Writer.WriteAsync(Encoding.UTF8.GetBytes(testMessage));
         await _clientToServerPipe.Writer.CompleteAsync();
 
