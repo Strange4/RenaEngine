@@ -235,7 +235,7 @@ public class GameLogic
         };
     }
 
-    public ActionStatus ProcessPlayerAction(int playerNumber, PlayerAction action)
+    public ActionStatus ProcessPlayerAction(int playerNumber, PlayerAction? action)
     {
         if (action == null) return ActionStatus.InvalidAction;
         if (action.PlaceShips != null && action.PlaceShips.Count > 0)
