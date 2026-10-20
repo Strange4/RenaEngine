@@ -181,16 +181,11 @@ public class GameLogic
 
     internal bool ShipOccupiesCoordinate(Ship ship, Coordinate coordinate)
     {
-        if (ship == null || coordinate == null) return false;
-        int size = ship.Size;
-        if (size <= 0) return false;
         bool isHorizontal = ship.Orientation == ShipOrientation.Horizontal;
-        int startX = ship.StartCoordinate.X;
-        int startY = ship.StartCoordinate.Y;
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < ship.Size; i++)
         {
-            int x = isHorizontal ? startX + i : startX;
-            int y = isHorizontal ? startY : startY + i;
+            int x = isHorizontal ? ship.StartCoordinate.X + i : ship.StartCoordinate.X;
+            int y = isHorizontal ? ship.StartCoordinate.Y : ship.StartCoordinate.Y + i;
             if (x == coordinate.X && y == coordinate.Y) return true;
         }
         return false;
@@ -198,16 +193,11 @@ public class GameLogic
 
     internal bool IsShipSunk(Ship ship, List<ShotRecord> shotsFired)
     {
-        if (ship == null || shotsFired == null) return false;
-        int size = ship.Size;
-        if (size <= 0) return false;
         bool isHorizontal = ship.Orientation == ShipOrientation.Horizontal;
-        int startX = ship.StartCoordinate.X;
-        int startY = ship.StartCoordinate.Y;
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < ship.Size; i++)
         {
-            int x = isHorizontal ? startX + i : startX;
-            int y = isHorizontal ? startY : startY + i;
+            int x = isHorizontal ? ship.StartCoordinate.X + i : ship.StartCoordinate.X;
+            int y = isHorizontal ? ship.StartCoordinate.Y : ship.StartCoordinate.Y + i;
             if (!shotsFired.Any(s => s.Coordinate.X == x && s.Coordinate.Y == y)) return false;
         }
         return true;
@@ -215,12 +205,7 @@ public class GameLogic
 
     internal bool CheckWinCondition(List<Ship> opponentShips, List<ShotRecord> shotsFired)
     {
-        if (opponentShips == null || shotsFired == null) return false;
-        foreach (var ship in opponentShips)
-        {
-            if (!this.IsShipSunk(ship, shotsFired)) return false;
-        }
-        return true;
+        return opponentShips.All(ship => this.IsShipSunk(ship, shotsFired));
     }
 
 
