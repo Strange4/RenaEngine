@@ -10,6 +10,7 @@
   <ItemGroup>
   	<!-- Packages -->
     <PackageReference Include="Docker.DotNet" Version="3.125.15" />
+    <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
     <PackageReference Include="protobuf-net" Version="3.4.30" />
     <PackageReference Include="protobuf-net.Reflection" Version="3.4.30" />
 

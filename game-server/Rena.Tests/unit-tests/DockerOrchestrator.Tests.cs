@@ -3,7 +3,9 @@ using Docker.DotNet.Models;
 
 using Moq;
 
-namespace DockerOrchestrator.Tests;
+using Rena.Server;
+
+namespace Rena.Tests.Unit;
 
 [TestFixture]
 public class OrchestratorTests
@@ -11,7 +13,7 @@ public class OrchestratorTests
     private Mock<IDockerClient> _dockerClientMock;
     private Mock<IContainerOperations> _containerOperationsMock;
     private Mock<IImageOperations> _imagesOperationsMock;
-    private Orchestrator _orchestrator;
+    private Server.Orchestrator _orchestrator;
 
     [SetUp]
     public void SetUp()
@@ -33,7 +35,7 @@ public class OrchestratorTests
         var stoppedList = new List<ContainerListResponse> { new() { ID = "c-stopped", State = "exited" } };
         var allList = new List<ContainerListResponse> { runningList[0], stoppedList[0] };
 
-        _containerOperationsMock
+        _ = _containerOperationsMock
             .Setup(c => c.ListContainersAsync(It.Is<ContainersListParameters>(p => p.All == false), default))
             .ReturnsAsync(runningList);
 

@@ -11,6 +11,15 @@
           "Newtonsoft.Json": "13.0.1"
         }
       },
+      "LanguageExt.Core": {
+        "type": "Direct",
+        "requested": "[4.4.9, )",
+        "resolved": "4.4.9",
+        "contentHash": "K9VGWkThJkaomifa3zcmwysw1BaSqIZZPZc6trBnJN8u9mpmA/cMMwCWEa/v7bPv/+NnG6PbyIDB7HtxBX7yCQ==",
+        "dependencies": {
+          "Microsoft.Bcl.AsyncInterfaces": "7.0.0"
+        }
+      },
       "protobuf-net": {
         "type": "Direct",
         "requested": "[3.4.30, )",
@@ -28,6 +37,11 @@
         "dependencies": {
           "protobuf-net.Core": "3.4.30"
         }
+      },
+      "Microsoft.Bcl.AsyncInterfaces": {
+        "type": "Transitive",
+        "resolved": "7.0.0",
+        "contentHash": "3aeMZ1N0lJoSyzqiP03hqemtb1BijhsJADdobn/4nsMJ8V1H+CrpuduUe4hlRdx+ikBQju1VGjMD1GJ3Sk05Eg=="
       },
       "Newtonsoft.Json": {
         "type": "Transitive",
