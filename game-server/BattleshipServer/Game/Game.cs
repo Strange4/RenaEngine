@@ -4,7 +4,7 @@ using Rena.GameEngine;
 
 namespace BattleshipServer.Game;
 
-class BattleshipGame : IGame<PlayerState, PlayerAction>
+public class BattleshipGame : IGame<PlayerState, PlayerAction>
 {
     public string GetName()
     {

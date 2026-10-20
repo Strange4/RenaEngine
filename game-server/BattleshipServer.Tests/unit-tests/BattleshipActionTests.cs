@@ -1,34 +1,34 @@
-﻿using BattleshipServer.Game.Models;
-using BattleshipServer.Logic;
+﻿using BattleshipServer.Game.Logic;
+using BattleshipServer.Game.Models;
 
-namespace Rena.Tests.unit_tests;
+namespace BattleshipServer.Tests.unit_tests;
 
 [TestFixture]
 public class BattleshipActionTests
 {
     private GameLogic _gameLogic;
-    private List<ShipState> _validFleet1;
-    private List<ShipState> _validFleet2;
+    private List<Ship> _validFleet1;
+    private List<Ship> _validFleet2;
 
     [SetUp]
     public void Setup()
     {
         _gameLogic = new GameLogic();
-        _validFleet1 = new List<ShipState>
+        _validFleet1 = new List<Ship>
         {
-            new ShipState { Name = ShipName.Carrier, StartCoordinate = new Coordinate{X = 1, Y = 1}, Orientation = ShipOrientation.Horizontal },
-            new ShipState { Name = ShipName.Battleship, StartCoordinate = new Coordinate{X = 1, Y = 0}, Orientation = ShipOrientation.Horizontal },
-            new ShipState { Name = ShipName.Cruiser, StartCoordinate = new Coordinate{X = 5, Y = 0}, Orientation = ShipOrientation.Horizontal },
-            new ShipState { Name = ShipName.Submarine, StartCoordinate = new Coordinate{X = 3, Y = 2}, Orientation = ShipOrientation.Horizontal },
-            new ShipState { Name = ShipName.Destroyer, StartCoordinate = new Coordinate{X = 4, Y = 3}, Orientation = ShipOrientation.Horizontal }
+            new Ship { Name = ShipName.Carrier, StartCoordinate = new Coordinate{X = 1, Y = 1}, Orientation = ShipOrientation.Horizontal },
+            new Ship { Name = ShipName.Battleship, StartCoordinate = new Coordinate{X = 1, Y = 0}, Orientation = ShipOrientation.Horizontal },
+            new Ship { Name = ShipName.Cruiser, StartCoordinate = new Coordinate{X = 5, Y = 0}, Orientation = ShipOrientation.Horizontal },
+            new Ship { Name = ShipName.Submarine, StartCoordinate = new Coordinate{X = 3, Y = 2}, Orientation = ShipOrientation.Horizontal },
+            new Ship { Name = ShipName.Destroyer, StartCoordinate = new Coordinate{X = 4, Y = 3}, Orientation = ShipOrientation.Horizontal }
         };
-        _validFleet2 = new List<ShipState>
+        _validFleet2 = new List<Ship>
         {
-            new ShipState { Name = ShipName.Carrier, StartCoordinate = new Coordinate{X = 0, Y = 0}, Orientation = ShipOrientation.Vertical },
-            new ShipState { Name = ShipName.Battleship, StartCoordinate = new Coordinate{X = 1, Y = 0}, Orientation = ShipOrientation.Vertical },
-            new ShipState { Name = ShipName.Cruiser, StartCoordinate = new Coordinate{X = 2, Y = 0}, Orientation = ShipOrientation.Vertical },
-            new ShipState { Name = ShipName.Submarine, StartCoordinate = new Coordinate{X = 3, Y = 0}, Orientation = ShipOrientation.Vertical },
-            new ShipState { Name = ShipName.Destroyer, StartCoordinate = new Coordinate{X = 4, Y = 0}, Orientation = ShipOrientation.Vertical }
+            new Ship { Name = ShipName.Carrier, StartCoordinate = new Coordinate{X = 0, Y = 0}, Orientation = ShipOrientation.Vertical },
+            new Ship { Name = ShipName.Battleship, StartCoordinate = new Coordinate{X = 1, Y = 0}, Orientation = ShipOrientation.Vertical },
+            new Ship { Name = ShipName.Cruiser, StartCoordinate = new Coordinate{X = 2, Y = 0}, Orientation = ShipOrientation.Vertical },
+            new Ship { Name = ShipName.Submarine, StartCoordinate = new Coordinate{X = 3, Y = 0}, Orientation = ShipOrientation.Vertical },
+            new Ship { Name = ShipName.Destroyer, StartCoordinate = new Coordinate{X = 4, Y = 0}, Orientation = ShipOrientation.Vertical }
         };
         _gameLogic.ProcessShipPlacement(1, _validFleet1);
         _gameLogic.ProcessShipPlacement(2, _validFleet2);
@@ -174,23 +174,22 @@ public class BattleshipActionTests
         _gameLogic.ProcessAction(1, new Coordinate { X = 5, Y = 6 });
         _gameLogic.ProcessAction(2, new Coordinate { X = 7, Y = 8 });
 
-        Assert.That(_gameLogic.ShotsFired1[0].Coordinate.X, Is.EqualTo(1));
-        Assert.That(_gameLogic.ShotsFired1[0].Coordinate.Y, Is.EqualTo(2));
-        Assert.That(_gameLogic.ShotsFired1[0].Result, Is.EqualTo(ShotResult.Hit));
+        Assert.That(_gameLogic.Player1.ShotsFired[0].Coordinate.X, Is.EqualTo(1));
+        Assert.That(_gameLogic.Player1.ShotsFired[0].Coordinate.Y, Is.EqualTo(2));
+        Assert.That(_gameLogic.Player1.ShotsFired[0].Result, Is.EqualTo(ShotResult.Hit));
 
-        Assert.That(_gameLogic.ShotsFired1[1].Coordinate.X, Is.EqualTo(5));
-        Assert.That(_gameLogic.ShotsFired1[1].Coordinate.Y, Is.EqualTo(6));
-        Assert.That(_gameLogic.ShotsFired1[1].Result, Is.EqualTo(ShotResult.Miss));
+        Assert.That(_gameLogic.Player1.ShotsFired[1].Coordinate.X, Is.EqualTo(5));
+        Assert.That(_gameLogic.Player1.ShotsFired[1].Coordinate.Y, Is.EqualTo(6));
+        Assert.That(_gameLogic.Player1.ShotsFired[1].Result, Is.EqualTo(ShotResult.Miss));
 
-        Assert.That(_gameLogic.ShotsFired2[0].Coordinate.X, Is.EqualTo(3));
-        Assert.That(_gameLogic.ShotsFired2[0].Coordinate.Y, Is.EqualTo(4));
-        Assert.That(_gameLogic.ShotsFired2[0].Result, Is.EqualTo(ShotResult.Miss));
+        Assert.That(_gameLogic.Player2.ShotsFired[0].Coordinate.X, Is.EqualTo(3));
+        Assert.That(_gameLogic.Player2.ShotsFired[0].Coordinate.Y, Is.EqualTo(4));
+        Assert.That(_gameLogic.Player2.ShotsFired[0].Result, Is.EqualTo(ShotResult.Miss));
 
-        Assert.That(_gameLogic.ShotsFired2[1].Coordinate.X, Is.EqualTo(7));
-        Assert.That(_gameLogic.ShotsFired2[1].Coordinate.Y, Is.EqualTo(8));
-        Assert.That(_gameLogic.ShotsFired2[1].Result, Is.EqualTo(ShotResult.Miss));
+        Assert.That(_gameLogic.Player2.ShotsFired[1].Coordinate.X, Is.EqualTo(7));
+        Assert.That(_gameLogic.Player2.ShotsFired[1].Coordinate.Y, Is.EqualTo(8));
+        Assert.That(_gameLogic.Player2.ShotsFired[1].Result, Is.EqualTo(ShotResult.Miss));
 
     }
-
 
 }

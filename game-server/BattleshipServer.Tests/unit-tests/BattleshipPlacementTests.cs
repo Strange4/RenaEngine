@@ -1,5 +1,5 @@
-﻿using BattleshipServer.Game.Models;
-using BattleshipServer.Logic;
+﻿using BattleshipServer.Game.Logic;
+using BattleshipServer.Game.Models;
 
 namespace Rena.Tests.unit_tests;
 
@@ -7,19 +7,19 @@ namespace Rena.Tests.unit_tests;
 public class BattleshipPlacementTests
 {
     private GameLogic _gameLogic;
-    private List<ShipState> _validFleet;
+    private List<Ship> _validFleet;
 
     [SetUp]
     public void Setup()
     {
         _gameLogic = new GameLogic();
-        _validFleet = new List<ShipState>
+        _validFleet = new List<Ship>
         {
-            new ShipState { Name = ShipName.Carrier, StartCoordinate = new Coordinate{X = 1, Y = 1}, Orientation = ShipOrientation.Horizontal },
-            new ShipState { Name = ShipName.Battleship, StartCoordinate = new Coordinate{X = 1, Y = 0}, Orientation = ShipOrientation.Horizontal },
-            new ShipState { Name = ShipName.Cruiser, StartCoordinate = new Coordinate{X = 5, Y = 0}, Orientation = ShipOrientation.Horizontal },
-            new ShipState { Name = ShipName.Submarine, StartCoordinate = new Coordinate{X = 3, Y = 2}, Orientation = ShipOrientation.Horizontal },
-            new ShipState { Name = ShipName.Destroyer, StartCoordinate = new Coordinate{X = 4, Y = 3}, Orientation = ShipOrientation.Horizontal }
+            new Ship { Name = ShipName.Carrier, StartCoordinate = new Coordinate{X = 1, Y = 1}, Orientation = ShipOrientation.Horizontal },
+            new Ship { Name = ShipName.Battleship, StartCoordinate = new Coordinate{X = 1, Y = 0}, Orientation = ShipOrientation.Horizontal },
+            new Ship { Name = ShipName.Cruiser, StartCoordinate = new Coordinate{X = 5, Y = 0}, Orientation = ShipOrientation.Horizontal },
+            new Ship { Name = ShipName.Submarine, StartCoordinate = new Coordinate{X = 3, Y = 2}, Orientation = ShipOrientation.Horizontal },
+            new Ship { Name = ShipName.Destroyer, StartCoordinate = new Coordinate{X = 4, Y = 3}, Orientation = ShipOrientation.Horizontal }
         };
     }
 
@@ -35,15 +35,15 @@ public class BattleshipPlacementTests
     {
         PlacementResult result = _gameLogic.ProcessShipPlacement(1, _validFleet);
         Assert.That(result, Is.EqualTo(PlacementResult.Success));
-        Assert.That(_gameLogic.PlacedShips1, Is.EqualTo(_validFleet));
-        Assert.That(_gameLogic.PlacedShips2, Is.Empty);
+        Assert.That(_gameLogic.Player1.PlacedShips, Is.EqualTo(_validFleet));
+        Assert.That(_gameLogic.Player2.PlacedShips, Is.Empty);
     }
 
     [Test]
     public void TestInvalidShipPlacement_Overlap()
     {
         // This will overlap with the Battleship
-        _validFleet[2] = new ShipState { Name = ShipName.Cruiser, StartCoordinate = new Coordinate { X = 4, Y = 0 }, Orientation = ShipOrientation.Horizontal };
+        _validFleet[2] = new Ship { Name = ShipName.Cruiser, StartCoordinate = new Coordinate { X = 4, Y = 0 }, Orientation = ShipOrientation.Horizontal };
         PlacementResult result = _gameLogic.ProcessShipPlacement(1, _validFleet);
         Assert.That(result, Is.EqualTo(PlacementResult.Overlapping));
     }
@@ -52,7 +52,7 @@ public class BattleshipPlacementTests
     public void TestInvalidShipPlacement_OutOfBounds()
     {
         // X = 7 is within bounds, but X = 8 is out of bounds for a ship of size 3
-        _validFleet[2] = new ShipState { Name = ShipName.Cruiser, StartCoordinate = new Coordinate { X = 8, Y = 0 }, Orientation = ShipOrientation.Horizontal };
+        _validFleet[2] = new Ship { Name = ShipName.Cruiser, StartCoordinate = new Coordinate { X = 8, Y = 0 }, Orientation = ShipOrientation.Horizontal };
         PlacementResult result = _gameLogic.ProcessShipPlacement(1, _validFleet);
         Assert.That(result, Is.EqualTo(PlacementResult.OutOfBounds));
     }
@@ -61,7 +61,7 @@ public class BattleshipPlacementTests
     public void TestInvalidShipPlacement_InvalidFleetComposition()
     {
         // Extra Destroyer
-        _validFleet[3] = new ShipState { Name = ShipName.Destroyer, StartCoordinate = new Coordinate { X = 5, Y = 3 }, Orientation = ShipOrientation.Horizontal };
+        _validFleet[3] = new Ship { Name = ShipName.Destroyer, StartCoordinate = new Coordinate { X = 5, Y = 3 }, Orientation = ShipOrientation.Horizontal };
         PlacementResult result = _gameLogic.ProcessShipPlacement(1, _validFleet);
         Assert.That(result, Is.EqualTo(PlacementResult.InvalidFleetComposition));
     }
@@ -70,7 +70,7 @@ public class BattleshipPlacementTests
     public void TestInvalidShipPlacement_InvalidFleetSize()
     {
         // Test with 6 ships (1 extra ship)
-        _validFleet.Add(new ShipState { Name = ShipName.Destroyer, StartCoordinate = new Coordinate { X = 5, Y = 3 }, Orientation = ShipOrientation.Horizontal });
+        _validFleet.Add(new Ship { Name = ShipName.Destroyer, StartCoordinate = new Coordinate { X = 5, Y = 3 }, Orientation = ShipOrientation.Horizontal });
         PlacementResult resultAbove = _gameLogic.ProcessShipPlacement(1, _validFleet);
         // Remove one ship to have only 4 ships
         _validFleet.RemoveAt(0);
@@ -113,7 +113,7 @@ public class BattleshipPlacementTests
     public void TestInvalidShipPlacement_PlayerTwoOverlap()
     {
         // Overlaps with Carrier
-        _validFleet[1] = new ShipState { Name = ShipName.Battleship, StartCoordinate = new Coordinate { X = 1, Y = 1 }, Orientation = ShipOrientation.Vertical };
+        _validFleet[1] = new Ship { Name = ShipName.Battleship, StartCoordinate = new Coordinate { X = 1, Y = 1 }, Orientation = ShipOrientation.Vertical };
         PlacementResult resultPlayerTwoPlacementOverlap = _gameLogic.ProcessShipPlacement(2, _validFleet);
         Assert.That(resultPlayerTwoPlacementOverlap, Is.EqualTo(PlacementResult.Overlapping));
     }
@@ -122,7 +122,7 @@ public class BattleshipPlacementTests
     public void TestInvalidShipPlacement_PlayerTwoOutOfBounds()
     {
         // Out of bounds
-        _validFleet[2] = new ShipState { Name = ShipName.Cruiser, StartCoordinate = new Coordinate { X = 4, Y = 8 }, Orientation = ShipOrientation.Vertical };
+        _validFleet[2] = new Ship { Name = ShipName.Cruiser, StartCoordinate = new Coordinate { X = 4, Y = 8 }, Orientation = ShipOrientation.Vertical };
         PlacementResult resultPlayerTwoPlacementOutOfBounds = _gameLogic.ProcessShipPlacement(2, _validFleet);
         Assert.That(resultPlayerTwoPlacementOutOfBounds, Is.EqualTo(PlacementResult.OutOfBounds));
     }
@@ -141,7 +141,7 @@ public class BattleshipPlacementTests
     public void TestInvalidShipPlacement_PlayerTwoInvalidFleetComposition()
     {
         // Extra Destroyer
-        _validFleet[3] = new ShipState { Name = ShipName.Destroyer, StartCoordinate = new Coordinate { X = 9, Y = 0 }, Orientation = ShipOrientation.Vertical };
+        _validFleet[3] = new Ship { Name = ShipName.Destroyer, StartCoordinate = new Coordinate { X = 9, Y = 0 }, Orientation = ShipOrientation.Vertical };
         PlacementResult resultPlayerTwoInvalidFleetComposition = _gameLogic.ProcessShipPlacement(2, _validFleet);
         Assert.That(resultPlayerTwoInvalidFleetComposition, Is.EqualTo(PlacementResult.InvalidFleetComposition));
     }
@@ -153,17 +153,17 @@ public class BattleshipPlacementTests
         PlacementResult resultPlayerTwo = _gameLogic.ProcessShipPlacement(2, _validFleet);
         Assert.That(resultPlayerOne, Is.EqualTo(PlacementResult.Success));
         Assert.That(resultPlayerTwo, Is.EqualTo(PlacementResult.Success));
-        Assert.That(_gameLogic.PlacedShips1, Has.Count.EqualTo(5));
-        Assert.That(_gameLogic.PlacedShips2, Has.Count.EqualTo(5));
+        Assert.That(_gameLogic.Player1.PlacedShips, Has.Count.EqualTo(5));
+        Assert.That(_gameLogic.Player2.PlacedShips, Has.Count.EqualTo(5));
     }
 
     [Test]
     public void TestInvalidShipPlacement_NegativeCoordinates()
     {
         // Negative coordinates for a ship
-        _validFleet[0] = new ShipState { Name = ShipName.Carrier, StartCoordinate = new Coordinate { X = -1, Y = 0 }, Orientation = ShipOrientation.Horizontal };
+        _validFleet[0] = new Ship { Name = ShipName.Carrier, StartCoordinate = new Coordinate { X = -1, Y = 0 }, Orientation = ShipOrientation.Horizontal };
         PlacementResult resultNegativeCoordinatesX = _gameLogic.ProcessShipPlacement(1, _validFleet);
-        _validFleet[0] = new ShipState { Name = ShipName.Carrier, StartCoordinate = new Coordinate { X = 0, Y = -1 }, Orientation = ShipOrientation.Horizontal };
+        _validFleet[0] = new Ship { Name = ShipName.Carrier, StartCoordinate = new Coordinate { X = 0, Y = -1 }, Orientation = ShipOrientation.Horizontal };
         PlacementResult resultNegativeCoordinatesY = _gameLogic.ProcessShipPlacement(1, _validFleet);
         Assert.That(resultNegativeCoordinatesX, Is.EqualTo(PlacementResult.OutOfBounds));
         Assert.That(resultNegativeCoordinatesY, Is.EqualTo(PlacementResult.OutOfBounds));
@@ -173,9 +173,9 @@ public class BattleshipPlacementTests
     public void TestInvalidShipPlacement_PerpendicularAxisOutOfBounds()
     {
         // Test a ship that is placed such that it extends out of bounds on the perpendicular axis
-        _validFleet[0] = new ShipState { Name = ShipName.Carrier, StartCoordinate = new Coordinate { X = 10, Y = 0 }, Orientation = ShipOrientation.Horizontal };
+        _validFleet[0] = new Ship { Name = ShipName.Carrier, StartCoordinate = new Coordinate { X = 10, Y = 0 }, Orientation = ShipOrientation.Horizontal };
         PlacementResult resultHorizontalOutOfBounds = _gameLogic.ProcessShipPlacement(1, _validFleet);
-        _validFleet[0] = new ShipState { Name = ShipName.Carrier, StartCoordinate = new Coordinate { X = 0, Y = 10 }, Orientation = ShipOrientation.Vertical };
+        _validFleet[0] = new Ship { Name = ShipName.Carrier, StartCoordinate = new Coordinate { X = 0, Y = 10 }, Orientation = ShipOrientation.Vertical };
         PlacementResult resultVerticalOutOfBounds = _gameLogic.ProcessShipPlacement(1, _validFleet);
         Assert.That(resultHorizontalOutOfBounds, Is.EqualTo(PlacementResult.OutOfBounds));
         Assert.That(resultVerticalOutOfBounds, Is.EqualTo(PlacementResult.OutOfBounds));
@@ -185,12 +185,12 @@ public class BattleshipPlacementTests
     public void TestInvalidShipPlacement_UnknownEnums()
     {
         // Test with unknown enum values
-        _validFleet[0] = new ShipState { Name = ShipName.ShipNameUnknown, StartCoordinate = new Coordinate { X = 0, Y = 0 }, Orientation = ShipOrientation.Horizontal };
+        _validFleet[0] = new Ship { Name = ShipName.ShipNameUnknown, StartCoordinate = new Coordinate { X = 0, Y = 0 }, Orientation = ShipOrientation.Horizontal };
         PlacementResult resultUnknownShipName = _gameLogic.ProcessShipPlacement(1, _validFleet);
         Assert.That(resultUnknownShipName, Is.EqualTo(PlacementResult.UnknownName));
 
         this.Setup(); // Reset the fleet to valid state for the next test
-        _validFleet[0] = new ShipState { Name = ShipName.Carrier, StartCoordinate = new Coordinate { X = 0, Y = 0 }, Orientation = ShipOrientation.ShipOrientationUnknown };
+        _validFleet[0] = new Ship { Name = ShipName.Carrier, StartCoordinate = new Coordinate { X = 0, Y = 0 }, Orientation = ShipOrientation.ShipOrientationUnknown };
         PlacementResult resultUnknownOrientation = _gameLogic.ProcessShipPlacement(1, _validFleet);
         Assert.That(resultUnknownOrientation, Is.EqualTo(PlacementResult.UnknownOrientation));
     }
@@ -216,7 +216,7 @@ public class BattleshipPlacementTests
     public void TestInvalidShipPlacement_NullCoordinateInShip()
     {
         // Test with a null coordinate in a ship
-        _validFleet[0] = new ShipState { Name = ShipName.Carrier, StartCoordinate = null!, Orientation = ShipOrientation.Horizontal };
+        _validFleet[0] = new Ship { Name = ShipName.Carrier, StartCoordinate = null!, Orientation = ShipOrientation.Horizontal };
         PlacementResult resultNullCoordinateInShip = _gameLogic.ProcessShipPlacement(1, _validFleet);
         Assert.That(resultNullCoordinateInShip, Is.EqualTo(PlacementResult.NullCoordinate));
     }
@@ -225,13 +225,13 @@ public class BattleshipPlacementTests
     public void TestValidShipPlacement_MaximumBoundary()
     {
         // Test placing a ship at the maximum boundary of the board
-        List<ShipState> maxBoundaryFleet = new List<ShipState>
+        List<Ship> maxBoundaryFleet = new List<Ship>
         {
-            new ShipState { Name = ShipName.Carrier, StartCoordinate = new Coordinate{X = 5, Y = 0}, Orientation = ShipOrientation.Horizontal },
-            new ShipState { Name = ShipName.Battleship, StartCoordinate = new Coordinate{X = 0, Y = 0}, Orientation = ShipOrientation.Horizontal },
-            new ShipState { Name = ShipName.Cruiser, StartCoordinate = new Coordinate{X = 0, Y = 2}, Orientation = ShipOrientation.Horizontal },
-            new ShipState { Name = ShipName.Submarine, StartCoordinate = new Coordinate{X = 0, Y = 4}, Orientation = ShipOrientation.Horizontal },
-            new ShipState { Name = ShipName.Destroyer, StartCoordinate = new Coordinate{X = 0, Y = 8}, Orientation = ShipOrientation.Vertical }
+            new Ship { Name = ShipName.Carrier, StartCoordinate = new Coordinate{X = 5, Y = 0}, Orientation = ShipOrientation.Horizontal },
+            new Ship { Name = ShipName.Battleship, StartCoordinate = new Coordinate{X = 0, Y = 0}, Orientation = ShipOrientation.Horizontal },
+            new Ship { Name = ShipName.Cruiser, StartCoordinate = new Coordinate{X = 0, Y = 2}, Orientation = ShipOrientation.Horizontal },
+            new Ship { Name = ShipName.Submarine, StartCoordinate = new Coordinate{X = 0, Y = 4}, Orientation = ShipOrientation.Horizontal },
+            new Ship { Name = ShipName.Destroyer, StartCoordinate = new Coordinate{X = 0, Y = 8}, Orientation = ShipOrientation.Vertical }
         };
         PlacementResult resultMaxBoundary = _gameLogic.ProcessShipPlacement(1, maxBoundaryFleet);
         Assert.That(resultMaxBoundary, Is.EqualTo(PlacementResult.Success));
@@ -241,8 +241,8 @@ public class BattleshipPlacementTests
     public void TestInvalidShipPlacement_PerpendicularOverlap()
     {
         // Test placing ships that overlap perpendicularly
-        _validFleet[0] = new ShipState { Name = ShipName.Carrier, StartCoordinate = new Coordinate { X = 1, Y = 1 }, Orientation = ShipOrientation.Horizontal };
-        _validFleet[1] = new ShipState { Name = ShipName.Battleship, StartCoordinate = new Coordinate { X = 1, Y = 0 }, Orientation = ShipOrientation.Vertical };
+        _validFleet[0] = new Ship { Name = ShipName.Carrier, StartCoordinate = new Coordinate { X = 1, Y = 1 }, Orientation = ShipOrientation.Horizontal };
+        _validFleet[1] = new Ship { Name = ShipName.Battleship, StartCoordinate = new Coordinate { X = 1, Y = 0 }, Orientation = ShipOrientation.Vertical };
         PlacementResult resultPerpendicularOverlap = _gameLogic.ProcessShipPlacement(1, _validFleet);
         Assert.That(resultPerpendicularOverlap, Is.EqualTo(PlacementResult.Overlapping));
     }
@@ -251,11 +251,11 @@ public class BattleshipPlacementTests
     public void TestInvalidShipPlacement_DoesNotPartiallyAddShips()
     {
         // Test that if one ship placement fails, none of the ships are added to the player's fleet
-        _validFleet[0] = new ShipState { Name = ShipName.Carrier, StartCoordinate = new Coordinate { X = 1, Y = 1 }, Orientation = ShipOrientation.Horizontal };
-        _validFleet[1] = new ShipState { Name = ShipName.Battleship, StartCoordinate = new Coordinate { X = 1, Y = 0 }, Orientation = ShipOrientation.Vertical }; // This will overlap with the Carrier
+        _validFleet[0] = new Ship { Name = ShipName.Carrier, StartCoordinate = new Coordinate { X = 1, Y = 1 }, Orientation = ShipOrientation.Horizontal };
+        _validFleet[1] = new Ship { Name = ShipName.Battleship, StartCoordinate = new Coordinate { X = 1, Y = 0 }, Orientation = ShipOrientation.Vertical }; // This will overlap with the Carrier
         PlacementResult resultPartialAdd = _gameLogic.ProcessShipPlacement(1, _validFleet);
         Assert.That(resultPartialAdd, Is.EqualTo(PlacementResult.Overlapping));
-        Assert.That(_gameLogic.PlacedShips1, Is.Empty);
+        Assert.That(_gameLogic.Player1.PlacedShips, Is.Empty);
     }
 
     [Test]
@@ -264,11 +264,11 @@ public class BattleshipPlacementTests
         // Test with an invalid cast of the enum
         ShipName invalidShipName = (ShipName)999; // Invalid enum value
         ShipOrientation invalidOrientation = (ShipOrientation)999; // Invalid enum value
-        _validFleet[0] = new ShipState { Name = invalidShipName, StartCoordinate = new Coordinate { X = 0, Y = 0 }, Orientation = ShipOrientation.Horizontal };
+        _validFleet[0] = new Ship { Name = invalidShipName, StartCoordinate = new Coordinate { X = 0, Y = 0 }, Orientation = ShipOrientation.Horizontal };
         PlacementResult resultInvalidCastEnumName = _gameLogic.ProcessShipPlacement(1, _validFleet);
         Assert.That(resultInvalidCastEnumName, Is.EqualTo(PlacementResult.UnknownName));
         this.Setup(); // Reset the fleet to valid state for the next test
-        _validFleet[1] = new ShipState { Name = ShipName.Carrier, StartCoordinate = new Coordinate { X = 0, Y = 1 }, Orientation = invalidOrientation };
+        _validFleet[1] = new Ship { Name = ShipName.Carrier, StartCoordinate = new Coordinate { X = 0, Y = 1 }, Orientation = invalidOrientation };
         PlacementResult resultInvalidCastEnumOrientation = _gameLogic.ProcessShipPlacement(1, _validFleet);
         Assert.That(resultInvalidCastEnumOrientation, Is.EqualTo(PlacementResult.UnknownOrientation));
     }
@@ -277,7 +277,7 @@ public class BattleshipPlacementTests
     public void TestInvalidShipPlacement_EmptyFleet()
     {
         // Test with an empty fleet
-        List<ShipState> emptyFleet = new List<ShipState>();
+        List<Ship> emptyFleet = new List<Ship>();
         PlacementResult resultEmptyFleet = _gameLogic.ProcessShipPlacement(1, emptyFleet);
         Assert.That(resultEmptyFleet, Is.EqualTo(PlacementResult.InvalidFleetSize));
     }
