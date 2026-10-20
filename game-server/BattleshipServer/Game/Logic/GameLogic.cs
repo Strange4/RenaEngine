@@ -38,27 +38,27 @@ public class GameLogic
 
     public PlayerState GetPlayerState(int playerNumber)
     {
-        List<Ship> yourShips = playerNumber is 1 ? this.PlacedShips1 : this.PlacedShips2;
-        List<Ship> sunkShips = playerNumber is 1 ? this.SunkShips2 : this.SunkShips1;
-        List<ShotRecord> shotsFired = playerNumber == 1 ? this.ShotsFired1 : this.ShotsFired2;
+        Player player = this.GetPlayer(playerNumber);
+        Player opponent = this.GetOpponent(player);
         bool isYourTurn = playerNumber == 1 ? this.IsPlayer1Turn : !this.IsPlayer1Turn;
-        bool isGameOver = this.IsGameOver;
         bool isWinner = playerNumber == 1 ? this.IsPlayer1Winner : !this.IsPlayer1Winner;
-        bool isPlacementPhase = yourShips.Count < 5;
 
         return new PlayerState
         {
             GridSize = BoardSize,
-            Ships = yourShips,
-            SunkShips = sunkShips,
-            ShotsFired = shotsFired,
-            isYourTurn = isYourTurn && !isGameOver,
-            isGameOver = isGameOver,
-            isWinner = isWinner && isGameOver,
-            isPlacementPhase = isPlacementPhase
+            Ships = player.PlacedShips,
+            SunkShips = opponent.SunkShips,
+            ShotsFired = player.ShotsFired,
+            isYourTurn = isYourTurn && !this.IsGameOver,
+            isGameOver = this.IsGameOver,
+            isWinner = isWinner && this.IsGameOver,
+            isPlacementPhase = player.PlacedShips.Count < 5
 
         };
     }
+
+    internal Player GetPlayer(int playerNumber) => playerNumber == 1 ? this.Player1 : this.Player2;
+    internal Player GetOpponent(Player player) => player == this.Player1 ? this.Player2 : this.Player1;
 
 
     internal PlacementResult ValidateFleetComposition(List<Ship> ships)
@@ -93,8 +93,7 @@ public class GameLogic
 
         foreach (Ship ship in ships)
         {
-            PlacementResult result = this.IsOutsideBoard(ship);
-            if (result != PlacementResult.Success) return result;
+            if (ship.IsOutsideBoard(BoardSize)) return PlacementResult.OutOfBounds;
 
             bool isHorizontal = ship.Orientation == ShipOrientation.Horizontal;
             int x = ship.StartCoordinate.X;
@@ -114,10 +113,10 @@ public class GameLogic
     internal PlacementResult ProcessShipPlacement(int playerNumber, List<Ship> ships)
     {
         if (playerNumber is not (1 or 2)) return PlacementResult.InvalidPlayerNumber;
-        List<Ship> targetShips = playerNumber is 1 ? this.PlacedShips1 : this.PlacedShips2;
-        if (targetShips.Count > 0) return PlacementResult.AlreadyPlaced;
+        Player player = this.GetPlayer(playerNumber);
+        if (player.PlacedShips.Count > 0) return PlacementResult.AlreadyPlaced;
         PlacementResult result = this.ValidateShipPlacement(ships);
-        if (result == PlacementResult.Success) targetShips.AddRange(ships);
+        if (result == PlacementResult.Success) player.PlacedShips.AddRange(ships);
         return result;
     }
 
@@ -134,25 +133,24 @@ public class GameLogic
         ActionStatus status = this.ValidateAction(playerNumber, coordinate);
         if (status != ActionStatus.Success) return new(status);
 
-        List<Ship> opponentShips = playerNumber == 1 ? this.PlacedShips2 : this.PlacedShips1;
-        List<ShotRecord> shotsFired = playerNumber == 1 ? this.ShotsFired1 : this.ShotsFired2;
-        List<Ship> opponentsSunkShips = playerNumber == 1 ? this.SunkShips2 : this.SunkShips1;
+        Player player = this.GetPlayer(playerNumber);
+        Player opponent = this.GetOpponent(player);
 
-        Ship? hitShip = opponentShips.FirstOrDefault(ship => this.ShipOccupiesCoordinate(ship, coordinate));
+        Ship? hitShip = opponent.PlacedShips.FirstOrDefault(ship => this.ShipOccupiesCoordinate(ship, coordinate));
         if (hitShip == null)
         {
-            shotsFired.Add(new ShotRecord { Coordinate = coordinate!, Result = ShotResult.Miss });
+            player.ShotsFired.Add(new ShotRecord { Coordinate = coordinate!, Result = ShotResult.Miss });
             this.IsPlayer1Turn = !this.IsPlayer1Turn; // Switch turns
             return new(ActionStatus.Success, ShotResult.Miss);
         }
 
-        shotsFired.Add(new ShotRecord { Coordinate = coordinate!, Result = ShotResult.Hit });
-        bool isSunk = this.IsShipSunk(hitShip, shotsFired);
+        player.ShotsFired.Add(new ShotRecord { Coordinate = coordinate!, Result = ShotResult.Hit });
+        bool isSunk = this.IsShipSunk(hitShip, player.ShotsFired);
         if (isSunk)
         {
-            shotsFired[shotsFired.Count - 1] = new ShotRecord { Coordinate = coordinate!, Result = ShotResult.Sunk }; // Update from hit to sunk
-            opponentsSunkShips.Add(hitShip);
-            if (this.CheckWinCondition(opponentShips, shotsFired))
+            player.ShotsFired[player.ShotsFired.Count - 1] = new ShotRecord { Coordinate = coordinate!, Result = ShotResult.Sunk }; // Update from hit to sunk
+            opponent.SunkShips.Add(hitShip);
+            if (this.CheckWinCondition(opponent.PlacedShips, player.ShotsFired))
             {
                 this.IsGameOver = true;
                 this.IsPlayer1Winner = playerNumber == 1;
@@ -173,15 +171,17 @@ public class GameLogic
          * Validate the shot coordinate is within bounds
          * Check if the shot has already been fired at that coordinate
          */
-        if (this.PlacedShips1.Count == 0 || this.PlacedShips2.Count == 0) return ActionStatus.NotReadyToStart;
-        if (this.IsGameOver) return ActionStatus.GameOver;
+
         if ((playerNumber is not (1 or 2))) return ActionStatus.InvalidPlayerNumber;
+        Player player = this.GetPlayer(playerNumber);
+        Player opponent = this.GetOpponent(player);
+        if (player.PlacedShips.Count == 0 || opponent.PlacedShips.Count == 0) return ActionStatus.NotReadyToStart;
+        if (this.IsGameOver) return ActionStatus.GameOver;
         if (this.IsPlayer1Turn && playerNumber == 2) return ActionStatus.NotYourTurn;
         if (!this.IsPlayer1Turn && playerNumber == 1) return ActionStatus.NotYourTurn;
         if (coordinate == null) return ActionStatus.NullCoordinate;
         if (coordinate.X < 0 || coordinate.X >= BoardSize || coordinate.Y < 0 || coordinate.Y >= BoardSize) return ActionStatus.OutOfBounds;
-        List<ShotRecord> shotsFired = playerNumber == 1 ? this.ShotsFired1 : this.ShotsFired2;
-        if (shotsFired.Any(s => s.Coordinate.X == coordinate.X && s.Coordinate.Y == coordinate.Y)) return ActionStatus.AlreadyFired;
+        if (player.ShotsFired.Any(s => s.Coordinate.X == coordinate.X && s.Coordinate.Y == coordinate.Y)) return ActionStatus.AlreadyFired;
         return ActionStatus.Success;
     }
 
