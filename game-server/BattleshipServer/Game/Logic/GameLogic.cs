@@ -15,7 +15,49 @@ public class GameLogic
     public bool IsGameOver { get; private set; } = false;
     public bool IsPlayer1Winner { get; private set; } = false;
 
-    public PlacementResult IsOutsideBoard(Ship ship)
+    public ActionStatus ProcessPlayerAction(int playerNumber, PlayerAction? action)
+    {
+        if (action == null) return ActionStatus.InvalidAction;
+        if (action.PlaceShips != null && action.PlaceShips.Count > 0)
+        {
+            PlacementResult pr = this.ProcessShipPlacement(playerNumber, action.PlaceShips);
+            return pr == PlacementResult.Success ? ActionStatus.Success : ActionStatus.InvalidPlacement;
+        }
+
+        if (action.ShootAt != null)
+        {
+            ActionExecutionResult result = this.ProcessAction(playerNumber, action.ShootAt);
+            return result.Status;
+        }
+
+        return ActionStatus.InvalidAction;
+    }
+
+    public PlayerState GetPlayerState(int playerNumber)
+    {
+        List<Ship> yourShips = playerNumber is 1 ? this.PlacedShips1 : this.PlacedShips2;
+        List<Ship> sunkShips = playerNumber is 1 ? this.SunkShips2 : this.SunkShips1;
+        List<ShotRecord> shotsFired = playerNumber == 1 ? this.ShotsFired1 : this.ShotsFired2;
+        bool isYourTurn = playerNumber == 1 ? this.IsPlayer1Turn : !this.IsPlayer1Turn;
+        bool isGameOver = this.IsGameOver;
+        bool isWinner = playerNumber == 1 ? this.IsPlayer1Winner : !this.IsPlayer1Winner;
+        bool isPlacementPhase = yourShips.Count < 5;
+
+        return new PlayerState
+        {
+            GridSize = BoardSize,
+            Ships = yourShips,
+            SunkShips = sunkShips,
+            ShotsFired = shotsFired,
+            isYourTurn = isYourTurn && !isGameOver,
+            isGameOver = isGameOver,
+            isWinner = isWinner && isGameOver,
+            isPlacementPhase = isPlacementPhase
+
+        };
+    }
+
+    internal PlacementResult IsOutsideBoard(Ship ship)
     {
         if (ship == null) return PlacementResult.NullCoordinate;
         if (ship.StartCoordinate == null) return PlacementResult.NullCoordinate;
@@ -43,7 +85,7 @@ public class GameLogic
         return PlacementResult.Success;
     }
 
-    public PlacementResult ValidateFleetComposition(List<Ship> ships)
+    internal PlacementResult ValidateFleetComposition(List<Ship> ships)
     {
         if (ships == null) return PlacementResult.NullFleet;
         if (ships.Count != 5) return PlacementResult.InvalidFleetSize;
@@ -62,12 +104,12 @@ public class GameLogic
         return PlacementResult.Success;
     }
 
-    public int GetIndex(int x, int y)
+    internal int GetIndex(int x, int y)
     {
         return (y * BoardSize) + x;
     }
 
-    public PlacementResult ValidateShipPlacement(List<Ship> ships)
+    internal PlacementResult ValidateShipPlacement(List<Ship> ships)
     {
         bool[] isOccupied = new bool[BoardSize * BoardSize];
         PlacementResult fleetResult = this.ValidateFleetComposition(ships);
@@ -93,7 +135,7 @@ public class GameLogic
         return PlacementResult.Success;
     }
 
-    public PlacementResult ProcessShipPlacement(int playerNumber, List<Ship> ships)
+    internal PlacementResult ProcessShipPlacement(int playerNumber, List<Ship> ships)
     {
         if (playerNumber is not (1 or 2)) return PlacementResult.InvalidPlayerNumber;
         List<Ship> targetShips = playerNumber is 1 ? this.PlacedShips1 : this.PlacedShips2;
@@ -103,7 +145,7 @@ public class GameLogic
         return result;
     }
 
-    public ActionExecutionResult ProcessAction(int playerNumber, Coordinate coordinate)
+    internal ActionExecutionResult ProcessAction(int playerNumber, Coordinate coordinate)
     {
         /*
          * Check if the shot hits any of the opponent's ships
@@ -146,7 +188,7 @@ public class GameLogic
 
     }
 
-    private ActionStatus ValidateAction(int playerNumber, Coordinate coordinate)
+    internal ActionStatus ValidateAction(int playerNumber, Coordinate coordinate)
     {
         /* 
          * Check if both players have placed their ships before allowing shots to be processed.
@@ -167,7 +209,7 @@ public class GameLogic
         return ActionStatus.Success;
     }
 
-    private bool ShipOccupiesCoordinate(Ship ship, Coordinate coordinate)
+    internal bool ShipOccupiesCoordinate(Ship ship, Coordinate coordinate)
     {
         if (ship == null || coordinate == null) return false;
         int size = ship.Size;
@@ -184,7 +226,7 @@ public class GameLogic
         return false;
     }
 
-    private bool IsShipSunk(Ship ship, List<ShotRecord> shotsFired)
+    internal bool IsShipSunk(Ship ship, List<ShotRecord> shotsFired)
     {
         if (ship == null || shotsFired == null) return false;
         int size = ship.Size;
@@ -201,7 +243,7 @@ public class GameLogic
         return true;
     }
 
-    private bool CheckWinCondition(List<Ship> opponentShips, List<ShotRecord> shotsFired)
+    internal bool CheckWinCondition(List<Ship> opponentShips, List<ShotRecord> shotsFired)
     {
         if (opponentShips == null || shotsFired == null) return false;
         foreach (var ship in opponentShips)
@@ -211,46 +253,8 @@ public class GameLogic
         return true;
     }
 
-    public PlayerState GetPlayerState(int playerNumber)
-    {
-        List<Ship> yourShips = playerNumber is 1 ? this.PlacedShips1 : this.PlacedShips2;
-        List<Ship> sunkShips = playerNumber is 1 ? this.SunkShips2 : this.SunkShips1;
-        List<ShotRecord> shotsFired = playerNumber == 1 ? this.ShotsFired1 : this.ShotsFired2;
-        bool isYourTurn = playerNumber == 1 ? this.IsPlayer1Turn : !this.IsPlayer1Turn;
-        bool isGameOver = this.IsGameOver;
-        bool isWinner = playerNumber == 1 ? this.IsPlayer1Winner : !this.IsPlayer1Winner;
-        bool isPlacementPhase = yourShips.Count < 5;
 
-        return new PlayerState
-        {
-            GridSize = BoardSize,
-            Ships = yourShips,
-            SunkShips = sunkShips,
-            ShotsFired = shotsFired,
-            isYourTurn = isYourTurn && !isGameOver,
-            isGameOver = isGameOver,
-            isWinner = isWinner && isGameOver,
-            isPlacementPhase = isPlacementPhase
 
-        };
-    }
 
-    public ActionStatus ProcessPlayerAction(int playerNumber, PlayerAction? action)
-    {
-        if (action == null) return ActionStatus.InvalidAction;
-        if (action.PlaceShips != null && action.PlaceShips.Count > 0)
-        {
-            PlacementResult pr = this.ProcessShipPlacement(playerNumber, action.PlaceShips);
-            return pr == PlacementResult.Success ? ActionStatus.Success : ActionStatus.InvalidPlacement;
-        }
-
-        if (action.ShootAt != null)
-        {
-            ActionExecutionResult result = this.ProcessAction(playerNumber, action.ShootAt);
-            return result.Status;
-        }
-
-        return ActionStatus.InvalidAction;
-    }
 
 }
