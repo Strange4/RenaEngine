@@ -1,6 +1,6 @@
 ﻿using BattleshipServer.Game.Models;
 
-namespace BattleshipServer.Logic;
+namespace BattleshipServer.Game.Logic;
 
 public class GameLogic
 {
