@@ -7,9 +7,9 @@ using static LanguageExt.Prelude;
 
 namespace DockerOrchestrator;
 
-class Orchestrator(DockerClient dockerClient)
+public class Orchestrator(IDockerClient dockerClient)
 {
-    readonly DockerClient _client = dockerClient;
+    readonly IDockerClient _client = dockerClient;
 
     async Task<Option<ContainerListResponse>> FindContainerById(string id, bool isRunning = true)
     {
@@ -64,7 +64,8 @@ class Orchestrator(DockerClient dockerClient)
 
     public async Task<IList<ContainerListResponse>> GetStoppedContainers()
     {
-        return await _client.Containers.ListContainersAsync(new ContainersListParameters() { All = true });
+        var containers = await _client.Containers.ListContainersAsync(new ContainersListParameters() { All = true });
+        return [.. containers.Where(c => c.State != "running")];
     }
 
     public async Task<IList<ContainerListResponse>> GetRunningContainers()
