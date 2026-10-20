@@ -156,4 +156,151 @@ public class OrchestratorTests
             None: () => Assert.Fail("Image should have been found by name.")
         );
     }
+
+    [Test]
+    public async Task StartContainer_WhenContainerDoesNotExist_ReturnsFalse()
+    {
+        _containerOperationsMock
+            .Setup(c => c.ListContainersAsync(It.IsAny<ContainersListParameters>(), default))
+            .ReturnsAsync(new List<ContainerListResponse>());
+
+        bool result = await _orchestrator.StartContainer("non-existent");
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task StartContainer_WhenDockerApiException_ReturnsFalse()
+    {
+        _containerOperationsMock
+            .Setup(c => c.ListContainersAsync(It.IsAny<ContainersListParameters>(), default))
+            .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.BadRequest, "Bad Request"));
+
+        bool result = await _orchestrator.StartContainer("c-1");
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task StartContainer_WhenGenericException_ReturnsFalse()
+    {
+        var containers = new List<ContainerListResponse> { new() { ID = "c-1", State = "exited" } };
+        _containerOperationsMock
+            .Setup(c => c.ListContainersAsync(It.IsAny<ContainersListParameters>(), default))
+            .ReturnsAsync(containers);
+        _containerOperationsMock
+            .Setup(c => c.StartContainerAsync("c-1", It.IsAny<ContainerStartParameters>(), default))
+            .ThrowsAsync(new Exception("Unexpected"));
+
+        bool result = await _orchestrator.StartContainer("c-1");
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task StopContainer_WhenContainerDoesNotExist_ReturnsFalse()
+    {
+        _containerOperationsMock
+            .Setup(c => c.ListContainersAsync(It.IsAny<ContainersListParameters>(), default))
+            .ReturnsAsync(new List<ContainerListResponse>());
+
+        bool result = await _orchestrator.StopContainer("non-existent");
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task StopContainer_WhenDockerApiException_ReturnsFalse()
+    {
+        var containers = new List<ContainerListResponse> { new() { ID = "c-1", State = "running" } };
+        _containerOperationsMock
+            .Setup(c => c.ListContainersAsync(It.IsAny<ContainersListParameters>(), default))
+            .ReturnsAsync(containers);
+        _containerOperationsMock
+            .Setup(c => c.StopContainerAsync("c-1", It.IsAny<ContainerStopParameters>(), default))
+            .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.InternalServerError, "Error"));
+
+        bool result = await _orchestrator.StopContainer("c-1");
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task GetAllImages_WhenDockerApiException_ReturnsEmptyList()
+    {
+        _imagesOperationsMock
+            .Setup(i => i.ListImagesAsync(It.IsAny<ImagesListParameters>(), default))
+            .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.InternalServerError, "Error"));
+
+        var result = await _orchestrator.GetAllImages();
+        Assert.That(result, Is.Empty);
+    }
+
+    [Test]
+    public async Task FindImageById_AllBranches_ExactMatch_ContainsMatch_AndNotFound()
+    {
+        var images = new List<ImagesListResponse>
+        {
+            new() { ID = "sha256:1234567890" }
+        };
+
+        _imagesOperationsMock
+            .Setup(i => i.ListImagesAsync(It.IsAny<ImagesListParameters>(), default))
+            .ReturnsAsync(images);
+
+        // Branch 1: Exact match (_.ID == id)
+        var exactMatch = await _orchestrator.GetImageById("sha256:1234567890");
+        Assert.That(exactMatch.IsSome, Is.True);
+
+        // Branch 2: Substring/Contains match (_.ID.Contains(id))
+        var containsMatch = await _orchestrator.GetImageById("123456");
+        Assert.That(containsMatch.IsSome, Is.True);
+
+        // Branch 3: Not found (None)
+        var notFound = await _orchestrator.GetImageById("non-matching-id");
+        Assert.That(notFound.IsNone, Is.True);
+    }
+
+    [Test]
+    public async Task CreateContainer_WhenDockerApiException_ReturnsNone()
+    {
+        _containerOperationsMock
+            .Setup(c => c.CreateContainerAsync(It.IsAny<CreateContainerParameters>(), default))
+            .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.BadRequest, "Bad Request"));
+
+        var result = await _orchestrator.CreateContainer("img-id", "name");
+        Assert.That(result.IsNone, Is.True);
+    }
+
+    [Test]
+    public async Task CreateContainer_WhenGenericException_ReturnsNone()
+    {
+        _containerOperationsMock
+            .Setup(c => c.CreateContainerAsync(It.IsAny<CreateContainerParameters>(), default))
+            .ThrowsAsync(new Exception("Unexpected"));
+
+        var result = await _orchestrator.CreateContainer("img-id", "name");
+        Assert.That(result.IsNone, Is.True);
+    }
+
+    [Test]
+    public async Task DeleteContainer_WhenContainerDoesNotExist_ReturnsFalse()
+    {
+        _containerOperationsMock
+            .Setup(c => c.ListContainersAsync(It.IsAny<ContainersListParameters>(), default))
+            .ReturnsAsync(new List<ContainerListResponse>());
+
+        bool result = await _orchestrator.DeleteContainer("non-existent");
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task DeleteContainer_WhenDockerApiException_ReturnsFalse()
+    {
+        var containers = new List<ContainerListResponse> { new() { ID = "c-1", State = "exited" } };
+        _containerOperationsMock
+            .Setup(c => c.ListContainersAsync(It.IsAny<ContainersListParameters>(), default))
+            .ReturnsAsync(containers);
+        _containerOperationsMock
+            .Setup(c => c.RemoveContainerAsync("c-1", It.IsAny<ContainerRemoveParameters>(), default))
+            .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.InternalServerError, "Error"));
+
+        bool result = await _orchestrator.DeleteContainer("c-1");
+        Assert.That(result, Is.False);
+    }
 }
