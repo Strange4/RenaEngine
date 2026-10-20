@@ -212,20 +212,6 @@ public class GameLogic
         return true;
     }
 
-    // Use this instead of trusting clients to send the correct ship size.
-    public static int GetShipSize(ShipName name)
-    {
-        return name switch
-        {
-            ShipName.Carrier => 5,
-            ShipName.Battleship => 4,
-            ShipName.Cruiser => 3,
-            ShipName.Submarine => 3,
-            ShipName.Destroyer => 2,
-            _ => 0
-        };
-    }
-
     public PlayerState GetPlayerState(int playerNumber)
     {
         List<ShipState> yourShips = playerNumber is 1 ? this.PlacedShips1 : this.PlacedShips2;
