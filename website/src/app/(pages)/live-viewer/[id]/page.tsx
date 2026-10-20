@@ -9,7 +9,7 @@ export default async function LiveViewerPage({ params }: { params: Promise<{ id:
         <h1>Scoreboard</h1>
         <span>Game #{id}</span>
       </header>
-      <LiveViewer />
+      <LiveViewer gameId={id} />
     </div>
   );
 }
