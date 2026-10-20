@@ -1,6 +1,6 @@
 ﻿using BattleshipServer.Game;
 
-namespace Rena.Tests.unit_tests;
+namespace BattleshipServer.Tests.unit_tests;
 
 [TestFixture]
 public class BattleshipGameTests

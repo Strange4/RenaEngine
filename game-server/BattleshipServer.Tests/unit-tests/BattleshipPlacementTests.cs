@@ -1,7 +1,7 @@
 ﻿using BattleshipServer.Game.Logic;
 using BattleshipServer.Game.Models;
 
-namespace Rena.Tests.unit_tests;
+namespace BattleshipServer.Tests.unit_tests;
 
 [TestFixture]
 public class BattleshipPlacementTests
