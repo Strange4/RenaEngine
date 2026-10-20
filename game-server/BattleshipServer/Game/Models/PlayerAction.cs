@@ -1,10 +1,28 @@
 ﻿using System.Runtime.Serialization;
 
+using ProtoBuf;
+
 namespace BattleshipServer.Game.Models;
 
 [DataContract]
-public class PlayerAction
+[ProtoContract]
+[ProtoInclude(1, typeof(PlaceShipsAction))]
+[ProtoInclude(2, typeof(ShootAction))]
+public abstract class PlayerAction;
+
+[DataContract]
+[ProtoContract]
+public class PlaceShipsAction : PlayerAction
 {
-    [DataMember(Order = 1)] public List<Ship> PlaceShips { get; init; } = new List<Ship>();
-    [DataMember(Order = 2)] public Coordinate ShootAt { get; init; } = new Coordinate();
+    [ProtoMember(1)]
+    [DataMember(Order = 1)] public List<Ship> Ships { get; init; } = [];
 }
+
+[DataContract]
+[ProtoContract]
+public class ShootAction : PlayerAction
+{
+    [ProtoMember(1, IsRequired = true)]
+    [DataMember(Order = 1)] public Coordinate ShootAt { get; init; } = new Coordinate();
+}
+

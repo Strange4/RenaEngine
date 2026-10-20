@@ -20,20 +20,14 @@ public class GameLogic
 
     public ActionStatus ProcessPlayerAction(int playerNumber, PlayerAction? action)
     {
-        if (action == null) return ActionStatus.InvalidAction;
-        if (action.PlaceShips != null && action.PlaceShips.Count > 0)
+        return action switch
         {
-            PlacementResult pr = this.ProcessShipPlacement(playerNumber, action.PlaceShips);
-            return pr == PlacementResult.Success ? ActionStatus.Success : ActionStatus.InvalidPlacement;
-        }
-
-        if (action.ShootAt != null)
-        {
-            ActionExecutionResult result = this.ProcessAction(playerNumber, action.ShootAt);
-            return result.Status;
-        }
-
-        return ActionStatus.InvalidAction;
+            PlaceShipsAction placeAction =>
+                this.ProcessShipPlacement(playerNumber, placeAction.Ships) == PlacementResult.Success ? ActionStatus.Success : ActionStatus.InvalidPlacement,
+            ShootAction shootAction =>
+                this.ProcessAction(playerNumber, shootAction.ShootAt).Status,
+            _ => ActionStatus.InvalidAction
+        };
     }
 
     public PlayerState GetPlayerState(int playerNumber)
