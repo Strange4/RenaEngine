@@ -5,29 +5,29 @@ namespace BattleshipServer.Game.Models;
 [DataContract]
 public enum ShotResult
 {
-    [EnumMember] ShotResultUnknown = 0,
-    [EnumMember] Hit = 1,
-    [EnumMember] Miss = 2,
-    [EnumMember] Sunk = 3,
+    ShotResultUnknown = 0,
+    Hit = 1,
+    Miss = 2,
+    Sunk = 3,
 }
 
 [DataContract]
 public enum ShipOrientation
 {
-    [EnumMember] ShipOrientationUnknown = 0,
-    [EnumMember] Horizontal = 1,
-    [EnumMember] Vertical = 2
+    ShipOrientationUnknown = 0,
+    Horizontal = 1,
+    Vertical = 2
 }
 
 [DataContract]
 public enum ShipName
 {
-    [EnumMember] ShipNameUnknown = 0,
-    [EnumMember] Carrier = 1,
-    [EnumMember] Battleship = 2,
-    [EnumMember] Cruiser = 3,
-    [EnumMember] Submarine = 4,
-    [EnumMember] Destroyer = 5
+    ShipNameUnknown = 0,
+    Carrier = 1,
+    Battleship = 2,
+    Cruiser = 3,
+    Submarine = 4,
+    Destroyer = 5
 }
 
 public enum PlacementResult
