@@ -149,4 +149,48 @@ public class BattleshipPlayerActionTests
         Assert.That(result.ShotResult, Is.EqualTo(ShotResult.ShotResultUnknown));
         Assert.That(result.IsWin, Is.False);
     }
+
+    [Test]
+    public void TestShip_GetShipSize_UnknownName()
+    {
+        //unknown name defaults to size 0
+        Ship ship = new Ship { Name = (ShipName)123 };
+        Assert.That(ship.Size, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void TestShip_IsOutsideBoard_UnknownOrientation()
+    {
+        Ship ship = new Ship
+        {
+            Name = ShipName.Carrier,
+            StartCoordinate = new Coordinate { X = 0, Y = 0 },
+            Orientation = ShipOrientation.ShipOrientationUnknown
+        };
+        Assert.That(ship.IsOutsideBoard(10), Is.True);
+    }
+
+    [Test]
+    public void TestShip_IsOutsideBoard_ZeroSize()
+    {
+        Ship ship = new Ship
+        {
+            Name = (ShipName)123, //unknown name defaults to size 0
+            StartCoordinate = new Coordinate { X = 0, Y = 0 },
+            Orientation = ShipOrientation.Horizontal
+        };
+        Assert.That(ship.IsOutsideBoard(10), Is.True);
+    }
+
+    [Test]
+    public void TestShip_IsOutsideBoard_VerticalOutOfBounds()
+    {
+        Ship ship = new Ship
+        {
+            Name = ShipName.Carrier,
+            StartCoordinate = new Coordinate { X = 10, Y = 0 },
+            Orientation = ShipOrientation.Vertical
+        };
+        Assert.That(ship.IsOutsideBoard(10), Is.True);
+    }
 }
