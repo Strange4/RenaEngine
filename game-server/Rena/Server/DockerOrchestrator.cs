@@ -3,11 +3,13 @@ using Docker.DotNet.Models;
 
 using LanguageExt;
 
+using Microsoft.Extensions.Logging;
+
 using static LanguageExt.Prelude;
 
 namespace Rena.Server;
 
-public class Orchestrator(IDockerClient dockerClient)
+public class Orchestrator(IDockerClient dockerClient, ILogger logger)
 {
     readonly IDockerClient _client = dockerClient;
 
@@ -30,12 +32,12 @@ public class Orchestrator(IDockerClient dockerClient)
         {
             Option<ContainerListResponse> container = await this.FindContainerById(id, false);
             return await container.Match(
-                Some: async c => await this._client.Containers.StartContainerAsync(id, parameters.IfNone(new ContainerStartParameters())),
+                Some: async _ => await this._client.Containers.StartContainerAsync(id, parameters.IfNone(new ContainerStartParameters())),
                 None: () => Task.FromResult(false));
         }
         catch (DockerApiException ex)
         {
-            Console.WriteLine($"[Docker API Error] Status: {ex.StatusCode} | Message: {ex.Message} | Body: {ex.ResponseBody}");
+            logger.LogError(ex, "Failed to start container {Id}", id);
             return false;
         }
         catch (Exception ex)
@@ -51,13 +53,13 @@ public class Orchestrator(IDockerClient dockerClient)
         {
             Option<ContainerListResponse> container = await this.FindContainerById(id);
             return await container.Match(
-                Some: async c => await this._client.Containers.StopContainerAsync(id, new ContainerStopParameters()),
+                Some: async _ => await this._client.Containers.StopContainerAsync(id, new ContainerStopParameters()),
                 None: () => Task.FromResult(false)
             );
         }
         catch (DockerApiException ex)
         {
-            Console.WriteLine($"[Docker API Error] Status: {ex.StatusCode} | Message: {ex.Message} | Body: {ex.ResponseBody}");
+            logger.LogError(ex, "Failed to stop container {Id}", id);
             return false;
         }
     }
@@ -93,7 +95,7 @@ public class Orchestrator(IDockerClient dockerClient)
         try { return Optional(await this._client.Images.ListImagesAsync(parameters.IfNone(new ImagesListParameters()))).IfNone([]); }
         catch (DockerApiException ex)
         {
-            Console.WriteLine($"[Docker API Error] Status: {ex.StatusCode} | Message: {ex.Message} | Body: {ex.ResponseBody}");
+            logger.LogError(ex, "Failed to list images with parameters: {Parameters}", parameters);
             return [];
         }
     }
@@ -140,12 +142,12 @@ public class Orchestrator(IDockerClient dockerClient)
         }
         catch (DockerApiException ex)
         {
-            Console.WriteLine($"[Docker API Error] Status: {ex.StatusCode} | Message: {ex.Message} | Body: {ex.ResponseBody}");
+            logger.LogError(ex, "[Docker API Error] Status: {StatusCode} | Message: {Message}", ex.StatusCode, ex.Message);
             return Option<CreateContainerResponse>.None;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Unexpected Error] {ex.Message}");
+            logger.LogError(ex, "[Unexpected Error] {Message}", ex.Message);
             return Option<CreateContainerResponse>.None;
         }
     }
@@ -156,7 +158,7 @@ public class Orchestrator(IDockerClient dockerClient)
         {
             Option<ContainerListResponse> container = await this.FindContainerById(id, false);
             return await container.Match(
-                Some: async c =>
+                Some: async _ =>
                 {
                     await this._client.Containers.RemoveContainerAsync(id, parameters.IfNone(new ContainerRemoveParameters()));
                     return true;
@@ -166,7 +168,7 @@ public class Orchestrator(IDockerClient dockerClient)
         }
         catch (DockerApiException ex)
         {
-            Console.WriteLine($"[Docker API Error] Status: {ex.StatusCode} | Message: {ex.Message} | Body: {ex.ResponseBody}");
+            logger.LogError(ex, "Failed to delete container {Id}", id);
             return false;
         }
     }
