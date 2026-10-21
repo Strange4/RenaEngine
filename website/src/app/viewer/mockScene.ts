@@ -35,6 +35,8 @@ function tiles(
   return result;
 }
 
+// Layers only order renderables of the same type: water (1) goes over grass (0),
+// but the cloud decoration (0) still goes over the ships (1) since decorations are drawn last
 const MAP: GameRenderable[] = [
   ...tiles("grass", "/sprites/grass.png", 0, [0, 0], MOCK_GRID_SIZE),
   ...tiles("water", "/sprites/water.svg", 1, [11, 2], [8, 6]),
