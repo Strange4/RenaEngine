@@ -25,7 +25,7 @@ export interface GameRenderable{
     assetPath:string; 
     size:[number, number]; //how big the object is tile-wise [width, height]
     type:RenderableType; 
-    layer:number; //zIndex for the Z Algorithm drawing the layers (graphics)
+    layer:number; //zIndex within its type's container only: the type decides the draw order (MAP < OBJECT < DECORATION), so a DECORATION always draws above an OBJECT whatever their layers
     removed?: boolean; //optional, might need this for games like Battleship where elements get removed
 }
 
