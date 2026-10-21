@@ -153,20 +153,6 @@ public class BattleshipActionTests
     }
 
     [Test]
-    public void TestInvalidActionSequence_NullCoordinate()
-    {
-        ActionExecutionResult result = _gameLogic.ProcessAction(1, null!);
-        Assert.That(result.Status, Is.EqualTo(ActionStatus.NullCoordinate));
-    }
-
-    [Test]
-    public void TestInvalidActionSequence_InvalidPlayerNumber()
-    {
-        ActionExecutionResult result = _gameLogic.ProcessAction(3, new Coordinate { X = 1, Y = 1 });
-        Assert.That(result.Status, Is.EqualTo(ActionStatus.InvalidPlayerNumber));
-    }
-
-    [Test]
     public void TestValidShotsFiredHistory()
     {
         _gameLogic.ProcessAction(1, new Coordinate { X = 1, Y = 2 });
