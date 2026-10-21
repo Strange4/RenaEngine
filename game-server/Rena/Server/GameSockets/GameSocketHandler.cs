@@ -1,3 +1,5 @@
+using System.Net.WebSockets;
+
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Http.Connections;
 
@@ -22,13 +24,7 @@ where A : class
             return;
         }
 
-        var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-
-        if (webSocket is null)
-        {
-            Console.WriteLine("Couldn't accept websocket request");
-            return;
-        }
+        WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
 
         var playerId = context.Request.Query["playerId"].ToString();
 
