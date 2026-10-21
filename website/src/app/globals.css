@@ -39,6 +39,72 @@ button {
   color: #34d399;
 }
 
+.access-denied-page {
+  box-sizing: border-box;
+  display: grid;
+  min-height: 100dvh;
+  max-width: none;
+  margin: 0;
+  padding: 2rem 1rem;
+  place-items: center;
+}
+
+.access-denied-card {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 30rem;
+  padding: 2rem;
+  border: 1px solid #374151;
+  border-radius: 12px;
+  background: #1f2937;
+  text-align: center;
+}
+
+.access-denied-card h1 {
+  margin: 0 0 0.75rem;
+}
+
+.access-denied-icon {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin: 0 auto 1.25rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #7f1d1d;
+  color: #fecaca;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.access-denied-code {
+  margin: 0 0 0.5rem;
+  color: #fca5a5;
+}
+
+.access-denied-message {
+  margin: 0 0 1.5rem;
+  color: #d1d5db;
+  line-height: 1.6;
+}
+
+.access-denied-back {
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-radius: 6px;
+  background: #dc2626;
+  color: #fff;
+  font-weight: 600;
+}
+
+.access-denied-home {
+  display: inline-block;
+  padding: 0.5rem;
+  color: #d1d5db;
+  text-underline-offset: 3px;
+}
+
 .live-viewer {
   display: flex;
   flex-direction: column;
