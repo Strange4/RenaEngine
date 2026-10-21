@@ -78,6 +78,7 @@ public class GameSocketConnectionTests
         Assert.That(serverResponse, Is.EqualTo($"Echo: {testMessage}\n"));
     }
 
+    [Test]
     public async Task HandleConnection_ClosesConnection_OnWebSocketClose()
     {
         var playerId = "player-who-is-done";
@@ -89,18 +90,23 @@ public class GameSocketConnectionTests
             _mockWebSocket,
             playerId
         );
-
-        var testMessage = "Hello Game Server";
-
-        await _clientToServerPipe.Writer.WriteAsync(Encoding.UTF8.GetBytes(testMessage));
+        
         await _clientToServerPipe.Writer.CompleteAsync();
 
         await socketConnection.HandleConnection();
 
-        var readResult = await _serverToClientPipe.Reader.ReadAsync();
+        await _mockWebSocket.Received(1).CloseAsync(
+        WebSocketCloseStatus.NormalClosure,
+        "Closing Normally",
+        Arg.Any<CancellationToken>()
+        );
+
+        ReadResult readResult;
+        var successfulRead = _serverToClientPipe.Reader.TryRead(out readResult);
         var outputBuffer = readResult.Buffer;
         string serverResponse = Encoding.UTF8.GetString(outputBuffer);
 
+        Assert.That(successfulRead, Is.False);
         Assert.That(serverResponse, Is.EqualTo(""));
 
     }
