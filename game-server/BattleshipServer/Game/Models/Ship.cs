@@ -42,4 +42,18 @@ public class Ship
         }
         return true;
     }
+
+    public bool IsShipSunk(List<ShotRecord> shotsFired)
+    {
+        bool isHorizontal = this.Orientation == ShipOrientation.Horizontal;
+        for (int i = 0; i < this.Size; i++)
+        {
+            int x = isHorizontal ? this.StartCoordinate.X + i : this.StartCoordinate.X;
+            int y = isHorizontal ? this.StartCoordinate.Y : this.StartCoordinate.Y + i;
+            if (!shotsFired.Any(s => s.Coordinate.X == x && s.Coordinate.Y == y)) return false;
+        }
+        return true;
+    }
+
+
 }

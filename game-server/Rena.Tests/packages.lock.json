@@ -454,12 +454,6 @@
         "resolved": "10.0.13",
         "contentHash": "DkNjtQyPR5Ud/zHnWHdsOuKbFRL9nIC92Q76z0NmHVDoQm40toLtsGFTIWq7toBoVa6fo/DInL3PLxY3Asixyw=="
       },
-      "battleshipserver": {
-        "type": "Project",
-        "dependencies": {
-          "Rena": "[1.0.0, )"
-        }
-      },
       "rena": {
         "type": "Project",
         "dependencies": {
