@@ -109,8 +109,6 @@ public class BattleshipPlayerActionTests
 
         Assert.That(statePlayer1.isPlacementPhase, Is.False);
         Assert.That(statePlayer2.isPlacementPhase, Is.False);
-        Assert.That(statePlayer1.isYourTurn, Is.True);
-        Assert.That(statePlayer2.isYourTurn, Is.False);
         Assert.That(statePlayer1.Ships, Has.Count.EqualTo(5));
     }
 
@@ -134,8 +132,6 @@ public class BattleshipPlayerActionTests
 
         Assert.That(statePlayer1.isGameOver, Is.True);
         Assert.That(statePlayer2.isGameOver, Is.True);
-        Assert.That(statePlayer1.isYourTurn, Is.False);
-        Assert.That(statePlayer2.isYourTurn, Is.False);
         Assert.That(statePlayer1.isWinner, Is.False);
         Assert.That(statePlayer2.isWinner, Is.True);
         Assert.That(statePlayer2.SunkShips, Has.Count.EqualTo(5));

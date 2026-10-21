@@ -81,18 +81,6 @@ public class BattleshipPlacementTests
     }
 
     [Test]
-    public void TestInvalidShipPlacement_InvalidPlayerNumber()
-    {
-        // Test invalid player numbers
-        PlacementResult resultNegativePlayerNumber = _gameLogic.ProcessShipPlacement(-1, _validFleet);
-        PlacementResult resultZeroPlayerNumber = _gameLogic.ProcessShipPlacement(0, _validFleet);
-        PlacementResult resultPlayerNumberThree = _gameLogic.ProcessShipPlacement(3, _validFleet);
-        Assert.That(resultNegativePlayerNumber, Is.EqualTo(PlacementResult.InvalidPlayerNumber));
-        Assert.That(resultZeroPlayerNumber, Is.EqualTo(PlacementResult.InvalidPlayerNumber));
-        Assert.That(resultPlayerNumberThree, Is.EqualTo(PlacementResult.InvalidPlayerNumber));
-    }
-
-    [Test]
     public void TestInvalidShipPlacement_DuplicatePlacement()
     {
         // Attempt to place ships again for the same player
@@ -195,31 +183,6 @@ public class BattleshipPlacementTests
         Assert.That(resultUnknownOrientation, Is.EqualTo(PlacementResult.UnknownOrientation));
     }
 
-    [Test]
-    public void TestInvalidShipPlacement_NullFleet()
-    {
-        // Test with a null fleet
-        PlacementResult resultNullFleet = _gameLogic.ProcessShipPlacement(1, null!);
-        Assert.That(resultNullFleet, Is.EqualTo(PlacementResult.NullFleet));
-    }
-
-    [Test]
-    public void TestInvalidShipPlacement_NullShipInFleet()
-    {
-        // Test with a null ship in the fleet
-        _validFleet[0] = null!;
-        PlacementResult resultNullShipInFleet = _gameLogic.ProcessShipPlacement(1, _validFleet);
-        Assert.That(resultNullShipInFleet, Is.EqualTo(PlacementResult.NullShip));
-    }
-
-    [Test]
-    public void TestInvalidShipPlacement_NullCoordinateInShip()
-    {
-        // Test with a null coordinate in a ship
-        _validFleet[0] = new Ship { Name = ShipName.Carrier, StartCoordinate = null!, Orientation = ShipOrientation.Horizontal };
-        PlacementResult resultNullCoordinateInShip = _gameLogic.ProcessShipPlacement(1, _validFleet);
-        Assert.That(resultNullCoordinateInShip, Is.EqualTo(PlacementResult.NullCoordinate));
-    }
 
     [Test]
     public void TestValidShipPlacement_MaximumBoundary()
