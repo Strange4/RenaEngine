@@ -22,11 +22,11 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
     const app = new Application();
     const assets = new AssetLoader();
     let initialized = false;
-    let unmounted = false;
+    const unmount = new AbortController();
 
     (async () => {
       const { setup, renderables } = await getSceneSource(gameId).getInitialScene();
-      if (unmounted) return;
+      if (unmount.signal.aborted) return;
 
       setResolution(setup.resolution);
       const renderer = new LiveViewRenderer(assets, setup);
@@ -41,16 +41,14 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
 
       // init is async: if we unmounted while it was running, the cleanup
       // below already ran without a renderer to destroy, so destroy here instead.
-      if (unmounted) {
+      if (unmount.signal.aborted) {
         app.destroy(true, { children: true });
         return;
       }
 
       container.appendChild(app.canvas);
       renderer.addContainerToStage(app.stage);
-      await renderer.renderScene(renderables);
-
-      if (unmounted) return;
+      await renderer.renderScene(renderables, unmount.signal);
     })().catch(e => {
       console.log(e);
       // TODO put actual error handling here
@@ -58,7 +56,7 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
     });
 
     return () => {
-      unmounted = true;
+      unmount.abort();
       if (initialized) app.destroy(true, { children: true });
     };
   }, [gameId]);
