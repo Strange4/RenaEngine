@@ -306,6 +306,39 @@ describe("LiveViewer", () => {
     expect(app.stage.addChild).not.toHaveBeenCalled();
   });
 
+  it("does not create sprites if unmounted while assets are loading", async () => {
+    let resolveAssets!: () => void;
+
+    (AssetLoader as jest.Mock).mockImplementationOnce(() => ({
+      loadFor: jest.fn(
+        () => new Promise<void>((resolve) => {
+          resolveAssets = resolve;
+        }),
+      ),
+      getTexture: jest.fn().mockReturnValue("mock-texture"),
+    }));
+
+    const { unmount } = render(<LiveViewer gameId="1" />);
+
+    const { __appInstances } = getPixiMocks();
+    const app = __appInstances[0];
+
+    await waitFor(() => {
+      expect(app.stage.addChild).toHaveBeenCalledTimes(3);
+    });
+
+    unmount();
+
+    await act(async () => {
+      resolveAssets();
+    });
+
+    expect(app.destroy).toHaveBeenCalledWith(true, {
+      children: true,
+    });
+    expect(Sprite).not.toHaveBeenCalled();
+  });
+
   it("logs an error when PixiJS initialization fails", async () => {
     const error = new Error("Pixi initialization failed");
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
