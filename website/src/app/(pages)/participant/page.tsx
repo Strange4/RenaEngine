@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import { getSession } from "@/server/lib/session";
@@ -11,6 +12,9 @@ export default async function ParticipantPage() {
   return (
     <main>
       <h1>Participant #{session.participantId}</h1>
+      <p>
+        <Link href="/test-feature">Open test feature</Link>
+      </p>
       <LogoutButton />
     </main>
   );

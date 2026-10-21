@@ -56,14 +56,26 @@ describe("proxy", () => {
 });
 
 describe("proxy matcher", () => {
-  it.each(["/admin", "/admin/settings", "/participant", "/participant/code"])(
+  it.each([
+    "/admin",
+    "/admin/settings",
+    "/participant",
+    "/participant/code",
+  ])(
     "runs on %s",
     (url) => {
       expect(unstable_doesMiddlewareMatch({ config, url })).toBe(true);
     },
   );
 
-  it.each(["/", "/login", "/access-denied", "/api/auth/me", "/administrator"])(
+  it.each([
+    "/",
+    "/login",
+    "/access-denied",
+    "/api/auth/me",
+    "/administrator",
+    "/test-feature",
+  ])(
     "does not run on %s",
     (url) => {
       expect(unstable_doesMiddlewareMatch({ config, url })).toBe(false);

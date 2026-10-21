@@ -24,6 +24,7 @@ internal static class RenaServerSetup
         builder.WebHost.UseUrls($"http://*:{renaOptions.ServerPort}");
 
         builder.Services.AddSingleton<RenaServerHandlers<G, S, A>>();
+        builder.Services.AddSingleton<CompetitionSettingsState>();
 
         builder.Services.AddOptions<RenaOptions>()
             .BindConfiguration(RenaOptions.SectionName)
@@ -39,5 +40,11 @@ internal static class RenaServerSetup
         app.MapGet("/", () => "Hello World!");
         app.MapGet("/name", RenaServerHandlers<G, S, A>.GetGameName);
         app.MapGet("/downloads/{languageName}", RenaServerHandlers<G, S, A>.HandleDownloads);
+        app.MapGet(
+            "/settings/features/{featureKey}",
+            RenaServerHandlers<G, S, A>.GetFeatureSetting);
+        app.MapPut(
+            "/settings/features/{featureKey}",
+            RenaServerHandlers<G, S, A>.UpdateFeatureSetting);
     }
 }
