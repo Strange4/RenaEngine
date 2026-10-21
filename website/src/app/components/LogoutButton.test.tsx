@@ -33,4 +33,17 @@ describe("LogoutButton", () => {
     expect(mockClear).toHaveBeenCalled();
     expect(mockRefresh).toHaveBeenCalled();
   });
+
+  it("shows a signing-out screen and disables the button while logging out", async () => {
+    mockFetch.mockReturnValue(new Promise(() => {}));
+    render(<LogoutButton />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Log Out" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Signing you out…",
+    );
+    expect(screen.getByRole("button", { name: "Log Out" })).toBeDisabled();
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
 });

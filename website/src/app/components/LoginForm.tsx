@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { buildToken } from "@/shared/credentials";
 import { homePathFor, isAdmin, parseToken } from "@/shared/token";
 import { useAuth } from "./AuthProvider";
+import LoadingScreen from "./LoadingScreen";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   const token = buildToken(id, password);
   const parsed = token ? parseToken(token) : null;
@@ -41,10 +43,13 @@ export default function LoginForm() {
       setLoading(false);
       return;
     }
+    setRedirecting(true);
     await refresh();
     router.replace(homePathFor(parsed));
     router.refresh();
   }
+
+  if (redirecting) return <LoadingScreen message="Signing you in…" />;
 
   return (
     <form onSubmit={onSubmit}>
