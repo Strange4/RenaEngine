@@ -108,6 +108,31 @@ describe("LoginForm", () => {
     );
   });
 
+  it("shows a signing-in screen after a successful login until the redirect", async () => {
+    mockAuthRefresh.mockReturnValue(new Promise(() => {}));
+    render(<LoginForm />);
+
+    fillAndSubmit("42", "secret");
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Signing you in…",
+    );
+    expect(screen.queryByLabelText("ID")).not.toBeInTheDocument();
+  });
+
+  it("does not show the loading screen when login is rejected", async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      json: async () => ({ error: "Wrong credentials" }),
+    });
+    render(<LoginForm />);
+
+    fillAndSubmit("42", "wrong");
+
+    expect(await screen.findByText("Wrong credentials")).toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
   it("shows the detected role while typing", () => {
     render(<LoginForm />);
 
