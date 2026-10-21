@@ -1,18 +1,32 @@
-
 services:
   game-server:
     build:
       context: ./game-server
       dockerfile: ./docker/game-server.Dockerfile
-      # make .env variables available during build
       args:
-        - RenaOptions__TSProtoPath=${RenaOptions__TSProtoPath}
-        - RenaOptions__GenerationDirectory=${RenaOptions__GenerationDirectory}
-    # make .env available inside running container
-    env_file:
-      - path: ./.env
+        RenaOptions__TSProtoPath: ${RenaOptions__TSProtoPath:-/sdk-tools/node_modules/ts-proto/protoc-gen-ts_proto}
+        RenaOptions__GenerationDirectory: /sdks
+    environment:
+      RenaOptions__TSProtoPath: ${RenaOptions__TSProtoPath:-/unused}
+      RenaOptions__GenerationDirectory: /sdks
+      RenaOptions__ServerPort: 3000
+      RenaOptions__AdminToken: ${ADMIN_TOKEN:-ADMIN-change-me}
+      RenaOptions__Features__test-feature: ${TEST_FEATURE_ENABLED:-false}
     ports:
-      - "${GAME_SERVER_CONTAINER_PORT}:${RenaOptions__ServerPort}"
+      - "${GAME_SERVER_CONTAINER_PORT:-5001}:3000"
+    networks:
+      - game-server-network
+
+  website:
+    build:
+      context: ./website
+    environment:
+      GAME_SERVER_URL: http://game-server:3000
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-ADMIN-change-me}
+    depends_on:
+      - game-server
+    ports:
+      - "${WEBSITE_CONTAINER_PORT:-3000}:3000"
     networks:
       - game-server-network
 
