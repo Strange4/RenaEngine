@@ -1,4 +1,5 @@
 using BattleshipServer.Game;
+using BattleshipServer.Game.Models;
 
 using Rena.Server;
 
