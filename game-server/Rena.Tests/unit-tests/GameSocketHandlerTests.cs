@@ -4,7 +4,6 @@ using System.Net.WebSockets;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Connections;
-using Microsoft.AspNetCore.Http.Connections.Features;
 
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -18,7 +17,7 @@ public class GameSocketHandlerTests
 {
     private Pipe _clientToServerPipe;
     private Pipe _serverToClientPipe;
-    private DefaultConnectionContext _connectionContext;
+    private ConnectionContext _mockConnectionContext;
     private GameSocketHandler<MockGame, MockState, MockAction> _handler;
 
     [SetUp]
@@ -27,11 +26,9 @@ public class GameSocketHandlerTests
         _clientToServerPipe = new Pipe();
         _serverToClientPipe = new Pipe();
 
-        _connectionContext = new DefaultConnectionContext
-        {
-            ConnectionId = "test-connection-id",
-            Transport = new TestDuplexPipe(_clientToServerPipe.Reader, _serverToClientPipe.Writer),
-        };
+        _mockConnectionContext = Substitute.For<ConnectionContext>();
+        _mockConnectionContext.ConnectionId.Returns("test-connection-id");
+        _mockConnectionContext.Transport.Returns(new TestDuplexPipe(_clientToServerPipe.Reader, _serverToClientPipe.Writer));
 
         _handler = new GameSocketHandler<MockGame, MockState, MockAction>();
     }
@@ -39,7 +36,7 @@ public class GameSocketHandlerTests
     [TearDown]
     public async Task AfterEach()
     {
-        await _connectionContext.DisposeAsync();
+        await _mockConnectionContext.DisposeAsync();
     }
 
     [Test]
@@ -62,17 +59,13 @@ public class GameSocketHandlerTests
         mockWebSocketManager.AcceptWebSocketAsync().Returns(Task.FromResult(mockWebSocket));
         mockHttpContext.WebSockets.Returns(mockWebSocketManager);
 
-
-        var mockHttpContextFeature = Substitute.For<IHttpContextFeature>();
-        mockHttpContextFeature.HttpContext.Returns(mockHttpContext);
-        _connectionContext.Features.Set(mockHttpContextFeature);
-
+        _mockConnectionContext.GetHttpContext().Returns(mockHttpContext);
 
         mockWebSocket.State.Returns(WebSocketState.Open);
 
         await _clientToServerPipe.Writer.CompleteAsync();
 
-        await _handler.OnConnectedAsync(_connectionContext);
+        await _handler.OnConnectedAsync(_mockConnectionContext);
 
         await mockWebSocketManager.Received(1).AcceptWebSocketAsync();
     }
@@ -85,12 +78,9 @@ public class GameSocketHandlerTests
         mockWebSocketManager.IsWebSocketRequest.Returns(false);
         mockHttpContext.WebSockets.Returns(mockWebSocketManager);
 
-        var mockHttpContextFeature = Substitute.For<IHttpContextFeature>();
-        mockHttpContextFeature.HttpContext.Returns(mockHttpContext);
-        _connectionContext.Features.Set(mockHttpContextFeature);
+        _mockConnectionContext.GetHttpContext().Returns(mockHttpContext);
 
-
-        await _handler.OnConnectedAsync(_connectionContext);
+        await _handler.OnConnectedAsync(_mockConnectionContext);
 
         await mockWebSocketManager.DidNotReceive().AcceptWebSocketAsync();
     }
@@ -98,9 +88,6 @@ public class GameSocketHandlerTests
     [Test]
     public async Task OnConnectedAsync_UnexpectedError_AbortsConnection()
     {
-        var mockConnection = Substitute.For<ConnectionContext>();
-        mockConnection.ConnectionId.Returns("Mock Connection");
-
         var mockHttpContext = Substitute.For<HttpContext>();
         var mockWebSocketManager = Substitute.For<WebSocketManager>();
         mockWebSocketManager.IsWebSocketRequest.Returns(true);
@@ -112,10 +99,10 @@ public class GameSocketHandlerTests
 
         mockWebSocketManager.AcceptWebSocketAsync().Returns(Task.FromResult(mockSocket));
 
-        mockConnection.GetHttpContext().Returns(mockHttpContext);
+        _mockConnectionContext.GetHttpContext().Returns(mockHttpContext);
 
-        await _handler.OnConnectedAsync(mockConnection);
+        await _handler.OnConnectedAsync(_mockConnectionContext);
 
-        mockConnection.Received(1).Abort();
+        _mockConnectionContext.Received(1).Abort();
     }
 }
