@@ -69,7 +69,18 @@ public class GameSocketTests
         );
 
         var receiveBuffer = new byte[1024];
-        var receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(receiveBuffer), CancellationToken.None);
+        using var ms = new MemoryStream();
+        WebSocketReceiveResult receiveResult;
+
+        do
+        {
+            receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(receiveBuffer), CancellationToken.None);
+
+            if (receiveResult.MessageType == WebSocketMessageType.Close) break;
+
+            ms.Write(receiveBuffer, 0, receiveResult.Count);
+
+        } while (!receiveResult.EndOfMessage);
 
         string serverResponse = Encoding.UTF8.GetString(receiveBuffer, 0, receiveResult.Count);
 
