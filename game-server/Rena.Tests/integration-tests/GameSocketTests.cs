@@ -82,7 +82,7 @@ public class GameSocketTests
 
         } while (!receiveResult.EndOfMessage);
 
-        string serverResponse = Encoding.UTF8.GetString(receiveBuffer, 0, receiveResult.Count);
+        string serverResponse = Encoding.UTF8.GetString(ms.ToArray(), 0, receiveResult.Count);
 
         Assert.That(serverResponse, Is.EqualTo($"Echo: {messageToSend}\n"));
 
