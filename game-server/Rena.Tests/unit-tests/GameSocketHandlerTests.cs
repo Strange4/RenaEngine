@@ -1,13 +1,15 @@
-using Microsoft.AspNetCore.Connections;
-using Microsoft.AspNetCore.Http;
 using System.IO.Pipelines;
 using System.Net.WebSockets;
+
+using Microsoft.AspNetCore.Connections;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Connections;
+using Microsoft.AspNetCore.Http.Connections.Features;
+
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 using Rena.Server.GameSockets;
-using Microsoft.AspNetCore.Http.Connections;
-using NSubstitute.ExceptionExtensions;
-using Microsoft.AspNetCore.Http.Connections.Features;
 
 namespace Rena.Tests.Unit;
 
@@ -24,7 +26,7 @@ public class GameSocketHandlerTests
     {
         _clientToServerPipe = new Pipe();
         _serverToClientPipe = new Pipe();
-        
+
         _connectionContext = new DefaultConnectionContext
         {
             ConnectionId = "test-connection-id",
@@ -65,9 +67,9 @@ public class GameSocketHandlerTests
         mockHttpContextFeature.HttpContext.Returns(mockHttpContext);
         _connectionContext.Features.Set(mockHttpContextFeature);
 
-        
+
         mockWebSocket.State.Returns(WebSocketState.Open);
-        
+
         await _clientToServerPipe.Writer.CompleteAsync();
 
         await _handler.OnConnectedAsync(_connectionContext);
@@ -80,14 +82,14 @@ public class GameSocketHandlerTests
     {
         var mockHttpContext = Substitute.For<HttpContext>();
         var mockWebSocketManager = Substitute.For<WebSocketManager>();
-        mockWebSocketManager.IsWebSocketRequest.Returns(false); 
+        mockWebSocketManager.IsWebSocketRequest.Returns(false);
         mockHttpContext.WebSockets.Returns(mockWebSocketManager);
 
         var mockHttpContextFeature = Substitute.For<IHttpContextFeature>();
         mockHttpContextFeature.HttpContext.Returns(mockHttpContext);
         _connectionContext.Features.Set(mockHttpContextFeature);
 
-        
+
         await _handler.OnConnectedAsync(_connectionContext);
 
         await mockWebSocketManager.DidNotReceive().AcceptWebSocketAsync();
@@ -101,7 +103,7 @@ public class GameSocketHandlerTests
 
         var mockHttpContext = Substitute.For<HttpContext>();
         var mockWebSocketManager = Substitute.For<WebSocketManager>();
-        mockWebSocketManager.IsWebSocketRequest.Returns(true); 
+        mockWebSocketManager.IsWebSocketRequest.Returns(true);
         mockHttpContext.WebSockets.Returns(mockWebSocketManager);
 
         WebSocket mockSocket = Substitute.For<WebSocket>();
@@ -111,7 +113,7 @@ public class GameSocketHandlerTests
         mockWebSocketManager.AcceptWebSocketAsync().Returns(Task.FromResult(mockSocket));
 
         mockConnection.GetHttpContext().Returns(mockHttpContext);
-                
+
         await _handler.OnConnectedAsync(mockConnection);
 
         mockConnection.Received(1).Abort();

@@ -90,7 +90,7 @@ public class GameSocketConnectionTests
             _mockWebSocket,
             playerId
         );
-        
+
         await _clientToServerPipe.Writer.CompleteAsync();
 
         await socketConnection.HandleConnection();
