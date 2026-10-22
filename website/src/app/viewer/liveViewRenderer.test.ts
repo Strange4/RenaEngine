@@ -198,6 +198,21 @@ describe("LiveViewRenderer", () => {
     expect(renderer.getSprite("ship")).toBeDefined();
   });
 
+  it("does not create sprites if aborted while assets are loading", async () => {
+    const { renderer, assetLoader } = createRenderer();
+    const controller = new AbortController();
+
+    assetLoader.loadFor.mockImplementation(async () => {
+      controller.abort();
+    });
+
+    await renderer.renderScene([baseRenderable], controller.signal);
+
+    expect(assetLoader.getTexture).not.toHaveBeenCalled();
+    expect(renderer.getSprite(baseRenderable.id)).toBeUndefined();
+    expect(renderer.getContainer(RenderableType.OBJECT).children).toHaveLength(0);
+  });
+
   it("returns the existing sprite when the same ID is added again", () => {
     const { renderer } = createRenderer();
 

@@ -1,36 +1,19 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Application } from "pixi.js";
 import { AssetLoader } from "@/app/viewer/assetLoader";
 import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
-import { type GameRenderable,type ViewerSetup, RenderableType } from "@/shared/renderable";
+import { getSceneSource } from "@/app/viewer/sceneSource";
 
-const TEST_SPRITE: GameRenderable = {
-  id: "test-sprite",
-  position: [2, 2],
-  assetPath: "/sprites/rena.png",
-  size: [3, 3],
-  type: RenderableType.OBJECT,
-  layer: 1,
-};
+interface LiveViewerProps {
+  gameId: string;
+}
 
-const TEST_SPRITE_TWO: GameRenderable = {
-  id: "test-sprite-two",
-  position: [0, 0],
-  assetPath: "/sprites/ship1.png",
-  size: [3, 3],
-  type: RenderableType.OBJECT,
-  layer: 2,
-};
-
-const TEST_VIEWER_SETUP: ViewerSetup = {
-    tileSize: 32,
-    resolution: [800, 600],
-};
-
-export default function LiveViewer() {
+export default function LiveViewer({ gameId }: LiveViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // Known once the scene is loaded, sizes the viewer to the game's canvas
+  const [resolution, setResolution] = useState<[number, number] | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -38,14 +21,19 @@ export default function LiveViewer() {
 
     const app = new Application();
     const assets = new AssetLoader();
-    const renderer = new LiveViewRenderer(assets, TEST_VIEWER_SETUP);
     let initialized = false;
-    let unmounted = false;
+    const unmount = new AbortController();
 
     (async () => {
+      const { setup, renderables } = await getSceneSource(gameId).getInitialScene();
+      if (unmount.signal.aborted) return;
+
+      setResolution(setup.resolution);
+      const renderer = new LiveViewRenderer(assets, setup);
+
       await app.init({
-        width: TEST_VIEWER_SETUP.resolution[0],
-        height: TEST_VIEWER_SETUP.resolution[1],
+        width: setup.resolution[0],
+        height: setup.resolution[1],
         background: "#1f2937",
         antialias: true,
       });
@@ -53,16 +41,14 @@ export default function LiveViewer() {
 
       // init is async: if we unmounted while it was running, the cleanup
       // below already ran without a renderer to destroy, so destroy here instead.
-      if (unmounted) {
+      if (unmount.signal.aborted) {
         app.destroy(true, { children: true });
         return;
       }
 
       container.appendChild(app.canvas);
       renderer.addContainerToStage(app.stage);
-
-      await renderer.renderScene([TEST_SPRITE, TEST_SPRITE_TWO]);
-      if (unmounted) return;
+      await renderer.renderScene(renderables, unmount.signal);
     })().catch(e => {
       console.log(e);
       // TODO put actual error handling here
@@ -70,19 +56,19 @@ export default function LiveViewer() {
     });
 
     return () => {
-      unmounted = true;
+      unmount.abort();
       if (initialized) app.destroy(true, { children: true });
     };
-  }, []);
+  }, [gameId]);
 
   return (
     <div
       ref={containerRef}
       className="live-viewer-canvas"
-      style={{
-        width: `${TEST_VIEWER_SETUP.resolution[0]}px`,
-        height: `${TEST_VIEWER_SETUP.resolution[1]}px`,
-      }}
+      style={resolution ? {
+        width: `${resolution[0]}px`,
+        height: `${resolution[1]}px`,
+      } : undefined}
       data-testid="live-viewer"
     />
   );
