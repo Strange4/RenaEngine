@@ -28,7 +28,6 @@ public class GameSocketHandlerTests
 
         _mockConnectionContext = Substitute.For<ConnectionContext>();
         _mockConnectionContext.ConnectionId.Returns("test-connection-id");
-        _mockConnectionContext.Transport.Returns(new TestDuplexPipe(_clientToServerPipe.Reader, _serverToClientPipe.Writer));
 
         _handler = new GameSocketHandler<MockGame, MockState, MockAction>();
     }
@@ -103,6 +102,6 @@ public class GameSocketHandlerTests
 
         await _handler.OnConnectedAsync(_mockConnectionContext);
 
-        _mockConnectionContext.Received(1).Abort();
+        _mockConnectionContext.Received(2).Abort();
     }
 }

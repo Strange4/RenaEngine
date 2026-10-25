@@ -1,29 +1,29 @@
 using System.Net.WebSockets;
 using System.Text;
 
-using Microsoft.AspNetCore.Connections;
-
 namespace Rena.Server.GameSockets;
 
 using Rena.GameEngine;
 
-public class GameSocketConnection<G, S, A>(ConnectionContext connection, WebSocket webSocket, string playerId)
+public class GameSocketConnection<G, S, A>(WebSocket webSocket, string playerId)
 where G : IGame<S, A>
 where S : class
 where A : class
 {
+    private const int BUFFER_SIZE = 1024;
 
     public string PlayerId => playerId;
 
+    private readonly List<byte> _currentMessage = new (BUFFER_SIZE);
+
     public async Task HandleConnection()
     {
-        var reader = connection!.Transport.Input;
-        var writer = connection.Transport.Output;
+        var buffer = new byte[BUFFER_SIZE];
 
         while (true)
         {
 
-            if (webSocket != null && webSocket.State == WebSocketState.CloseReceived)
+            if (webSocket.State == WebSocketState.CloseReceived)
             {
                 // Respond to the client's close request to complete the handshake cleanly
                 await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure,
@@ -32,25 +32,26 @@ where A : class
                 break;
             }
 
-            var result = await reader.ReadAsync();
-            var buffer = result.Buffer;
+            WebSocketReceiveResult result = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
+            _currentMessage.AddRange(new ArraySegment<byte>(buffer, 0, result.Count));
 
-            if (buffer.IsEmpty && result.IsCompleted)
+            // Must receive the whole message before continuing
+            // Setup for when we will be receiving Action objects from frontend
+            if (!result.EndOfMessage)
             {
-                Console.WriteLine($"Connection {connection.ConnectionId} lost");
-                break;
+                continue;
             }
 
-            // Read incoming text string from buffer
-            string message = Encoding.UTF8.GetString(buffer);
-            Console.WriteLine($"Received: {message}");
-
-            // Tell the reader we have consumed the bytes
-            reader.AdvanceTo(buffer.End);
+            // Read received text string from accumulated bytes
+            string message = Encoding.UTF8.GetString([.. _currentMessage]);
+            Console.WriteLine($"Received: {message}");            
 
             // Echo a response back
             var responseBytes = Encoding.UTF8.GetBytes($"Echo: {message}\n");
-            await writer.WriteAsync(responseBytes);
+            await webSocket.SendAsync(responseBytes, result.MessageType, true, CancellationToken.None);
+
+            // Reset the message
+            _currentMessage.Clear();
         }
     }
 }

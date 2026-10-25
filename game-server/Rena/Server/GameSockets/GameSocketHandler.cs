@@ -28,7 +28,7 @@ where A : class
 
         var playerId = context.Request.Query["playerId"].ToString();
 
-        GameSocketConnection<G, S, A> gameConnection = new(connection, webSocket, playerId);
+        GameSocketConnection<G, S, A> gameConnection = new( webSocket, playerId);
 
         if (playerId is null) return;
 
@@ -39,10 +39,13 @@ where A : class
         catch (Exception e)
         {
             Console.WriteLine($"[UnnexpectedConnectionError]: Something went wrong with {connection.ConnectionId} | {e.Message}");
+            Console.WriteLine(e.Message);
+            Console.WriteLine(e.StackTrace);
         }
         finally
         {
             Console.WriteLine("Aborting Connection");
+            connection.Abort();
             connection.Abort();
         }
 

@@ -1,4 +1,3 @@
-using System.IO.Pipelines;
 using System.Net.WebSockets;
 using System.Text;
 
@@ -24,21 +23,16 @@ public class MockAction { }
 [TestFixture]
 public class GameSocketConnectionTests
 {
-    Pipe _clientToServerPipe;
-    Pipe _serverToClientPipe;
     WebSocket _mockWebSocket;
     DefaultConnectionContext _connectionContext;
 
     [SetUp]
     public async Task BeforeEach()
     {
-        _clientToServerPipe = new Pipe();
-        _serverToClientPipe = new Pipe();
         _mockWebSocket = Substitute.For<WebSocket>();
         _connectionContext = new DefaultConnectionContext
         {
             ConnectionId = "test-connection-id",
-            Transport = new TestDuplexPipe(_clientToServerPipe.Reader, _serverToClientPipe.Writer)
         };
     }
 
@@ -57,7 +51,6 @@ public class GameSocketConnectionTests
         _mockWebSocket.State.Returns(WebSocketState.Open);
 
         var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(
-            _connectionContext,
             _mockWebSocket,
             playerId
         );
@@ -65,15 +58,41 @@ public class GameSocketConnectionTests
         Assert.That(socketConnection.PlayerId, Is.EqualTo(playerId));
 
         var testMessage = "Hello Game Server";
+        var testMessageBytes = Encoding.UTF8.GetBytes(testMessage);
 
-        await _clientToServerPipe.Writer.WriteAsync(Encoding.UTF8.GetBytes(testMessage));
-        await _clientToServerPipe.Writer.CompleteAsync();
+
+        // Setup the receive to transfer the test message into the input array
+        _mockWebSocket
+            .ReceiveAsync(Arg.Any<ArraySegment<byte>>(), Arg.Any<CancellationToken>())
+            .Returns(async callInfo =>
+            {
+                // Make sure to disconnect after reading once
+                _mockWebSocket.State.Returns(WebSocketState.CloseReceived);
+                
+                var bufferArg = callInfo.ArgAt<ArraySegment<byte>>(0);
+                Array.Copy(testMessageBytes, 0, bufferArg.Array!, bufferArg.Offset, testMessageBytes.Length);
+
+                return new WebSocketReceiveResult(
+                    testMessageBytes.Length, 
+                    WebSocketMessageType.Text, 
+                    endOfMessage: true
+                );
+                
+            });
+        
+        byte[]? capturedResponseBytes = Encoding.UTF8.GetBytes("Send Async is failing");
+
+        // Setup the send to transfer the test message back to the test
+        await _mockWebSocket.SendAsync(
+            Arg.Do<ArraySegment<byte>>(bytes => capturedResponseBytes = [.. bytes]),
+            Arg.Any<WebSocketMessageType>(),
+            Arg.Any<bool>(),
+            Arg.Any<CancellationToken>()
+        );
 
         await socketConnection.HandleConnection();
 
-        var readResult = await _serverToClientPipe.Reader.ReadAsync();
-        var outputBuffer = readResult.Buffer;
-        string serverResponse = Encoding.UTF8.GetString(outputBuffer);
+        string serverResponse = Encoding.UTF8.GetString(capturedResponseBytes);
 
         Assert.That(serverResponse, Is.EqualTo($"Echo: {testMessage}\n"));
     }
@@ -86,12 +105,9 @@ public class GameSocketConnectionTests
         _mockWebSocket.State.Returns(WebSocketState.CloseReceived);
 
         var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(
-            _connectionContext,
             _mockWebSocket,
             playerId
         );
-
-        await _clientToServerPipe.Writer.CompleteAsync();
 
         await socketConnection.HandleConnection();
 
@@ -101,20 +117,12 @@ public class GameSocketConnectionTests
         Arg.Any<CancellationToken>()
         );
 
-        ReadResult readResult;
-        var successfulRead = _serverToClientPipe.Reader.TryRead(out readResult);
-        var outputBuffer = readResult.Buffer;
-        string serverResponse = Encoding.UTF8.GetString(outputBuffer);
-
-        Assert.That(successfulRead, Is.False);
-        Assert.That(serverResponse, Is.EqualTo(""));
+        await _mockWebSocket.Received(0).SendAsync(
+            Arg.Any<ArraySegment<byte>>(),
+            Arg.Any<WebSocketMessageType>(),
+            Arg.Any<bool>(),
+            Arg.Any<CancellationToken>()
+        );
 
     }
-}
-
-
-internal class TestDuplexPipe(PipeReader input, PipeWriter output) : IDuplexPipe
-{
-    public PipeReader Input { get; } = input;
-    public PipeWriter Output { get; } = output;
 }
