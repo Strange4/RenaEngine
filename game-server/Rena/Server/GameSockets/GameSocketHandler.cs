@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 using Rena.GameEngine;
 
-public class GameSocketHandler<G, S, A> (ILogger<GameSocketHandler<G, S, A>> logger)
+public class GameSocketHandler<G, S, A>(ILogger<GameSocketHandler<G, S, A>> logger)
 where G : IGame<S, A>
 where S : class
 where A : class

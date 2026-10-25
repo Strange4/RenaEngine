@@ -2,7 +2,6 @@ using System.Net.WebSockets;
 using System.Text;
 
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 
 using NSubstitute;
@@ -29,7 +28,7 @@ public class GameSocketHandlerTests
         _mockWebSocketManager = Substitute.For<WebSocketManager>();
         _mockWebSocket = Substitute.For<WebSocket>();
         ILogger<GameSocketHandler<MockGame, MockState, MockAction>> logger = Substitute.For<ILogger<GameSocketHandler<MockGame, MockState, MockAction>>>();
-        _gameSocketHandler = new (logger);
+        _gameSocketHandler = new(logger);
 
 
         _mockWebSocketManager.IsWebSocketRequest.Returns(true);
