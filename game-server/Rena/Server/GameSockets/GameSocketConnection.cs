@@ -14,7 +14,7 @@ where A : class
 
     public string PlayerId => playerId;
 
-    private readonly List<byte> _currentMessage = new (BUFFER_SIZE);
+    private readonly List<byte> _currentMessage = new(BUFFER_SIZE);
 
     public virtual async Task HandleConnection()
     {
@@ -45,7 +45,7 @@ where A : class
 
             // Read received text string from accumulated bytes
             string message = Encoding.UTF8.GetString([.. _currentMessage]);
-            Console.WriteLine($"Received: {message}");            
+            Console.WriteLine($"Received: {message}");
 
             // Echo a response back
             var responseBytes = Encoding.UTF8.GetBytes($"Echo: {message}\n");

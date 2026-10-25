@@ -1,13 +1,13 @@
 using System.Net.WebSockets;
+using System.Text;
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 
 using Rena.Server.GameSockets;
-using Microsoft.AspNetCore.Routing;
-using System.Text;
 
 namespace Rena.Tests.Unit;
 
@@ -69,20 +69,20 @@ public class GameSocketHandlerTests
                     Array.Copy(testMessageBytes, 0, bufferArg.Array!, bufferArg.Offset, testMessageBytes.Length);
 
                     return new WebSocketReceiveResult(
-                        testMessageBytes.Length, 
-                        WebSocketMessageType.Text, 
+                        testMessageBytes.Length,
+                        WebSocketMessageType.Text,
                         endOfMessage: true
                     );
                 }
-                
+
                 return new WebSocketReceiveResult(
-                    0, 
-                    WebSocketMessageType.Close, 
+                    0,
+                    WebSocketMessageType.Close,
                     endOfMessage: true
                 );
-                
+
             });
-        
+
         byte[]? capturedResponseBytes = Encoding.UTF8.GetBytes("Send Async is failing");
 
         // Setup the send to transfer the test message back to the test
@@ -94,7 +94,7 @@ public class GameSocketHandlerTests
         );
 
         await GameSocketHandler<MockGame, MockState, MockAction>.GameConnect(_mockHttpContext);
-        
+
         string serverResponse = Encoding.UTF8.GetString(capturedResponseBytes);
 
         await _mockWebSocketManager.Received(1).AcceptWebSocketAsync();
@@ -103,7 +103,7 @@ public class GameSocketHandlerTests
             Arg.Is("Closing Normally"),
             Arg.Is(CancellationToken.None)
         );
-        
+
         Assert.That(serverResponse, Is.EqualTo($"Echo: {testMessage}\n"));
 
     }

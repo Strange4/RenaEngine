@@ -1,8 +1,6 @@
 using System.Net.WebSockets;
 using System.Text;
 
-using Microsoft.AspNetCore.Connections;
-
 using NSubstitute;
 
 using Rena.GameEngine;
@@ -68,20 +66,20 @@ public class GameSocketConnectionTests
                     Array.Copy(testMessageBytes, 0, bufferArg.Array!, bufferArg.Offset, testMessageBytes.Length);
 
                     return new WebSocketReceiveResult(
-                        testMessageBytes.Length, 
-                        WebSocketMessageType.Text, 
+                        testMessageBytes.Length,
+                        WebSocketMessageType.Text,
                         endOfMessage: true
                     );
                 }
-                
+
                 return new WebSocketReceiveResult(
-                    0, 
-                    WebSocketMessageType.Close, 
+                    0,
+                    WebSocketMessageType.Close,
                     endOfMessage: true
                 );
-                
+
             });
-        
+
         byte[]? capturedResponseBytes = Encoding.UTF8.GetBytes("Send Async is failing");
 
         // Setup the send to transfer the test message back to the test

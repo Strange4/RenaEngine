@@ -33,7 +33,7 @@ where A : class
 
         WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
 
-        GameSocketConnection<G, S, A> gameConnection = new( webSocket, playerId);
+        GameSocketConnection<G, S, A> gameConnection = new(webSocket, playerId);
 
         try
         {
@@ -46,8 +46,8 @@ where A : class
             Console.WriteLine(e.StackTrace);
             if (webSocket.State == WebSocketState.Open)
             {
-                await webSocket.CloseAsync(WebSocketCloseStatus.InternalServerError, 
-                    "Something unnexpected happened", 
+                await webSocket.CloseAsync(WebSocketCloseStatus.InternalServerError,
+                    "Something unnexpected happened",
                     CancellationToken.None
                 );
             }
