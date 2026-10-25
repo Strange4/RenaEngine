@@ -184,6 +184,113 @@ public class OrchestratorTests
     }
 
     [Test]
+    public async Task CreateImage_BuildsImageWithDockerfileNameAndTag()
+    {
+        const string imageName = "my-image:latest";
+        string contextDirectory = Path.Combine(Path.GetTempPath(), $"docker-context-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(contextDirectory);
+        string dockerfilePath = Path.Combine(contextDirectory, "Dockerfile");
+        await File.WriteAllTextAsync(dockerfilePath, "FROM scratch");
+
+        try
+        {
+            var result = await this._orchestrator.CreateImage(dockerfilePath, imageName, contextDirectory);
+
+            Assert.That(result, Is.True);
+            this._imagesOperationsMock.Verify(images => images.BuildImageFromDockerfileAsync(
+                It.Is<ImageBuildParameters>(parameters =>
+                    parameters.Dockerfile == Path.GetFileName(dockerfilePath) &&
+                    parameters.Tags.Contains(imageName)),
+                It.IsAny<Stream>(),
+                It.IsAny<IEnumerable<AuthConfig>>(),
+                It.IsAny<IDictionary<string, string>>(),
+                It.IsAny<IProgress<JSONMessage>>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+        finally
+        {
+            File.Delete(dockerfilePath);
+            Directory.Delete(contextDirectory);
+        }
+    }
+
+    [Test]
+    public async Task CreateImage_WhenDockerfilePathIsNull_ReturnsFalse()
+    {
+        var result = await this._orchestrator.CreateImage(null!, "my-image:latest");
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task CreateImage_WhenImageNameIsNull_ReturnsFalse()
+    {
+        string dockerfilePath = Path.Combine(Path.GetTempPath(), $"Dockerfile-{Guid.NewGuid():N}");
+        await File.WriteAllTextAsync(dockerfilePath, "FROM scratch");
+
+        try
+        {
+            var result = await this._orchestrator.CreateImage(dockerfilePath, null!);
+
+            Assert.That(result, Is.False);
+        }
+        finally
+        {
+            File.Delete(dockerfilePath);
+        }
+    }
+
+    [Test]
+    public async Task DeleteImage_WhenImageExists_DeletesImageByIdAndReturnsTrue()
+    {
+        const string imageId = "sha256:4ee5a832ef6e";
+        const string imageName = "my-image:latest";
+        this._fixture.ImageResponses =
+        [
+            new() { ID = imageId, RepoTags = [imageName] }
+        ];
+        this._imagesOperationsMock
+            .Setup(images => images.DeleteImageAsync(imageId, It.IsAny<ImageDeleteParameters>()))
+            .ReturnsAsync(new List<IDictionary<string, string>>());
+
+        var result = await this._orchestrator.DeleteImageAsync(imageName);
+
+        Assert.That(result, Is.True);
+        this._imagesOperationsMock.Verify(images => images.DeleteImageAsync(
+            imageId,
+            It.Is<ImageDeleteParameters>(parameters =>
+                parameters.Force == true && parameters.NoPrune == false)), Times.Once);
+    }
+
+    [Test]
+    public async Task DeleteImage_WhenImageDoesNotExist_ReturnsFalse()
+    {
+        var result = await this._orchestrator.DeleteImageAsync("missing-image:latest");
+
+        Assert.That(result, Is.False);
+        this._imagesOperationsMock.Verify(images => images.DeleteImageAsync(
+            It.IsAny<string>(),
+            It.IsAny<ImageDeleteParameters>()), Times.Never);
+    }
+
+    [Test]
+    public async Task DeleteImage_WhenDockerApiException_ReturnsFalse()
+    {
+        const string imageName = "my-image:latest";
+        this._fixture.ImageResponses =
+        [
+            new() { ID = "sha256:4ee5a832ef6e", RepoTags = [imageName] }
+        ];
+        this._imagesOperationsMock
+            .Setup(images => images.DeleteImageAsync(It.IsAny<string>(), It.IsAny<ImageDeleteParameters>()))
+            .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.InternalServerError, "Error"));
+
+        var result = await this._orchestrator.DeleteImageAsync(imageName);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
     public async Task StartContainer_WhenContainerDoesNotExist_ReturnsFalse()
     {
         bool result = await this._orchestrator.StartContainer("non-existent");

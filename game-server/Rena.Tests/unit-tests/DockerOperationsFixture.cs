@@ -45,6 +45,15 @@ internal sealed class DockerOperationsFixture : IDisposable
         this.Images
             .Setup(operations => operations.ListImagesAsync(It.IsAny<ImagesListParameters>(), default))
             .Returns(() => Task.FromResult(this.ImageResponses));
+        this.Images
+            .Setup(operations => operations.BuildImageFromDockerfileAsync(
+                It.IsAny<ImageBuildParameters>(),
+                It.IsAny<Stream>(),
+                It.IsAny<IEnumerable<AuthConfig>>(),
+                It.IsAny<IDictionary<string, string>>(),
+                It.IsAny<IProgress<JSONMessage>>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
         this.Orchestrator = new Orchestrator(this.DockerClient.Object, this.Logger.Object);
     }
 

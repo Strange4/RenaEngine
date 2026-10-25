@@ -1,3 +1,7 @@
+using System.Collections.Concurrent;
+using System.Formats.Tar;
+using System.Text.RegularExpressions;
+
 using Docker.DotNet;
 using Docker.DotNet.Models;
 
@@ -169,6 +173,150 @@ public class Orchestrator(IDockerClient dockerClient, ILogger logger)
         catch (DockerApiException ex)
         {
             logger.LogError(ex, "Failed to delete container {Id}", id);
+            return false;
+        }
+    }
+
+    public async Task<bool> CreateImage(
+        string dockerFilePath,
+        string imageName,
+        string? buildContextPath = null,
+        IDictionary<string, string>? buildArgs = null)
+    {
+        if (dockerFilePath == null)
+        {
+            logger.LogError("File \"{File}\" not found", dockerFilePath);
+            return false;
+        }
+        if (imageName == null)
+        {
+            logger.LogError("Supply an image name when building image.");
+            return false;
+        }
+
+        string fullDockerFilePath = Path.GetFullPath(dockerFilePath);
+        string contextDirectory = Path.GetFullPath(buildContextPath ?? Path.GetDirectoryName(fullDockerFilePath)!);
+        string relativeDockerFilePath = Path.GetRelativePath(contextDirectory, fullDockerFilePath)
+            .Replace(Path.DirectorySeparatorChar, '/');
+        if (relativeDockerFilePath == ".." || relativeDockerFilePath.StartsWith("../", StringComparison.Ordinal))
+        {
+            logger.LogError("Dockerfile {Dockerfile} must be inside build context {Context}", dockerFilePath, contextDirectory);
+            return false;
+        }
+
+        using var tarStream = new MemoryStream();
+        using var writer = new TarWriter(tarStream, leaveOpen: true);
+        try
+        {
+            await WriteBuildContextAsync(contextDirectory, writer);
+            tarStream.Position = 0;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to archive Docker build context {Context}", contextDirectory);
+            return false;
+        }
+
+        ConcurrentQueue<string> buildErrors = new();
+        var progress = new SynchronousProgress<JSONMessage>(message =>
+        {
+            if (!string.IsNullOrEmpty(message.Stream))
+            {
+                logger.LogInformation(message.Stream);
+            }
+            else if (message.Error != null)
+            {
+                logger.LogError(message.Error.Message);
+                buildErrors.Enqueue(message.Error.Message);
+            }
+            else if (!string.IsNullOrEmpty(message.Status))
+            {
+                logger.LogInformation($"{message.Status} {message.ProgressMessage}");
+            }
+        });
+        var buildParams = new ImageBuildParameters
+        {
+            Dockerfile = relativeDockerFilePath,
+            Tags = [imageName],
+            BuildArgs = buildArgs
+        };
+        await this._client.Images.BuildImageFromDockerfileAsync(
+            buildParams,
+            tarStream,
+            authConfigs: null,
+            headers: null,
+            progress,
+            CancellationToken.None);
+        if (!buildErrors.IsEmpty)
+        {
+            logger.LogError("Failed to build image {ImageName}: {Errors}", imageName, string.Join(Environment.NewLine, buildErrors));
+            return false;
+        }
+        logger.LogInformation($"Image {imageName} finished building");
+        return true;
+    }
+
+    sealed class SynchronousProgress<T>(Action<T> report) : IProgress<T>
+    {
+        public void Report(T value) => report(value);
+    }
+
+    static async Task WriteBuildContextAsync(string contextDirectory, TarWriter writer)
+    {
+        string[] ignorePatterns = File.Exists(Path.Combine(contextDirectory, ".dockerignore"))
+            ? File.ReadLines(Path.Combine(contextDirectory, ".dockerignore"))
+                .Select(line => line.Trim())
+                .Where(line => line.Length > 0 && !line.StartsWith('#') && !line.StartsWith('!'))
+                .Select(line => line.TrimStart('/'))
+                .Select(line => line.EndsWith('/') ? line + "**" : line)
+                .Select(DockerIgnorePatternToRegex)
+                .ToArray()
+            : [];
+
+        foreach (string entryPath in Directory.EnumerateFileSystemEntries(contextDirectory, "*", SearchOption.AllDirectories))
+        {
+            string relativePath = Path.GetRelativePath(contextDirectory, entryPath).Replace(Path.DirectorySeparatorChar, '/');
+            if (ignorePatterns.Any(pattern => Regex.IsMatch(relativePath, pattern)))
+            {
+                continue;
+            }
+
+            string tarEntryName = Directory.Exists(entryPath) ? relativePath + "/" : relativePath;
+            await writer.WriteEntryAsync(entryPath, tarEntryName);
+        }
+    }
+
+    static string DockerIgnorePatternToRegex(string pattern)
+    {
+        string regex = Regex.Escape(pattern)
+            .Replace(@"\*\*/", @"(?:.*/)?")
+            .Replace(@"\*\*", ".*")
+            .Replace(@"\*", "[^/]*")
+            .Replace(@"\?", "[^/]");
+        return $"^{regex}(?:/.*)?$";
+    }
+
+    public async Task<bool> DeleteImageAsync(string imageName, Option<ImageDeleteParameters> parameters = default)
+    {
+        try
+        {
+            var image = await this.FindImageByName(imageName);
+            return await image.Match(
+                Some: async _ =>
+                {
+                    await this._client.Images.DeleteImageAsync(_.ID, parameters.IfNone(new ImageDeleteParameters()
+                    {
+                        Force = true,
+                        NoPrune = false,
+                    }));
+                    return true;
+                },
+                None: () => Task.FromResult(false)
+            );
+        }
+        catch (DockerApiException ex)
+        {
+            logger.LogError(ex, "Failed to delete image {Name}", imageName);
             return false;
         }
     }

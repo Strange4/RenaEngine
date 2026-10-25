@@ -5,7 +5,7 @@ WORKDIR /game-server
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-    protobuf-compiler=3.21.12-8.2ubuntu0.3 \
+    protobuf-compiler=3.21.12-8.2ubuntu0.4 \
     nodejs=18.19.1+dfsg-6ubuntu5 \
     npm=9.2.0~ds1-2 \
     && rm -rf /var/lib/apt/lists/*
@@ -29,7 +29,7 @@ WORKDIR /game-server/BattleshipServer
 ARG RenaOptions__TSProtoPath
 ARG RenaOptions__GenerationDirectory
 
-RUN dotnet publish -c release -o /app --no-restore \
+RUN dotnet publish -c release -o /app \
     && dotnet /app/BattleshipServer.dll --generate
 
 # final stage/image
