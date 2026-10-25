@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -44,7 +45,9 @@ internal static class RenaServerSetup
         app.MapGet("/", () => "Hello World!");
         app.MapGet("/name", RenaServerHandlers<G, S, A>.GetGameName);
         app.MapGet("/downloads/{languageName}", RenaServerHandlers<G, S, A>.HandleDownloads);
-        app.Map("/game/connect/{playerId}", GameSocketHandler<G, S, A>.GameConnect);
+        app.Map("/game/connect/{playerId}", async (
+            string playerId, HttpContext context,
+            GameSocketHandler<G, S, A> handler) => await handler.GameConnect(context, playerId));
         app.MapGet(
             "/settings/features/{featureKey}",
             RenaServerHandlers<G, S, A>.GetFeatureSetting);

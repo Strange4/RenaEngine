@@ -3,9 +3,11 @@ using System.Text;
 
 namespace Rena.Server.GameSockets;
 
+using Microsoft.Extensions.Logging;
+
 using Rena.GameEngine;
 
-public class GameSocketConnection<G, S, A>(WebSocket webSocket, string playerId)
+public class GameSocketConnection<G, S, A>(WebSocket webSocket, string playerId, ILogger logger)
 where G : IGame<S, A>
 where S : class
 where A : class
@@ -45,7 +47,7 @@ where A : class
 
             // Read received text string from accumulated bytes
             string message = Encoding.UTF8.GetString([.. _currentMessage]);
-            Console.WriteLine($"Received: {message}");
+            logger.LogInformation("{PlayerId} - Received: {message}", playerId, message);
 
             // Echo a response back
             var responseBytes = Encoding.UTF8.GetBytes($"Echo: {message}\n");

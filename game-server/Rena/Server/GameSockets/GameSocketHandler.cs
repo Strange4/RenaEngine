@@ -4,36 +4,36 @@ using Microsoft.AspNetCore.Http;
 
 namespace Rena.Server.GameSockets;
 
+using Microsoft.Extensions.Logging;
+
 using Rena.GameEngine;
 
-public class GameSocketHandler<G, S, A>
+public class GameSocketHandler<G, S, A> (ILogger<GameSocketHandler<G, S, A>> logger)
 where G : IGame<S, A>
 where S : class
 where A : class
 {
 
-    public static async Task GameConnect(HttpContext context)
+    public async Task GameConnect(HttpContext context, string playerId)
     {
 
         if (!context.WebSockets.IsWebSocketRequest)
         {
-            Console.WriteLine("Not a websocket request, rejecting");
+            logger.LogInformation("{ConnectionId}: Not a websocket request, rejecting", context.Connection.Id);
             context.Response.StatusCode = 400;
             return;
         }
 
-        var playerId = context.Request?.RouteValues["playerId"]?.ToString();
-
         if (string.IsNullOrWhiteSpace(playerId))
         {
-            Console.WriteLine("Missing required PlayerId, rejecting");
+            logger.LogInformation("{ConnectionId}: Missing required PlayerId, rejecting", context.Connection.Id);
             context.Response.StatusCode = 400;
             return;
         }
 
         WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
 
-        GameSocketConnection<G, S, A> gameConnection = new(webSocket, playerId);
+        GameSocketConnection<G, S, A> gameConnection = new(webSocket, playerId, logger);
 
         try
         {
@@ -41,9 +41,11 @@ where A : class
         }
         catch (Exception e)
         {
-            Console.WriteLine($"[UnnexpectedConnectionError]: Something went wrong with {context.Connection.Id} | {e.Message}");
-            Console.WriteLine(e.Message);
-            Console.WriteLine(e.StackTrace);
+            logger.LogError("[UnnexpectedConnectionError]: Something went wrong with {ConnectionId} | {error message} | {stacktrace}",
+                context.Connection.Id,
+                e.Message,
+                e.StackTrace
+            );
             if (webSocket.State == WebSocketState.Open)
             {
                 await webSocket.CloseAsync(WebSocketCloseStatus.InternalServerError,

@@ -3,6 +3,7 @@ using System.Text;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Logging;
 
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -19,25 +20,22 @@ public class GameSocketHandlerTests
     private WebSocketManager _mockWebSocketManager;
     private WebSocket _mockWebSocket;
 
+    private GameSocketHandler<MockGame, MockState, MockAction> _gameSocketHandler;
+
     [SetUp]
     public void BeforeEach()
     {
         _mockHttpContext = Substitute.For<HttpContext>();
         _mockWebSocketManager = Substitute.For<WebSocketManager>();
         _mockWebSocket = Substitute.For<WebSocket>();
+        ILogger<GameSocketHandler<MockGame, MockState, MockAction>> logger = Substitute.For<ILogger<GameSocketHandler<MockGame, MockState, MockAction>>>();
+        _gameSocketHandler = new (logger);
+
 
         _mockWebSocketManager.IsWebSocketRequest.Returns(true);
         _mockWebSocketManager.AcceptWebSocketAsync().Returns(Task.FromResult(_mockWebSocket));
         _mockHttpContext.WebSockets.Returns(_mockWebSocketManager);
 
-        var routeValueDictionary = new RouteValueDictionary
-        {
-            ["playerId"] = "player-999"
-        };
-
-        var mockRequest = Substitute.For<HttpRequest>();
-        mockRequest.RouteValues.Returns(routeValueDictionary);
-        _mockHttpContext.Request.Returns(mockRequest);
     }
 
     [TearDown]
@@ -93,7 +91,7 @@ public class GameSocketHandlerTests
             Arg.Any<CancellationToken>()
         );
 
-        await GameSocketHandler<MockGame, MockState, MockAction>.GameConnect(_mockHttpContext);
+        await _gameSocketHandler.GameConnect(_mockHttpContext, "player-executes");
 
         string serverResponse = Encoding.UTF8.GetString(capturedResponseBytes);
 
@@ -113,7 +111,7 @@ public class GameSocketHandlerTests
     {
         _mockWebSocketManager.IsWebSocketRequest.Returns(false);
 
-        await GameSocketHandler<MockGame, MockState, MockAction>.GameConnect(_mockHttpContext);
+        await _gameSocketHandler.GameConnect(_mockHttpContext, "player-reject");
 
         await _mockWebSocketManager.DidNotReceive().AcceptWebSocketAsync();
         Assert.That(_mockHttpContext.Response.StatusCode, Is.EqualTo(400));
@@ -124,7 +122,7 @@ public class GameSocketHandlerTests
     {
         _mockHttpContext.Request.RouteValues.Returns([]);
 
-        await GameSocketHandler<MockGame, MockState, MockAction>.GameConnect(_mockHttpContext);
+        await _gameSocketHandler.GameConnect(_mockHttpContext, "");
 
         await _mockWebSocketManager.DidNotReceive().AcceptWebSocketAsync();
         Assert.That(_mockHttpContext.Response.StatusCode, Is.EqualTo(400));
@@ -141,7 +139,7 @@ public class GameSocketHandlerTests
 
         _mockWebSocketManager.AcceptWebSocketAsync().Returns(Task.FromResult(_mockWebSocket));
 
-        await GameSocketHandler<MockGame, MockState, MockAction>.GameConnect(_mockHttpContext);
+        await _gameSocketHandler.GameConnect(_mockHttpContext, "player-error");
 
         await _mockWebSocket.Received(1).CloseAsync(
             Arg.Is(WebSocketCloseStatus.InternalServerError),

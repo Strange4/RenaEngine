@@ -1,6 +1,8 @@
 using System.Net.WebSockets;
 using System.Text;
 
+using Microsoft.Extensions.Logging;
+
 using NSubstitute;
 
 using Rena.GameEngine;
@@ -21,12 +23,14 @@ public class MockAction { }
 [TestFixture]
 public class GameSocketConnectionTests
 {
-    WebSocket _mockWebSocket;
+    private WebSocket _mockWebSocket;
+    private ILogger _mockLogger;
 
     [SetUp]
     public async Task BeforeEach()
     {
         _mockWebSocket = Substitute.For<WebSocket>();
+        _mockLogger = Substitute.For<ILogger>();
     }
 
     [TearDown]
@@ -44,7 +48,8 @@ public class GameSocketConnectionTests
 
         var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(
             _mockWebSocket,
-            playerId
+            playerId,
+            _mockLogger
         );
 
         Assert.That(socketConnection.PlayerId, Is.EqualTo(playerId));
@@ -112,7 +117,8 @@ public class GameSocketConnectionTests
 
         var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(
             _mockWebSocket,
-            playerId
+            playerId,
+            _mockLogger
         );
 
         await socketConnection.HandleConnection();
