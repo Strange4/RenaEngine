@@ -24,23 +24,17 @@ public class MockAction { }
 public class GameSocketConnectionTests
 {
     WebSocket _mockWebSocket;
-    DefaultConnectionContext _connectionContext;
 
     [SetUp]
     public async Task BeforeEach()
     {
         _mockWebSocket = Substitute.For<WebSocket>();
-        _connectionContext = new DefaultConnectionContext
-        {
-            ConnectionId = "test-connection-id",
-        };
     }
 
     [TearDown]
     public async Task AfterEach()
     {
         _mockWebSocket.Dispose();
-        await _connectionContext.DisposeAsync();
     }
 
     [Test]
@@ -60,21 +54,29 @@ public class GameSocketConnectionTests
         var testMessage = "Hello Game Server";
         var testMessageBytes = Encoding.UTF8.GetBytes(testMessage);
 
+        int callcount = 0;
 
         // Setup the receive to transfer the test message into the input array
         _mockWebSocket
             .ReceiveAsync(Arg.Any<ArraySegment<byte>>(), Arg.Any<CancellationToken>())
             .Returns(async callInfo =>
             {
-                // Make sure to disconnect after reading once
-                _mockWebSocket.State.Returns(WebSocketState.CloseReceived);
-                
-                var bufferArg = callInfo.ArgAt<ArraySegment<byte>>(0);
-                Array.Copy(testMessageBytes, 0, bufferArg.Array!, bufferArg.Offset, testMessageBytes.Length);
+                callcount++;
+                if (callcount == 1)
+                {
+                    var bufferArg = callInfo.ArgAt<ArraySegment<byte>>(0);
+                    Array.Copy(testMessageBytes, 0, bufferArg.Array!, bufferArg.Offset, testMessageBytes.Length);
 
+                    return new WebSocketReceiveResult(
+                        testMessageBytes.Length, 
+                        WebSocketMessageType.Text, 
+                        endOfMessage: true
+                    );
+                }
+                
                 return new WebSocketReceiveResult(
-                    testMessageBytes.Length, 
-                    WebSocketMessageType.Text, 
+                    0, 
+                    WebSocketMessageType.Close, 
                     endOfMessage: true
                 );
                 
@@ -102,7 +104,13 @@ public class GameSocketConnectionTests
     {
         var playerId = "player-who-is-done";
 
-        _mockWebSocket.State.Returns(WebSocketState.CloseReceived);
+        _mockWebSocket
+            .ReceiveAsync(Arg.Any<ArraySegment<byte>>(), Arg.Any<CancellationToken>())
+            .Returns(_ => new WebSocketReceiveResult(
+                    0,
+                    WebSocketMessageType.Close,
+                    endOfMessage: true
+                ));
 
         var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(
             _mockWebSocket,
@@ -111,10 +119,10 @@ public class GameSocketConnectionTests
 
         await socketConnection.HandleConnection();
 
-        await _mockWebSocket.Received(1).CloseAsync(
-        WebSocketCloseStatus.NormalClosure,
-        "Closing Normally",
-        Arg.Any<CancellationToken>()
+        await _mockWebSocket.Received(1).CloseOutputAsync(
+        Arg.Is(WebSocketCloseStatus.NormalClosure),
+        Arg.Is("Closing Normally"),
+        Arg.Is(CancellationToken.None)
         );
 
         await _mockWebSocket.Received(0).SendAsync(

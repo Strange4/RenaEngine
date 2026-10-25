@@ -1,107 +1,153 @@
-using System.IO.Pipelines;
 using System.Net.WebSockets;
 
-using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Connections;
 
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 
 using Rena.Server.GameSockets;
+using Microsoft.AspNetCore.Routing;
+using System.Text;
 
 namespace Rena.Tests.Unit;
 
 [TestFixture]
 public class GameSocketHandlerTests
 {
-    private Pipe _clientToServerPipe;
-    private Pipe _serverToClientPipe;
-    private ConnectionContext _mockConnectionContext;
-    private GameSocketHandler<MockGame, MockState, MockAction> _handler;
+
+    private HttpContext _mockHttpContext;
+    private WebSocketManager _mockWebSocketManager;
+    private WebSocket _mockWebSocket;
 
     [SetUp]
     public void BeforeEach()
     {
-        _clientToServerPipe = new Pipe();
-        _serverToClientPipe = new Pipe();
+        _mockHttpContext = Substitute.For<HttpContext>();
+        _mockWebSocketManager = Substitute.For<WebSocketManager>();
+        _mockWebSocket = Substitute.For<WebSocket>();
 
-        _mockConnectionContext = Substitute.For<ConnectionContext>();
-        _mockConnectionContext.ConnectionId.Returns("test-connection-id");
+        _mockWebSocketManager.IsWebSocketRequest.Returns(true);
+        _mockWebSocketManager.AcceptWebSocketAsync().Returns(Task.FromResult(_mockWebSocket));
+        _mockHttpContext.WebSockets.Returns(_mockWebSocketManager);
 
-        _handler = new GameSocketHandler<MockGame, MockState, MockAction>();
+        var routeValueDictionary = new RouteValueDictionary
+        {
+            ["playerId"] = "player-999"
+        };
+
+        var mockRequest = Substitute.For<HttpRequest>();
+        mockRequest.RouteValues.Returns(routeValueDictionary);
+        _mockHttpContext.Request.Returns(mockRequest);
     }
 
     [TearDown]
-    public async Task AfterEach()
+    public void AfterEach()
     {
-        await _mockConnectionContext.DisposeAsync();
+        _mockWebSocket.Dispose();
     }
 
     [Test]
     public async Task OnConnectedAsync_ValidWebSocketRequest_SpawnsConnectionAndExecutes()
     {
-        var mockHttpContext = Substitute.For<HttpContext>();
-        var mockWebSocketManager = Substitute.For<WebSocketManager>();
-        var mockWebSocket = Substitute.For<WebSocket>();
 
-        var queryCollection = new QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
-        {
-            { "playerId", "player-999" }
-        });
+        _mockWebSocket.State.Returns(WebSocketState.Open);
 
-        var mockRequest = Substitute.For<HttpRequest>();
-        mockRequest.Query.Returns(queryCollection);
-        mockHttpContext.Request.Returns(mockRequest);
+        int callcount = 0;
 
-        mockWebSocketManager.IsWebSocketRequest.Returns(true);
-        mockWebSocketManager.AcceptWebSocketAsync().Returns(Task.FromResult(mockWebSocket));
-        mockHttpContext.WebSockets.Returns(mockWebSocketManager);
+        var testMessage = "Hello Game Server";
+        var testMessageBytes = Encoding.UTF8.GetBytes(testMessage);
 
-        _mockConnectionContext.GetHttpContext().Returns(mockHttpContext);
+        // Setup the receive to transfer the test message into the input array
+        _mockWebSocket
+            .ReceiveAsync(Arg.Any<ArraySegment<byte>>(), Arg.Any<CancellationToken>())
+            .Returns(async callInfo =>
+            {
+                callcount++;
+                if (callcount == 1)
+                {
+                    var bufferArg = callInfo.ArgAt<ArraySegment<byte>>(0);
+                    Array.Copy(testMessageBytes, 0, bufferArg.Array!, bufferArg.Offset, testMessageBytes.Length);
 
-        mockWebSocket.State.Returns(WebSocketState.Open);
+                    return new WebSocketReceiveResult(
+                        testMessageBytes.Length, 
+                        WebSocketMessageType.Text, 
+                        endOfMessage: true
+                    );
+                }
+                
+                return new WebSocketReceiveResult(
+                    0, 
+                    WebSocketMessageType.Close, 
+                    endOfMessage: true
+                );
+                
+            });
+        
+        byte[]? capturedResponseBytes = Encoding.UTF8.GetBytes("Send Async is failing");
 
-        await _clientToServerPipe.Writer.CompleteAsync();
+        // Setup the send to transfer the test message back to the test
+        await _mockWebSocket.SendAsync(
+            Arg.Do<ArraySegment<byte>>(bytes => capturedResponseBytes = [.. bytes]),
+            Arg.Any<WebSocketMessageType>(),
+            Arg.Any<bool>(),
+            Arg.Any<CancellationToken>()
+        );
 
-        await _handler.OnConnectedAsync(_mockConnectionContext);
+        await GameSocketHandler<MockGame, MockState, MockAction>.GameConnect(_mockHttpContext);
+        
+        string serverResponse = Encoding.UTF8.GetString(capturedResponseBytes);
 
-        await mockWebSocketManager.Received(1).AcceptWebSocketAsync();
+        await _mockWebSocketManager.Received(1).AcceptWebSocketAsync();
+        await _mockWebSocket.Received(1).CloseOutputAsync(
+            Arg.Is(WebSocketCloseStatus.NormalClosure),
+            Arg.Is("Closing Normally"),
+            Arg.Is(CancellationToken.None)
+        );
+        
+        Assert.That(serverResponse, Is.EqualTo($"Echo: {testMessage}\n"));
+
     }
 
     [Test]
     public async Task OnConnectedAsync_NotWebSocketRequest_RejectsImmediately()
     {
-        var mockHttpContext = Substitute.For<HttpContext>();
-        var mockWebSocketManager = Substitute.For<WebSocketManager>();
-        mockWebSocketManager.IsWebSocketRequest.Returns(false);
-        mockHttpContext.WebSockets.Returns(mockWebSocketManager);
+        _mockWebSocketManager.IsWebSocketRequest.Returns(false);
 
-        _mockConnectionContext.GetHttpContext().Returns(mockHttpContext);
+        await GameSocketHandler<MockGame, MockState, MockAction>.GameConnect(_mockHttpContext);
 
-        await _handler.OnConnectedAsync(_mockConnectionContext);
+        await _mockWebSocketManager.DidNotReceive().AcceptWebSocketAsync();
+        Assert.That(_mockHttpContext.Response.StatusCode, Is.EqualTo(400));
+    }
 
-        await mockWebSocketManager.DidNotReceive().AcceptWebSocketAsync();
+    [Test]
+    public async Task OnConnectedAsync_NoPlayerId_RejectsImmediately()
+    {
+        _mockHttpContext.Request.RouteValues.Returns([]);
+
+        await GameSocketHandler<MockGame, MockState, MockAction>.GameConnect(_mockHttpContext);
+
+        await _mockWebSocketManager.DidNotReceive().AcceptWebSocketAsync();
+        Assert.That(_mockHttpContext.Response.StatusCode, Is.EqualTo(400));
     }
 
     [Test]
     public async Task OnConnectedAsync_UnexpectedError_AbortsConnection()
     {
-        var mockHttpContext = Substitute.For<HttpContext>();
-        var mockWebSocketManager = Substitute.For<WebSocketManager>();
-        mockWebSocketManager.IsWebSocketRequest.Returns(true);
-        mockHttpContext.WebSockets.Returns(mockWebSocketManager);
 
-        WebSocket mockSocket = Substitute.For<WebSocket>();
+        _mockWebSocket.ReceiveAsync(
+            Arg.Any<ArraySegment<byte>>(), Arg.Any<CancellationToken>()
+        ).Throws(new Exception("Something really weird happened"));
+        _mockWebSocket.State.Returns(WebSocketState.Open);
 
-        mockSocket.State.Throws(new Exception("Something really weird happened"));
+        _mockWebSocketManager.AcceptWebSocketAsync().Returns(Task.FromResult(_mockWebSocket));
 
-        mockWebSocketManager.AcceptWebSocketAsync().Returns(Task.FromResult(mockSocket));
+        await GameSocketHandler<MockGame, MockState, MockAction>.GameConnect(_mockHttpContext);
 
-        _mockConnectionContext.GetHttpContext().Returns(mockHttpContext);
+        await _mockWebSocket.Received(1).CloseAsync(
+            Arg.Is(WebSocketCloseStatus.InternalServerError),
+            Arg.Is("Something unnexpected happened"),
+            Arg.Is(CancellationToken.None)
+        );
 
-        await _handler.OnConnectedAsync(_mockConnectionContext);
-
-        _mockConnectionContext.Received(2).Abort();
     }
 }

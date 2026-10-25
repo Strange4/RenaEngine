@@ -1,36 +1,39 @@
 using System.Net.WebSockets;
 
-using Microsoft.AspNetCore.Connections;
-using Microsoft.AspNetCore.Http.Connections;
+using Microsoft.AspNetCore.Http;
 
 namespace Rena.Server.GameSockets;
 
 using Rena.GameEngine;
 
-public class GameSocketHandler<G, S, A> : ConnectionHandler
+public class GameSocketHandler<G, S, A>
 where G : IGame<S, A>
 where S : class
 where A : class
 {
 
-    public override async Task OnConnectedAsync(ConnectionContext connection)
+    public static async Task GameConnect(HttpContext context)
     {
 
-        var context = connection.GetHttpContext();
-
-        if (context == null || !context.WebSockets.IsWebSocketRequest)
+        if (!context.WebSockets.IsWebSocketRequest)
         {
             Console.WriteLine("Not a websocket request, rejecting");
+            context.Response.StatusCode = 400;
+            return;
+        }
+
+        var playerId = context.Request?.RouteValues["playerId"]?.ToString();
+
+        if (string.IsNullOrWhiteSpace(playerId))
+        {
+            Console.WriteLine("Missing required PlayerId, rejecting");
+            context.Response.StatusCode = 400;
             return;
         }
 
         WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
 
-        var playerId = context.Request.Query["playerId"].ToString();
-
         GameSocketConnection<G, S, A> gameConnection = new( webSocket, playerId);
-
-        if (playerId is null) return;
 
         try
         {
@@ -38,15 +41,20 @@ where A : class
         }
         catch (Exception e)
         {
-            Console.WriteLine($"[UnnexpectedConnectionError]: Something went wrong with {connection.ConnectionId} | {e.Message}");
+            Console.WriteLine($"[UnnexpectedConnectionError]: Something went wrong with {context.Connection.Id} | {e.Message}");
             Console.WriteLine(e.Message);
             Console.WriteLine(e.StackTrace);
+            if (webSocket.State == WebSocketState.Open)
+            {
+                await webSocket.CloseAsync(WebSocketCloseStatus.InternalServerError, 
+                    "Something unnexpected happened", 
+                    CancellationToken.None
+                );
+            }
         }
         finally
         {
-            Console.WriteLine("Aborting Connection");
-            connection.Abort();
-            connection.Abort();
+            webSocket.Dispose();
         }
 
     }

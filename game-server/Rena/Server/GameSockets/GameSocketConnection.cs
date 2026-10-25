@@ -16,23 +16,24 @@ where A : class
 
     private readonly List<byte> _currentMessage = new (BUFFER_SIZE);
 
-    public async Task HandleConnection()
+    public virtual async Task HandleConnection()
     {
         var buffer = new byte[BUFFER_SIZE];
 
         while (true)
         {
 
-            if (webSocket.State == WebSocketState.CloseReceived)
+            WebSocketReceiveResult result = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
+
+            if (result.MessageType == WebSocketMessageType.Close)
             {
                 // Respond to the client's close request to complete the handshake cleanly
-                await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure,
+                await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure,
                     "Closing Normally",
                     CancellationToken.None);
                 break;
             }
 
-            WebSocketReceiveResult result = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
             _currentMessage.AddRange(new ArraySegment<byte>(buffer, 0, result.Count));
 
             // Must receive the whole message before continuing

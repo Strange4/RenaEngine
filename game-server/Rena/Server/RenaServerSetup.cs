@@ -44,7 +44,7 @@ internal static class RenaServerSetup
         app.MapGet("/", () => "Hello World!");
         app.MapGet("/name", RenaServerHandlers<G, S, A>.GetGameName);
         app.MapGet("/downloads/{languageName}", RenaServerHandlers<G, S, A>.HandleDownloads);
-        app.MapConnectionHandler<GameSocketHandler<G, S, A>>("/game/connect/{playerId}");
+        app.Map("/game/connect/{playerId}", GameSocketHandler<G, S, A>.GameConnect);
         app.MapGet(
             "/settings/features/{featureKey}",
             RenaServerHandlers<G, S, A>.GetFeatureSetting);
