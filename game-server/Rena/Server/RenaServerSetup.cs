@@ -25,8 +25,6 @@ internal static class RenaServerSetup
 
         builder.WebHost.UseUrls($"http://*:{renaOptions.ServerPort}");
 
-        builder.Services.AddConnections();
-
         builder.Services.AddSingleton<RenaServerHandlers<G, S, A>>();
         builder.Services.AddSingleton<CompetitionSettingsState>();
         builder.Services.AddTransient<GameSocketHandler<G, S, A>>();
