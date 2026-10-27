@@ -129,7 +129,7 @@ public class GameSocketConnectionTests
         Arg.Is(CancellationToken.None)
         );
 
-        await _mockWebSocket.Received(0).SendAsync(
+        await _mockWebSocket.DidNotReceive().SendAsync(
             Arg.Any<ArraySegment<byte>>(),
             Arg.Any<WebSocketMessageType>(),
             Arg.Any<bool>(),
