@@ -5,22 +5,21 @@ using Microsoft.Extensions.Logging;
 
 using Moq;
 
-using Rena.Server;
+using Rena.Server.DockerManager;
 
 namespace Rena.Tests.Unit;
 
-internal sealed class DockerOperationsFixture : IDisposable
+internal sealed class DockerServicesFixture : IDisposable
 {
     public Mock<IDockerClient> DockerClient { get; } = new();
     public Mock<IContainerOperations> Containers { get; } = new();
     public Mock<IImageOperations> Images { get; } = new();
     public Mock<ILogger> Logger { get; } = new();
-    public Orchestrator Orchestrator { get; }
     public IList<ContainerListResponse> ContainerResponses { get; set; } = [];
     public IList<ImagesListResponse> ImageResponses { get; set; } = [];
     public CreateContainerResponse CreateContainerResponse { get; } = new() { ID = "container-xyz" };
 
-    public DockerOperationsFixture()
+    public DockerServicesFixture()
     {
         this.DockerClient.Setup(client => client.Containers).Returns(this.Containers.Object);
         this.DockerClient.Setup(client => client.Images).Returns(this.Images.Object);
@@ -46,6 +45,9 @@ internal sealed class DockerOperationsFixture : IDisposable
             .Setup(operations => operations.ListImagesAsync(It.IsAny<ImagesListParameters>(), default))
             .Returns(() => Task.FromResult(this.ImageResponses));
         this.Images
+            .Setup(operations => operations.DeleteImageAsync(It.IsAny<string>(), It.IsAny<ImageDeleteParameters>(), default))
+            .ReturnsAsync(new List<IDictionary<string, string>>());
+        this.Images
             .Setup(operations => operations.BuildImageFromDockerfileAsync(
                 It.IsAny<ImageBuildParameters>(),
                 It.IsAny<Stream>(),
@@ -54,7 +56,6 @@ internal sealed class DockerOperationsFixture : IDisposable
                 It.IsAny<IProgress<JSONMessage>>(),
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        this.Orchestrator = new Orchestrator(this.DockerClient.Object, this.Logger.Object);
     }
 
     public void Dispose()
