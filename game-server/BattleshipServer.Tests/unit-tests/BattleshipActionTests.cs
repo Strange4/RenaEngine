@@ -14,71 +14,25 @@ public class BattleshipActionTests
     public void Setup()
     {
         _gameLogic = new GameLogic();
+
+        // csharpier-ignore
         _validFleet1 =
         [
-            new Ship
-            {
-                Name = ShipName.Carrier,
-                StartCoordinate = new Coordinate { X = 1, Y = 1 },
-                Orientation = ShipOrientation.Horizontal,
-            },
-            new Ship
-            {
-                Name = ShipName.Battleship,
-                StartCoordinate = new Coordinate { X = 1, Y = 0 },
-                Orientation = ShipOrientation.Horizontal,
-            },
-            new Ship
-            {
-                Name = ShipName.Cruiser,
-                StartCoordinate = new Coordinate { X = 5, Y = 0 },
-                Orientation = ShipOrientation.Horizontal,
-            },
-            new Ship
-            {
-                Name = ShipName.Submarine,
-                StartCoordinate = new Coordinate { X = 3, Y = 2 },
-                Orientation = ShipOrientation.Horizontal,
-            },
-            new Ship
-            {
-                Name = ShipName.Destroyer,
-                StartCoordinate = new Coordinate { X = 4, Y = 3 },
-                Orientation = ShipOrientation.Horizontal,
-            },
+            new Ship { Name = ShipName.Carrier,    StartCoordinate = new Coordinate { X = 1, Y = 1 }, Orientation = ShipOrientation.Horizontal, },
+            new Ship { Name = ShipName.Battleship, StartCoordinate = new Coordinate { X = 1, Y = 0 }, Orientation = ShipOrientation.Horizontal, },
+            new Ship { Name = ShipName.Cruiser,    StartCoordinate = new Coordinate { X = 5, Y = 0 }, Orientation = ShipOrientation.Horizontal, },
+            new Ship { Name = ShipName.Submarine,  StartCoordinate = new Coordinate { X = 3, Y = 2 }, Orientation = ShipOrientation.Horizontal, },
+            new Ship { Name = ShipName.Destroyer,  StartCoordinate = new Coordinate { X = 4, Y = 3 }, Orientation = ShipOrientation.Horizontal, },
         ];
+
+        // csharpier-ignore
         _validFleet2 =
         [
-            new Ship
-            {
-                Name = ShipName.Carrier,
-                StartCoordinate = new Coordinate { X = 0, Y = 0 },
-                Orientation = ShipOrientation.Vertical,
-            },
-            new Ship
-            {
-                Name = ShipName.Battleship,
-                StartCoordinate = new Coordinate { X = 1, Y = 0 },
-                Orientation = ShipOrientation.Vertical,
-            },
-            new Ship
-            {
-                Name = ShipName.Cruiser,
-                StartCoordinate = new Coordinate { X = 2, Y = 0 },
-                Orientation = ShipOrientation.Vertical,
-            },
-            new Ship
-            {
-                Name = ShipName.Submarine,
-                StartCoordinate = new Coordinate { X = 3, Y = 0 },
-                Orientation = ShipOrientation.Vertical,
-            },
-            new Ship
-            {
-                Name = ShipName.Destroyer,
-                StartCoordinate = new Coordinate { X = 4, Y = 0 },
-                Orientation = ShipOrientation.Vertical,
-            },
+            new Ship { Name = ShipName.Carrier,    StartCoordinate = new Coordinate { X = 0, Y = 0 }, Orientation = ShipOrientation.Vertical, },
+            new Ship { Name = ShipName.Battleship, StartCoordinate = new Coordinate { X = 1, Y = 0 }, Orientation = ShipOrientation.Vertical, },
+            new Ship { Name = ShipName.Cruiser,    StartCoordinate = new Coordinate { X = 2, Y = 0 }, Orientation = ShipOrientation.Vertical, },
+            new Ship { Name = ShipName.Submarine,  StartCoordinate = new Coordinate { X = 3, Y = 0 }, Orientation = ShipOrientation.Vertical, },
+            new Ship { Name = ShipName.Destroyer,  StartCoordinate = new Coordinate { X = 4, Y = 0 }, Orientation = ShipOrientation.Vertical, },
         ];
         _gameLogic.ProcessShipPlacement(1, _validFleet1);
         _gameLogic.ProcessShipPlacement(2, _validFleet2);
