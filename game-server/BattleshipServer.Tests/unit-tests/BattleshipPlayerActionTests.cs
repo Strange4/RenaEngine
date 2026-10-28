@@ -1,7 +1,7 @@
 ﻿using BattleshipServer.Game.Logic;
 using BattleshipServer.Game.Models;
 
-namespace BattleshipServer.Tests.unit_tests;
+namespace BattleshipServer.Tests.Unit;
 
 [TestFixture]
 public class BattleshipPlayerActionTests
@@ -14,8 +14,8 @@ public class BattleshipPlayerActionTests
     public void Setup()
     {
         _gameLogic = new GameLogic();
-        _validFleet1 = new List<Ship>
-        {
+        _validFleet1 =
+        [
             new Ship
             {
                 Name = ShipName.Carrier,
@@ -46,9 +46,9 @@ public class BattleshipPlayerActionTests
                 StartCoordinate = new Coordinate { X = 4, Y = 3 },
                 Orientation = ShipOrientation.Horizontal,
             },
-        };
-        _validFleet2 = new List<Ship>
-        {
+        ];
+        _validFleet2 =
+        [
             new Ship
             {
                 Name = ShipName.Carrier,
@@ -79,7 +79,7 @@ public class BattleshipPlayerActionTests
                 StartCoordinate = new Coordinate { X = 4, Y = 0 },
                 Orientation = ShipOrientation.Vertical,
             },
-        };
+        ];
     }
 
     [TearDown]
@@ -103,7 +103,7 @@ public class BattleshipPlayerActionTests
     public void TestInvalidProcessPlayerAction_PlaceShips()
     {
         // Test with fleet size 0
-        PlayerAction action = new PlaceShipsAction { Ships = new List<Ship>() };
+        PlayerAction action = new PlaceShipsAction { Ships = [] };
         ActionStatus status = _gameLogic.ProcessPlayerAction(1, action);
         Assert.That(status, Is.EqualTo(ActionStatus.InvalidPlacement));
     }
@@ -146,9 +146,9 @@ public class BattleshipPlayerActionTests
     {
         PlayerState state = _gameLogic.GetPlayerState(1);
         Assert.That(state.GridSize, Is.EqualTo(GameLogic.BoardSize));
-        Assert.That(state.isPlacementPhase, Is.True);
-        Assert.That(state.isGameOver, Is.False);
-        Assert.That(state.isWinner, Is.False);
+        Assert.That(state.IsPlacementPhase, Is.True);
+        Assert.That(state.IsGameOver, Is.False);
+        Assert.That(state.IsWinner, Is.False);
         Assert.That(state.Ships, Is.Empty);
         Assert.That(state.ShotsFired, Is.Empty);
         Assert.That(state.SunkShips, Is.Empty);
@@ -163,8 +163,8 @@ public class BattleshipPlayerActionTests
         PlayerState statePlayer1 = _gameLogic.GetPlayerState(1);
         PlayerState statePlayer2 = _gameLogic.GetPlayerState(2);
 
-        Assert.That(statePlayer1.isPlacementPhase, Is.False);
-        Assert.That(statePlayer2.isPlacementPhase, Is.False);
+        Assert.That(statePlayer1.IsPlacementPhase, Is.False);
+        Assert.That(statePlayer2.IsPlacementPhase, Is.False);
         Assert.That(statePlayer1.Ships, Has.Count.EqualTo(5));
     }
 
@@ -188,10 +188,10 @@ public class BattleshipPlayerActionTests
         PlayerState statePlayer1 = _gameLogic.GetPlayerState(1);
         PlayerState statePlayer2 = _gameLogic.GetPlayerState(2);
 
-        Assert.That(statePlayer1.isGameOver, Is.True);
-        Assert.That(statePlayer2.isGameOver, Is.True);
-        Assert.That(statePlayer1.isWinner, Is.False);
-        Assert.That(statePlayer2.isWinner, Is.True);
+        Assert.That(statePlayer1.IsGameOver, Is.True);
+        Assert.That(statePlayer2.IsGameOver, Is.True);
+        Assert.That(statePlayer1.IsWinner, Is.False);
+        Assert.That(statePlayer2.IsWinner, Is.True);
         Assert.That(statePlayer2.SunkShips, Has.Count.EqualTo(5));
     }
 

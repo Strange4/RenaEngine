@@ -1,7 +1,7 @@
-﻿using BattleshipServer.Game.Logic;
+using BattleshipServer.Game.Logic;
 using BattleshipServer.Game.Models;
 
-namespace BattleshipServer.Tests.unit_tests;
+namespace BattleshipServer.Tests.Unit;
 
 [TestFixture]
 public class BattleshipActionTests
@@ -169,7 +169,7 @@ public class BattleshipActionTests
     [Test]
     public void TestInvalidActionSequence_ShootAfterGameOver()
     {
-        ActionExecutionResult result = null!;
+        ActionExecutionResult result;
         for (int i = 0; i < 99; i++)
         {
             result = _gameLogic.ProcessAction(1, new Coordinate { X = i % 10, Y = i / 10 });

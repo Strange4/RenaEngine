@@ -1,6 +1,6 @@
 ﻿using BattleshipServer.Game;
 
-namespace BattleshipServer.Tests.unit_tests;
+namespace BattleshipServer.Tests.Unit;
 
 [TestFixture]
 public class BattleshipGameTests

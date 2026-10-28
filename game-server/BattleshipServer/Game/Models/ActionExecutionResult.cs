@@ -19,11 +19,11 @@ public record ActionExecutionResult
     public ActionExecutionResult(
         ActionStatus status,
         ShotResult shotResult = ShotResult.ShotResultUnknown,
-        bool IsWin = false
+        bool isWin = false
     )
     {
         this.Status = status;
         this.ShotResult = shotResult;
-        this.IsWin = IsWin;
+        this.IsWin = isWin;
     }
 }

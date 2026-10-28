@@ -9,9 +9,9 @@ namespace Rena.Tests.Unit;
 public class OrchestratorTests
 {
     private DockerOperationsFixture _fixture = null!;
-    private Mock<IContainerOperations> _containerOperationsMock => this._fixture.Containers;
-    private Mock<IImageOperations> _imagesOperationsMock => this._fixture.Images;
-    private Orchestrator _orchestrator => _fixture.Orchestrator;
+    private Mock<IContainerOperations> ContainerOperationsMock => this._fixture.Containers;
+    private Mock<IImageOperations> ImagesOperationsMock => this._fixture.Images;
+    private Orchestrator Orchestrator => _fixture.Orchestrator;
 
     [SetUp]
     public void SetUp()
@@ -31,7 +31,7 @@ public class OrchestratorTests
         };
         this._fixture.ContainerResponses = containers;
 
-        var result = await this._orchestrator.GetRunningContainers();
+        var result = await this.Orchestrator.GetRunningContainers();
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0].ID, Is.EqualTo("c-running"));
@@ -47,7 +47,7 @@ public class OrchestratorTests
         };
         this._fixture.ContainerResponses = containers;
 
-        var result = await this._orchestrator.GetStoppedContainers();
+        var result = await this.Orchestrator.GetStoppedContainers();
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0].ID, Is.EqualTo("c-stopped"));
@@ -59,7 +59,7 @@ public class OrchestratorTests
         var containers = new List<ContainerListResponse> { new() { ID = "c-1" } };
         this._fixture.ContainerResponses = containers;
 
-        var result = await this._orchestrator.FindContainers(new ContainersListParameters { All = true });
+        var result = await this.Orchestrator.FindContainers(new ContainersListParameters { All = true });
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0].ID, Is.EqualTo("c-1"));
@@ -75,7 +75,7 @@ public class OrchestratorTests
         };
         this._fixture.ContainerResponses = containers;
 
-        var result = await this._orchestrator.FindFirstContainer(new ContainersListParameters { All = true });
+        var result = await this.Orchestrator.FindFirstContainer(new ContainersListParameters { All = true });
 
         Assert.That(result.IsSome);
         result.IfSome(container => Assert.That(container.ID, Is.EqualTo("c-first")));
@@ -87,7 +87,7 @@ public class OrchestratorTests
         var containers = new List<ContainerListResponse> { new() { ID = "c-1" } };
         this._fixture.ContainerResponses = containers;
 
-        var result = await this._orchestrator.GetContainerById("c-1");
+        var result = await this.Orchestrator.GetContainerById("c-1");
 
         Assert.That(result.IsSome);
         result.IfSome(container => Assert.That(container.ID, Is.EqualTo("c-1")));
@@ -99,7 +99,7 @@ public class OrchestratorTests
         const string imageId = "sha256:4ee5a832ef6e";
         const string containerName = "test-app";
 
-        var result = await this._orchestrator.CreateContainer(imageId, containerName);
+        var result = await this.Orchestrator.CreateContainer(imageId, containerName);
 
         Assert.That(result.IsSome);
         result.IfSome(response => Assert.That(response.ID, Is.EqualTo(this._fixture.CreateContainerResponse.ID)));
@@ -119,7 +119,7 @@ public class OrchestratorTests
         const string containerId = "c-1";
         this._fixture.ContainerResponses = [new() { ID = containerId }];
 
-        var result = await this._orchestrator.StartContainer(containerId);
+        var result = await this.Orchestrator.StartContainer(containerId);
 
         Assert.That(result, Is.True);
     }
@@ -130,7 +130,7 @@ public class OrchestratorTests
         const string containerId = "c-1";
         this._fixture.ContainerResponses = [new() { ID = containerId }];
 
-        var result = await this._orchestrator.StopContainer(containerId);
+        var result = await this.Orchestrator.StopContainer(containerId);
 
         Assert.That(result, Is.True);
     }
@@ -141,7 +141,7 @@ public class OrchestratorTests
         const string containerId = "c-1";
         this._fixture.ContainerResponses = [new() { ID = containerId }];
 
-        var result = await this._orchestrator.DeleteContainer(containerId);
+        var result = await this.Orchestrator.DeleteContainer(containerId);
 
         Assert.That(result, Is.True);
     }
@@ -153,7 +153,7 @@ public class OrchestratorTests
         var images = new List<ImagesListResponse> { new() { ID = imageId } };
         this._fixture.ImageResponses = images;
 
-        var result = await this._orchestrator.GetAllImages();
+        var result = await this.Orchestrator.GetAllImages();
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0].ID, Is.EqualTo(imageId));
@@ -166,7 +166,7 @@ public class OrchestratorTests
         var images = new List<ImagesListResponse> { new() { ID = imageId } };
         this._fixture.ImageResponses = images;
 
-        var result = await this._orchestrator.GetImageById("4ee5a832ef6e");
+        var result = await this.Orchestrator.GetImageById("4ee5a832ef6e");
 
         Assert.That(result.IsSome);
         result.IfSome(image => Assert.That(image.ID, Is.EqualTo(imageId)));
@@ -184,7 +184,7 @@ public class OrchestratorTests
 
         this._fixture.ImageResponses = images;
 
-        var result = await this._orchestrator.GetImageByName(imageName);
+        var result = await this.Orchestrator.GetImageByName(imageName);
 
         Assert.That(result.IsSome);
         result.IfSome(image => Assert.That(image.ID, Is.EqualTo(imageId)));
@@ -193,17 +193,17 @@ public class OrchestratorTests
     [Test]
     public async Task StartContainer_WhenContainerDoesNotExist_ReturnsFalse()
     {
-        bool result = await this._orchestrator.StartContainer("non-existent");
+        bool result = await this.Orchestrator.StartContainer("non-existent");
         Assert.That(result, Is.False);
     }
 
     [Test]
     public async Task StartContainer_WhenDockerApiException_ReturnsFalse()
     {
-        this._containerOperationsMock.Setup(c => c.ListContainersAsync(It.IsAny<ContainersListParameters>(), default))
+        this.ContainerOperationsMock.Setup(c => c.ListContainersAsync(It.IsAny<ContainersListParameters>(), default))
             .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.BadRequest, "Bad Request"));
 
-        bool result = await this._orchestrator.StartContainer("c-1");
+        bool result = await this.Orchestrator.StartContainer("c-1");
         Assert.That(result, Is.False);
     }
 
@@ -211,19 +211,19 @@ public class OrchestratorTests
     public async Task StartContainer_WhenGenericException_ReturnsFalse()
     {
         this._fixture.ContainerResponses = [new() { ID = "c-1", State = "exited" }];
-        this._containerOperationsMock.Setup(c =>
+        this.ContainerOperationsMock.Setup(c =>
                 c.StartContainerAsync("c-1", It.IsAny<ContainerStartParameters>(), default)
             )
             .ThrowsAsync(new Exception("Unexpected"));
 
-        bool result = await this._orchestrator.StartContainer("c-1");
+        bool result = await this.Orchestrator.StartContainer("c-1");
         Assert.That(result, Is.False);
     }
 
     [Test]
     public async Task StopContainer_WhenContainerDoesNotExist_ReturnsFalse()
     {
-        bool result = await this._orchestrator.StopContainer("non-existent");
+        bool result = await this.Orchestrator.StopContainer("non-existent");
         Assert.That(result, Is.False);
     }
 
@@ -231,22 +231,22 @@ public class OrchestratorTests
     public async Task StopContainer_WhenDockerApiException_ReturnsFalse()
     {
         this._fixture.ContainerResponses = [new() { ID = "c-1", State = "running" }];
-        this._containerOperationsMock.Setup(c =>
+        this.ContainerOperationsMock.Setup(c =>
                 c.StopContainerAsync("c-1", It.IsAny<ContainerStopParameters>(), default)
             )
             .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.InternalServerError, "Error"));
 
-        bool result = await this._orchestrator.StopContainer("c-1");
+        bool result = await this.Orchestrator.StopContainer("c-1");
         Assert.That(result, Is.False);
     }
 
     [Test]
     public async Task GetAllImages_WhenDockerApiException_ReturnsEmptyList()
     {
-        this._imagesOperationsMock.Setup(i => i.ListImagesAsync(It.IsAny<ImagesListParameters>(), default))
+        this.ImagesOperationsMock.Setup(i => i.ListImagesAsync(It.IsAny<ImagesListParameters>(), default))
             .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.InternalServerError, "Error"));
 
-        var result = await this._orchestrator.GetAllImages();
+        var result = await this.Orchestrator.GetAllImages();
         Assert.That(result, Is.Empty);
     }
 
@@ -255,7 +255,7 @@ public class OrchestratorTests
     {
         this._fixture.ImageResponses = [new() { ID = "sha256:1234567890" }];
 
-        var result = await this._orchestrator.GetImageById("sha256:1234567890");
+        var result = await this.Orchestrator.GetImageById("sha256:1234567890");
 
         Assert.That(result.IsSome, Is.True);
     }
@@ -265,7 +265,7 @@ public class OrchestratorTests
     {
         this._fixture.ImageResponses = [new() { ID = "sha256:1234567890" }];
 
-        var result = await this._orchestrator.GetImageById("123456");
+        var result = await this.Orchestrator.GetImageById("123456");
 
         Assert.That(result.IsSome, Is.True);
     }
@@ -273,7 +273,7 @@ public class OrchestratorTests
     [Test]
     public async Task GetImageById_ReturnsNoneWhenImageDoesNotExist()
     {
-        var result = await this._orchestrator.GetImageById("non-matching-id");
+        var result = await this.Orchestrator.GetImageById("non-matching-id");
 
         Assert.That(result.IsNone, Is.True);
     }
@@ -281,27 +281,27 @@ public class OrchestratorTests
     [Test]
     public async Task CreateContainer_WhenDockerApiException_ReturnsNone()
     {
-        this._containerOperationsMock.Setup(c => c.CreateContainerAsync(It.IsAny<CreateContainerParameters>(), default))
+        this.ContainerOperationsMock.Setup(c => c.CreateContainerAsync(It.IsAny<CreateContainerParameters>(), default))
             .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.BadRequest, "Bad Request"));
 
-        var result = await this._orchestrator.CreateContainer("img-id", "name");
+        var result = await this.Orchestrator.CreateContainer("img-id", "name");
         Assert.That(result.IsNone, Is.True);
     }
 
     [Test]
     public async Task CreateContainer_WhenGenericException_ReturnsNone()
     {
-        this._containerOperationsMock.Setup(c => c.CreateContainerAsync(It.IsAny<CreateContainerParameters>(), default))
+        this.ContainerOperationsMock.Setup(c => c.CreateContainerAsync(It.IsAny<CreateContainerParameters>(), default))
             .ThrowsAsync(new Exception("Unexpected"));
 
-        var result = await this._orchestrator.CreateContainer("img-id", "name");
+        var result = await this.Orchestrator.CreateContainer("img-id", "name");
         Assert.That(result.IsNone, Is.True);
     }
 
     [Test]
     public async Task DeleteContainer_WhenContainerDoesNotExist_ReturnsFalse()
     {
-        bool result = await this._orchestrator.DeleteContainer("non-existent");
+        bool result = await this.Orchestrator.DeleteContainer("non-existent");
         Assert.That(result, Is.False);
     }
 
@@ -309,12 +309,12 @@ public class OrchestratorTests
     public async Task DeleteContainer_WhenDockerApiException_ReturnsFalse()
     {
         this._fixture.ContainerResponses = [new() { ID = "c-1", State = "exited" }];
-        this._containerOperationsMock.Setup(c =>
+        this.ContainerOperationsMock.Setup(c =>
                 c.RemoveContainerAsync("c-1", It.IsAny<ContainerRemoveParameters>(), default)
             )
             .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.InternalServerError, "Error"));
 
-        bool result = await this._orchestrator.DeleteContainer("c-1");
+        bool result = await this.Orchestrator.DeleteContainer("c-1");
         Assert.That(result, Is.False);
     }
 }

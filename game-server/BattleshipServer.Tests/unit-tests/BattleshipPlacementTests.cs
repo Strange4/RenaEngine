@@ -1,7 +1,7 @@
 ﻿using BattleshipServer.Game.Logic;
 using BattleshipServer.Game.Models;
 
-namespace BattleshipServer.Tests.unit_tests;
+namespace BattleshipServer.Tests.Unit;
 
 [TestFixture]
 public class BattleshipPlacementTests
@@ -13,8 +13,8 @@ public class BattleshipPlacementTests
     public void Setup()
     {
         _gameLogic = new GameLogic();
-        _validFleet = new List<Ship>
-        {
+        _validFleet =
+        [
             new Ship
             {
                 Name = ShipName.Carrier,
@@ -45,7 +45,7 @@ public class BattleshipPlacementTests
                 StartCoordinate = new Coordinate { X = 4, Y = 3 },
                 Orientation = ShipOrientation.Horizontal,
             },
-        };
+        ];
     }
 
     [TearDown]
@@ -279,8 +279,8 @@ public class BattleshipPlacementTests
     public void TestValidShipPlacement_MaximumBoundary()
     {
         // Test placing a ship at the maximum boundary of the board
-        List<Ship> maxBoundaryFleet = new List<Ship>
-        {
+        List<Ship> maxBoundaryFleet =
+        [
             new Ship
             {
                 Name = ShipName.Carrier,
@@ -311,7 +311,7 @@ public class BattleshipPlacementTests
                 StartCoordinate = new Coordinate { X = 0, Y = 8 },
                 Orientation = ShipOrientation.Vertical,
             },
-        };
+        ];
         PlacementResult resultMaxBoundary = _gameLogic.ProcessShipPlacement(1, maxBoundaryFleet);
         Assert.That(resultMaxBoundary, Is.EqualTo(PlacementResult.Success));
     }
@@ -386,7 +386,7 @@ public class BattleshipPlacementTests
     public void TestInvalidShipPlacement_EmptyFleet()
     {
         // Test with an empty fleet
-        List<Ship> emptyFleet = new List<Ship>();
+        List<Ship> emptyFleet = [];
         PlacementResult resultEmptyFleet = _gameLogic.ProcessShipPlacement(1, emptyFleet);
         Assert.That(resultEmptyFleet, Is.EqualTo(PlacementResult.InvalidFleetSize));
     }

@@ -45,9 +45,9 @@ public class GameLogic
             Ships = player.PlacedShips,
             SunkShips = opponent.SunkShips,
             ShotsFired = player.ShotsFired,
-            isGameOver = this.IsGameOver,
-            isWinner = isWinner && this.IsGameOver,
-            isPlacementPhase = player.PlacedShips.Count < 5,
+            IsGameOver = this.IsGameOver,
+            IsWinner = isWinner && this.IsGameOver,
+            IsPlacementPhase = player.PlacedShips.Count < 5,
         };
     }
 
@@ -55,11 +55,11 @@ public class GameLogic
 
     internal Player GetOpponent(int playerNumber) => playerNumber == 1 ? this.Player2 : this.Player1;
 
-    internal PlacementResult ValidateFleetComposition(List<Ship> ships)
+    internal static PlacementResult ValidateFleetComposition(List<Ship> ships)
     {
         if (ships.Count != 5)
             return PlacementResult.InvalidFleetSize;
-        HashSet<ShipName> shipNames = new HashSet<ShipName>();
+        HashSet<ShipName> shipNames = [];
         foreach (var ship in ships)
         {
             if (ship.Name is ShipName.ShipNameUnknown || !Enum.IsDefined(ship.Name))
@@ -72,15 +72,15 @@ public class GameLogic
         return PlacementResult.Success;
     }
 
-    internal int GetIndex(int x, int y)
+    internal static int GetIndex(int x, int y)
     {
         return (y * BoardSize) + x;
     }
 
-    internal PlacementResult ValidateShipPlacement(List<Ship> ships)
+    internal static PlacementResult ValidateShipPlacement(List<Ship> ships)
     {
         bool[] isOccupied = new bool[BoardSize * BoardSize];
-        PlacementResult fleetResult = this.ValidateFleetComposition(ships);
+        PlacementResult fleetResult = ValidateFleetComposition(ships);
         if (fleetResult != PlacementResult.Success)
             return fleetResult;
 
@@ -96,7 +96,7 @@ public class GameLogic
             int size = ship.Size;
             for (int j = 0; j < size; j++)
             {
-                int index = isHorizontal ? this.GetIndex(x + j, y) : this.GetIndex(x, y + j);
+                int index = isHorizontal ? GetIndex(x + j, y) : GetIndex(x, y + j);
                 if (isOccupied[index])
                     return PlacementResult.Overlapping;
                 isOccupied[index] = true;
@@ -110,7 +110,7 @@ public class GameLogic
         Player player = this.GetPlayer(playerNumber);
         if (player.PlacedShips.Count > 0)
             return PlacementResult.AlreadyPlaced;
-        PlacementResult result = this.ValidateShipPlacement(ships);
+        PlacementResult result = ValidateShipPlacement(ships);
         if (result == PlacementResult.Success)
             player.PlacedShips.AddRange(ships);
         return result;
@@ -133,7 +133,7 @@ public class GameLogic
         Player player = this.GetPlayer(playerNumber);
         Player opponent = this.GetOpponent(playerNumber);
 
-        Ship? hitShip = opponent.PlacedShips.FirstOrDefault(ship => this.ShipOccupiesCoordinate(ship, coordinate));
+        Ship? hitShip = opponent.PlacedShips.FirstOrDefault(ship => ShipOccupiesCoordinate(ship, coordinate));
         if (hitShip == null)
         {
             player.ShotsFired.Add(new ShotRecord { Coordinate = coordinate, Result = ShotResult.Miss });
@@ -145,17 +145,13 @@ public class GameLogic
         bool isSunk = hitShip.IsShipSunk(player.ShotsFired);
         if (isSunk)
         {
-            player.ShotsFired[player.ShotsFired.Count - 1] = new ShotRecord
-            {
-                Coordinate = coordinate,
-                Result = ShotResult.Sunk,
-            }; // Update from hit to sunk
+            player.ShotsFired[^1] = new ShotRecord { Coordinate = coordinate, Result = ShotResult.Sunk }; // Update from hit to sunk
             opponent.SunkShips.Add(hitShip);
-            if (this.CheckWinCondition(opponent.PlacedShips, player.ShotsFired))
+            if (CheckWinCondition(opponent.PlacedShips, player.ShotsFired))
             {
                 this.IsGameOver = true;
                 this.IsPlayer1Winner = playerNumber == 1;
-                return new(ActionStatus.Success, ShotResult.Sunk, IsWin: true);
+                return new(ActionStatus.Success, ShotResult.Sunk, isWin: true);
             }
         }
         this.IsPlayer1Turn = !this.IsPlayer1Turn; // Switch turns
@@ -178,9 +174,9 @@ public class GameLogic
             return ActionStatus.NotReadyToStart;
         if (this.IsGameOver)
             return ActionStatus.GameOver;
-        if (this.IsPlayer1Turn && playerNumber == 2){
+        if (this.IsPlayer1Turn && playerNumber == 2)
+        {
             return ActionStatus.NotYourTurn;
-
         }
         if (!this.IsPlayer1Turn && playerNumber == 1)
             return ActionStatus.NotYourTurn;
@@ -191,7 +187,7 @@ public class GameLogic
         return ActionStatus.Success;
     }
 
-    internal bool ShipOccupiesCoordinate(Ship ship, Coordinate coordinate)
+    internal static bool ShipOccupiesCoordinate(Ship ship, Coordinate coordinate)
     {
         bool isHorizontal = ship.Orientation == ShipOrientation.Horizontal;
         for (int i = 0; i < ship.Size; i++)
@@ -204,7 +200,7 @@ public class GameLogic
         return false;
     }
 
-    internal bool CheckWinCondition(List<Ship> opponentShips, List<ShotRecord> shotsFired)
+    internal static bool CheckWinCondition(List<Ship> opponentShips, List<ShotRecord> shotsFired)
     {
         return opponentShips.All(ship => ship.IsShipSunk(shotsFired));
     }

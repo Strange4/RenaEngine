@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 
 internal sealed class CompetitionSettingsState
 {
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly Dictionary<string, bool> _features;
 
     public CompetitionSettingsState(IOptions<RenaOptions> options)
