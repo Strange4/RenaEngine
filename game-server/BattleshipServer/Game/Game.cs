@@ -1,5 +1,4 @@
 using BattleshipServer.Game.Models;
-
 using Rena.GameEngine;
 
 namespace BattleshipServer.Game;
