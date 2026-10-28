@@ -3,6 +3,6 @@
 /website/ @SacciadisG @kcrri @lucaieraci @nicolas-zampieri
 
 /website/src/app/viewer/ @YehJordan @benjaminsunliu @DallaliRim @JenLys
-/website/src/app/shared/renderable.*.ts @YehJordan @benjaminsunliu @DallaliRim @JenLys
-/website/src/app/components/LiveViewer.*.ts @YehJordan @benjaminsunliu @DallaliRim @JenLys
+/website/src/app/shared/renderable*.ts @YehJordan @benjaminsunliu @DallaliRim @JenLys
+/website/src/app/components/LiveViewer*.tsx @YehJordan @benjaminsunliu @DallaliRim @JenLys
 /website/src/app/(pages)/live-viewer/ @YehJordan @benjaminsunliu @DallaliRim @JenLys
