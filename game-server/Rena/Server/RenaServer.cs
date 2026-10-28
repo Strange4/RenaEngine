@@ -26,6 +26,8 @@ where A : class
 
         var app = builder.Build();
 
+        app.UseWebSockets();
+
         app.UseRenaEndpoints<G, S, A>();
 
         return new RenaServer<G, S, A>(app);
