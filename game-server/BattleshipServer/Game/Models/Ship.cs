@@ -5,9 +5,15 @@ namespace BattleshipServer.Game.Models;
 [DataContract]
 public class Ship
 {
-    [DataMember(Order = 1)] public ShipName Name { get; init; } = ShipName.ShipNameUnknown;
-    [DataMember(Order = 2)] public ShipOrientation Orientation { get; init; } = ShipOrientation.ShipOrientationUnknown;
-    [DataMember(Order = 3)] public Coordinate StartCoordinate { get; init; } = new Coordinate();
+    [DataMember(Order = 1)]
+    public ShipName Name { get; init; } = ShipName.ShipNameUnknown;
+
+    [DataMember(Order = 2)]
+    public ShipOrientation Orientation { get; init; } = ShipOrientation.ShipOrientationUnknown;
+
+    [DataMember(Order = 3)]
+    public Coordinate StartCoordinate { get; init; } = new Coordinate();
+
     [DataMember(Order = 4)]
     public int Size
     {
@@ -23,15 +29,17 @@ public class Ship
             ShipName.Cruiser => 3,
             ShipName.Submarine => 3,
             ShipName.Destroyer => 2,
-            _ => 0
+            _ => 0,
         };
     }
 
     public bool IsOutsideBoard(int boardSize)
     {
         // Convention: Horizontal ships are placed from left to right, vertical ships are placed from top to bottom
-        if (this.Size == 0) return true;
-        if (this.StartCoordinate.X < 0 || this.StartCoordinate.Y < 0) return true;
+        if (this.Size == 0)
+            return true;
+        if (this.StartCoordinate.X < 0 || this.StartCoordinate.Y < 0)
+            return true;
         if (this.Orientation == ShipOrientation.Horizontal)
         {
             return (this.StartCoordinate.X + this.Size > boardSize) || (this.StartCoordinate.Y >= boardSize);
@@ -50,10 +58,9 @@ public class Ship
         {
             int x = isHorizontal ? this.StartCoordinate.X + i : this.StartCoordinate.X;
             int y = isHorizontal ? this.StartCoordinate.Y : this.StartCoordinate.Y + i;
-            if (!shotsFired.Any(s => s.Coordinate.X == x && s.Coordinate.Y == y)) return false;
+            if (!shotsFired.Any(s => s.Coordinate.X == x && s.Coordinate.Y == y))
+                return false;
         }
         return true;
     }
-
-
 }

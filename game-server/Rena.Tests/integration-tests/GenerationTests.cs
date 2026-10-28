@@ -1,5 +1,4 @@
 using System.IO.Compression;
-
 using Rena.Generator;
 
 namespace Rena.Tests.Integration;
@@ -15,15 +14,20 @@ public class SDKGenerationTests
         RenaOptions options = new()
         {
             GenerationDirectory = "./sdks",
-            TSProtoPath = "../../../../Rena/generated/typescript/sdk-tools/node_modules/.bin/" + tsProtoName
+            TSProtoPath = "../../../../Rena/generated/typescript/sdk-tools/node_modules/.bin/" + tsProtoName,
         };
         ILanguageSDKGenerator typescriptGenerator = new TypescriptSDKGenerator(options.TSProtoPath);
         string zipFilePath = Path.Combine(options.GenerationDirectory, "typescript.zip");
-        await SDKGenerator<GameState, GameAction>.GenerateSDK(options.GenerationDirectory, zipFilePath, typescriptGenerator);
+        await SDKGenerator<GameState, GameAction>.GenerateSDK(
+            options.GenerationDirectory,
+            zipFilePath,
+            typescriptGenerator
+        );
         Assert.That(zipFilePath, Does.Exist);
         ZipArchive archive = await ZipFile.OpenReadAsync(zipFilePath);
         var generatedTypesEntry = archive.GetEntry("generated/game.ts");
-        List<ZipArchiveEntry?> wantedFiles = [
+        List<ZipArchiveEntry?> wantedFiles =
+        [
             generatedTypesEntry,
             archive.GetEntry("README.md"),
             archive.GetEntry("main.ts"),

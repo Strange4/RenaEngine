@@ -18,8 +18,6 @@ public record class RenaOptions
     [Required]
     public string AdminToken { get; set; } = "ADMIN-change-me";
 
-    public Dictionary<string, bool> Features { get; set; } = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["test-feature"] = false
-    };
+    public Dictionary<string, bool> Features { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase) { ["test-feature"] = false };
 }

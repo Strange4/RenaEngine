@@ -9,9 +9,7 @@ internal sealed class CompetitionSettingsState
 
     public CompetitionSettingsState(IOptions<RenaOptions> options)
     {
-        this._features = new Dictionary<string, bool>(
-            options.Value.Features,
-            StringComparer.OrdinalIgnoreCase);
+        this._features = new Dictionary<string, bool>(options.Value.Features, StringComparer.OrdinalIgnoreCase);
     }
 
     public bool TryGetFeature(string featureKey, out bool enabled)

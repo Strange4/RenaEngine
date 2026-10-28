@@ -16,19 +16,69 @@ public class BattleshipPlayerActionTests
         _gameLogic = new GameLogic();
         _validFleet1 = new List<Ship>
         {
-            new Ship { Name = ShipName.Carrier, StartCoordinate = new Coordinate{X = 1, Y = 1}, Orientation = ShipOrientation.Horizontal },
-            new Ship { Name = ShipName.Battleship, StartCoordinate = new Coordinate{X = 1, Y = 0}, Orientation = ShipOrientation.Horizontal },
-            new Ship { Name = ShipName.Cruiser, StartCoordinate = new Coordinate{X = 5, Y = 0}, Orientation = ShipOrientation.Horizontal },
-            new Ship { Name = ShipName.Submarine, StartCoordinate = new Coordinate{X = 3, Y = 2}, Orientation = ShipOrientation.Horizontal },
-            new Ship { Name = ShipName.Destroyer, StartCoordinate = new Coordinate{X = 4, Y = 3}, Orientation = ShipOrientation.Horizontal }
+            new Ship
+            {
+                Name = ShipName.Carrier,
+                StartCoordinate = new Coordinate { X = 1, Y = 1 },
+                Orientation = ShipOrientation.Horizontal,
+            },
+            new Ship
+            {
+                Name = ShipName.Battleship,
+                StartCoordinate = new Coordinate { X = 1, Y = 0 },
+                Orientation = ShipOrientation.Horizontal,
+            },
+            new Ship
+            {
+                Name = ShipName.Cruiser,
+                StartCoordinate = new Coordinate { X = 5, Y = 0 },
+                Orientation = ShipOrientation.Horizontal,
+            },
+            new Ship
+            {
+                Name = ShipName.Submarine,
+                StartCoordinate = new Coordinate { X = 3, Y = 2 },
+                Orientation = ShipOrientation.Horizontal,
+            },
+            new Ship
+            {
+                Name = ShipName.Destroyer,
+                StartCoordinate = new Coordinate { X = 4, Y = 3 },
+                Orientation = ShipOrientation.Horizontal,
+            },
         };
         _validFleet2 = new List<Ship>
         {
-            new Ship { Name = ShipName.Carrier, StartCoordinate = new Coordinate{X = 0, Y = 0}, Orientation = ShipOrientation.Vertical },
-            new Ship { Name = ShipName.Battleship, StartCoordinate = new Coordinate{X = 1, Y = 0}, Orientation = ShipOrientation.Vertical },
-            new Ship { Name = ShipName.Cruiser, StartCoordinate = new Coordinate{X = 2, Y = 0}, Orientation = ShipOrientation.Vertical },
-            new Ship { Name = ShipName.Submarine, StartCoordinate = new Coordinate{X = 3, Y = 0}, Orientation = ShipOrientation.Vertical },
-            new Ship { Name = ShipName.Destroyer, StartCoordinate = new Coordinate{X = 4, Y = 0}, Orientation = ShipOrientation.Vertical }
+            new Ship
+            {
+                Name = ShipName.Carrier,
+                StartCoordinate = new Coordinate { X = 0, Y = 0 },
+                Orientation = ShipOrientation.Vertical,
+            },
+            new Ship
+            {
+                Name = ShipName.Battleship,
+                StartCoordinate = new Coordinate { X = 1, Y = 0 },
+                Orientation = ShipOrientation.Vertical,
+            },
+            new Ship
+            {
+                Name = ShipName.Cruiser,
+                StartCoordinate = new Coordinate { X = 2, Y = 0 },
+                Orientation = ShipOrientation.Vertical,
+            },
+            new Ship
+            {
+                Name = ShipName.Submarine,
+                StartCoordinate = new Coordinate { X = 3, Y = 0 },
+                Orientation = ShipOrientation.Vertical,
+            },
+            new Ship
+            {
+                Name = ShipName.Destroyer,
+                StartCoordinate = new Coordinate { X = 4, Y = 0 },
+                Orientation = ShipOrientation.Vertical,
+            },
         };
     }
 
@@ -63,7 +113,10 @@ public class BattleshipPlayerActionTests
     {
         _gameLogic.ProcessShipPlacement(1, _validFleet1);
         _gameLogic.ProcessShipPlacement(2, _validFleet2);
-        PlayerAction action = new ShootAction { ShootAt = new Coordinate { X = 0, Y = 0 } };
+        PlayerAction action = new ShootAction
+        {
+            ShootAt = new Coordinate { X = 0, Y = 0 },
+        };
         ActionStatus status = _gameLogic.ProcessPlayerAction(1, action);
         Assert.That(status, Is.EqualTo(ActionStatus.Success));
     }
@@ -73,7 +126,10 @@ public class BattleshipPlayerActionTests
     {
         _gameLogic.ProcessShipPlacement(1, _validFleet1);
         _gameLogic.ProcessShipPlacement(2, _validFleet2);
-        PlayerAction action = new ShootAction { ShootAt = new Coordinate { X = 10, Y = 10 } };
+        PlayerAction action = new ShootAction
+        {
+            ShootAt = new Coordinate { X = 10, Y = 10 },
+        };
         ActionStatus status = _gameLogic.ProcessPlayerAction(1, action);
         Assert.That(status, Is.EqualTo(ActionStatus.OutOfBounds));
     }
@@ -122,9 +178,11 @@ public class BattleshipPlayerActionTests
         for (int i = 0; i < 99; i++)
         {
             ActionExecutionResult result1 = _gameLogic.ProcessAction(1, new Coordinate { X = i % 10, Y = i / 10 });
-            if (result1.IsWin) break;
+            if (result1.IsWin)
+                break;
             ActionExecutionResult result2 = _gameLogic.ProcessAction(2, new Coordinate { X = i % 10, Y = i / 10 });
-            if (result2.IsWin) break;
+            if (result2.IsWin)
+                break;
         }
 
         PlayerState statePlayer1 = _gameLogic.GetPlayerState(1);
@@ -161,7 +219,7 @@ public class BattleshipPlayerActionTests
         {
             Name = ShipName.Carrier,
             StartCoordinate = new Coordinate { X = 0, Y = 0 },
-            Orientation = ShipOrientation.ShipOrientationUnknown
+            Orientation = ShipOrientation.ShipOrientationUnknown,
         };
         Assert.That(ship.IsOutsideBoard(10), Is.True);
     }
@@ -173,7 +231,7 @@ public class BattleshipPlayerActionTests
         {
             Name = (ShipName)123, //unknown name defaults to size 0
             StartCoordinate = new Coordinate { X = 0, Y = 0 },
-            Orientation = ShipOrientation.Horizontal
+            Orientation = ShipOrientation.Horizontal,
         };
         Assert.That(ship.IsOutsideBoard(10), Is.True);
     }
@@ -185,7 +243,7 @@ public class BattleshipPlayerActionTests
         {
             Name = ShipName.Carrier,
             StartCoordinate = new Coordinate { X = 10, Y = 0 },
-            Orientation = ShipOrientation.Vertical
+            Orientation = ShipOrientation.Vertical,
         };
         Assert.That(ship.IsOutsideBoard(10), Is.True);
     }

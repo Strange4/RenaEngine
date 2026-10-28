@@ -27,12 +27,13 @@ internal class TypescriptSDKGenerator(string tsProtoPath) : ILanguageSDKGenerato
         ProcessStartInfo typescriptArgs = new()
         {
             FileName = "protoc",
-            ArgumentList = {
+            ArgumentList =
+            {
                 $"--plugin=protoc-gen-ts_proto={tsProtoPath}",
                 $"--ts_proto_out={generatedTypesPath}",
                 $"--ts_proto_opt=esModuleInterop=true",
                 $"--proto_path={Path.GetDirectoryName(protoFilePath)}",
-                protoFilePath
+                protoFilePath,
             },
         };
 
@@ -52,15 +53,24 @@ internal class TypescriptSDKGenerator(string tsProtoPath) : ILanguageSDKGenerato
 
         // Takes the files embedded at build time using Rena.csproj and writes them to real files in the file system.
         await EmbeddedFileIO.WriteEmbededFile(generatedTypesPath, "generated.typescript", "glue.ts");
-        await EmbeddedFileIO.WriteAllEmbeddedFiles(generationDirectory, "generated.typescript", ["main.ts", "README.md", "package.json", "package-lock.json"]);
+        await EmbeddedFileIO.WriteAllEmbeddedFiles(
+            generationDirectory,
+            "generated.typescript",
+            ["main.ts", "README.md", "package.json", "package-lock.json"]
+        );
     }
 
-    private static async Task GenerateDefaultFile(ProtoTypeInformation typeInfo, string defaultFilePath, string protoFilePath)
+    private static async Task GenerateDefaultFile(
+        ProtoTypeInformation typeInfo,
+        string defaultFilePath,
+        string protoFilePath
+    )
     {
         string importPath = Path.GetFileName(protoFilePath)[..^".proto".Length];
         string actionTypeName = typeInfo.ActionTypeName;
         string stateTypeName = typeInfo.StateTypeName;
-        string content = $@"import {{ {actionTypeName}, {stateTypeName} }} from ""./{importPath}.ts""
+        string content =
+            $@"import {{ {actionTypeName}, {stateTypeName} }} from ""./{importPath}.ts""
 export type Action = {actionTypeName};
 export type State = {stateTypeName};
 ";
@@ -68,9 +78,10 @@ export type State = {stateTypeName};
     }
 }
 
-
 public class ProcessFailedException : Exception
 {
     public ProcessFailedException() { }
-    public ProcessFailedException(string message) : base(message) { }
+
+    public ProcessFailedException(string message)
+        : base(message) { }
 }

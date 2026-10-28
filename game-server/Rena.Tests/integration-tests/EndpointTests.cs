@@ -1,11 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Runtime.Serialization;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
-
 using Rena.GameEngine;
 using Rena.Server;
 
@@ -21,18 +19,18 @@ public class EndpointTests
     public async Task OneTimeSetUp()
     {
         var builder = WebApplication.CreateBuilder(
-            new WebApplicationOptions
-            {
-                EnvironmentName = "Testing",
-                Args = []
-            });
+            new WebApplicationOptions { EnvironmentName = "Testing", Args = [] }
+        );
 
         builder.WebHost.UseTestServer();
-        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>{
-            {"RenaOptions:TSProtoPath", "TESTING"},
-            {"RenaOptions:AdminToken", "TEST-ADMIN-TOKEN"},
-            {"RenaOptions:Features:test-feature", "false"},
-        });
+        builder.Configuration.AddInMemoryCollection(
+            new Dictionary<string, string?>
+            {
+                { "RenaOptions:TSProtoPath", "TESTING" },
+                { "RenaOptions:AdminToken", "TEST-ADMIN-TOKEN" },
+                { "RenaOptions:Features:test-feature", "false" },
+            }
+        );
         builder.SetRenaServices<TestGame, GameState, GameAction>();
 
         _app = builder.Build();
@@ -76,48 +74,42 @@ public class EndpointTests
     [Test]
     public async Task TestFeatureSetting_AdminCanEnableAndDisableIt()
     {
-        using HttpResponseMessage initialResponse = await _client.GetAsync(
-            "/settings/features/test-feature");
+        using HttpResponseMessage initialResponse = await _client.GetAsync("/settings/features/test-feature");
         Assert.That(initialResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         TestFeatureSettingDto? initialSetting =
             await initialResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
         Assert.That(initialSetting?.Enabled, Is.False);
 
-        using HttpResponseMessage unknownFeatureResponse = await _client.GetAsync(
-            "/settings/features/unknown");
+        using HttpResponseMessage unknownFeatureResponse = await _client.GetAsync("/settings/features/unknown");
         Assert.That(unknownFeatureResponse.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
 
         using HttpResponseMessage missingTokenResponse = await _client.PutAsJsonAsync(
             "/settings/features/test-feature",
-            new { enabled = true });
+            new { enabled = true }
+        );
         Assert.That(missingTokenResponse.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
 
         using HttpRequestMessage wrongTokenRequest = CreateSettingRequest(true, "WRONG-TOKEN");
         using HttpResponseMessage wrongTokenResponse = await _client.SendAsync(wrongTokenRequest);
         Assert.That(wrongTokenResponse.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
 
-        using HttpRequestMessage invalidBodyRequest = new(
-            HttpMethod.Put,
-            "/settings/features/test-feature")
+        using HttpRequestMessage invalidBodyRequest = new(HttpMethod.Put, "/settings/features/test-feature")
         {
-            Content = JsonContent.Create(new { enabled = "yes" })
+            Content = JsonContent.Create(new { enabled = "yes" }),
         };
         invalidBodyRequest.Headers.Authorization = new("Bearer", "TEST-ADMIN-TOKEN");
         using HttpResponseMessage invalidBodyResponse = await _client.SendAsync(invalidBodyRequest);
         Assert.That(invalidBodyResponse.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
 
-        using HttpRequestMessage missingEnabledRequest = new(
-            HttpMethod.Put,
-            "/settings/features/test-feature")
+        using HttpRequestMessage missingEnabledRequest = new(HttpMethod.Put, "/settings/features/test-feature")
         {
-            Content = JsonContent.Create(new Dictionary<string, bool>())
+            Content = JsonContent.Create(new Dictionary<string, bool>()),
         };
         missingEnabledRequest.Headers.Authorization = new("Bearer", "TEST-ADMIN-TOKEN");
         using HttpResponseMessage missingEnabledResponse = await _client.SendAsync(missingEnabledRequest);
         Assert.That(missingEnabledResponse.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
 
-        using HttpResponseMessage unchangedResponse = await _client.GetAsync(
-            "/settings/features/test-feature");
+        using HttpResponseMessage unchangedResponse = await _client.GetAsync("/settings/features/test-feature");
         TestFeatureSettingDto? unchangedSetting =
             await unchangedResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
         Assert.That(unchangedSetting?.Enabled, Is.False);
@@ -125,12 +117,10 @@ public class EndpointTests
         using HttpRequestMessage enableRequest = CreateSettingRequest(true, "TEST-ADMIN-TOKEN");
         using HttpResponseMessage enableResponse = await _client.SendAsync(enableRequest);
         Assert.That(enableResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        TestFeatureSettingDto? enabledSetting =
-            await enableResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
+        TestFeatureSettingDto? enabledSetting = await enableResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
         Assert.That(enabledSetting?.Enabled, Is.True);
 
-        using HttpResponseMessage currentResponse = await _client.GetAsync(
-            "/settings/features/test-feature");
+        using HttpResponseMessage currentResponse = await _client.GetAsync("/settings/features/test-feature");
         TestFeatureSettingDto? currentSetting =
             await currentResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
         Assert.That(currentSetting?.Enabled, Is.True);
@@ -147,7 +137,7 @@ public class EndpointTests
     {
         HttpRequestMessage request = new(HttpMethod.Put, "/settings/features/test-feature")
         {
-            Content = JsonContent.Create(new { enabled })
+            Content = JsonContent.Create(new { enabled }),
         };
         request.Headers.Authorization = new("Bearer", token);
         return request;
@@ -155,7 +145,6 @@ public class EndpointTests
 }
 
 public record TestFeatureSettingDto(bool Enabled);
-
 
 [DataContract]
 public class GameState

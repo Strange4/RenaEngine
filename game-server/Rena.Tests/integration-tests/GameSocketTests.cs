@@ -1,10 +1,8 @@
 using System.Net.WebSockets;
 using System.Text;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
-
 using Rena.Server;
 
 namespace Rena.Tests.Integration;
@@ -19,16 +17,13 @@ public class GameSocketTests
     public async Task OneTimeSetUp()
     {
         var builder = WebApplication.CreateBuilder(
-            new WebApplicationOptions
-            {
-                EnvironmentName = "Testing",
-                Args = []
-            });
+            new WebApplicationOptions { EnvironmentName = "Testing", Args = [] }
+        );
 
         builder.WebHost.UseTestServer();
-        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>{
-            {"RenaOptions:TSProtoPath", "TESTING"},
-        });
+        builder.Configuration.AddInMemoryCollection(
+            new Dictionary<string, string?> { { "RenaOptions:TSProtoPath", "TESTING" } }
+        );
         builder.SetRenaServices<TestGame, GameState, GameAction>();
 
         _app = builder.Build();
@@ -76,10 +71,10 @@ public class GameSocketTests
         {
             receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(receiveBuffer), CancellationToken.None);
 
-            if (receiveResult.MessageType == WebSocketMessageType.Close) break;
+            if (receiveResult.MessageType == WebSocketMessageType.Close)
+                break;
 
             ms.Write(receiveBuffer, 0, receiveResult.Count);
-
         } while (!receiveResult.EndOfMessage);
 
         string serverResponse = Encoding.UTF8.GetString(ms.ToArray());
@@ -88,8 +83,4 @@ public class GameSocketTests
 
         await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing test", CancellationToken.None);
     }
-
-
 }
-
-

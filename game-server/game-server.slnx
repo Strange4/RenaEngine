@@ -1,5 +1,8 @@
 <Solution>
-  <Project Path="BattleshipServer.Tests/BattleshipServer.Tests.csproj" Id="d863afac-d87c-4393-9c28-9e30cc1abc5d" />
+  <Project
+    Path="BattleshipServer.Tests/BattleshipServer.Tests.csproj"
+    Id="d863afac-d87c-4393-9c28-9e30cc1abc5d"
+  />
   <Project Path="BattleshipServer/BattleshipServer.csproj" />
   <Project Path="Rena.Tests/Rena.Tests.csproj" />
   <Project Path="Rena/Rena.csproj" />

@@ -11,5 +11,4 @@ public class BattleshipGameTests
         var game = new BattleshipGame();
         Assert.That(game.GetName(), Is.EqualTo("Battleship"));
     }
-
 }
