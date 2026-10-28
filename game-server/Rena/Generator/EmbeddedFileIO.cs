@@ -4,11 +4,7 @@ using System.Reflection;
 
 internal class EmbeddedFileIO
 {
-    public static async Task WriteAllEmbeddedFiles(
-        string directory,
-        string namespacedSourceDirectory,
-        List<string> fileNames
-    )
+    public static async Task WriteAllEmbeddedFiles(string directory, string namespacedSourceDirectory, List<string> fileNames)
     {
         List<Task> tasks = [];
         foreach (string fileName in fileNames)

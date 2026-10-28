@@ -60,11 +60,7 @@ public class GameSocketHandlerTests
                     var bufferArg = callInfo.ArgAt<ArraySegment<byte>>(0);
                     Array.Copy(testMessageBytes, 0, bufferArg.Array!, bufferArg.Offset, testMessageBytes.Length);
 
-                    return new WebSocketReceiveResult(
-                        testMessageBytes.Length,
-                        WebSocketMessageType.Text,
-                        endOfMessage: true
-                    );
+                    return new WebSocketReceiveResult(testMessageBytes.Length, WebSocketMessageType.Text, endOfMessage: true);
                 }
 
                 return new WebSocketReceiveResult(0, WebSocketMessageType.Close, endOfMessage: true);
@@ -87,11 +83,7 @@ public class GameSocketHandlerTests
         await _mockWebSocketManager.Received(1).AcceptWebSocketAsync();
         await _mockWebSocket
             .Received(1)
-            .CloseOutputAsync(
-                Arg.Is(WebSocketCloseStatus.NormalClosure),
-                Arg.Is("Closing Normally"),
-                Arg.Is(CancellationToken.None)
-            );
+            .CloseOutputAsync(Arg.Is(WebSocketCloseStatus.NormalClosure), Arg.Is("Closing Normally"), Arg.Is(CancellationToken.None));
 
         Assert.That(serverResponse, Is.EqualTo($"Echo: {testMessage}\n"));
     }
@@ -132,10 +124,6 @@ public class GameSocketHandlerTests
 
         await _mockWebSocket
             .Received(1)
-            .CloseAsync(
-                Arg.Is(WebSocketCloseStatus.InternalServerError),
-                Arg.Is("Something unnexpected happened"),
-                Arg.Is(CancellationToken.None)
-            );
+            .CloseAsync(Arg.Is(WebSocketCloseStatus.InternalServerError), Arg.Is("Something unnexpected happened"), Arg.Is(CancellationToken.None));
     }
 }

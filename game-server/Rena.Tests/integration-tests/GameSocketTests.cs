@@ -16,14 +16,10 @@ public class GameSocketTests
     [OneTimeSetUp]
     public async Task OneTimeSetUp()
     {
-        var builder = WebApplication.CreateBuilder(
-            new WebApplicationOptions { EnvironmentName = "Testing", Args = [] }
-        );
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Testing", Args = [] });
 
         builder.WebHost.UseTestServer();
-        builder.Configuration.AddInMemoryCollection(
-            new Dictionary<string, string?> { { "RenaOptions:TSProtoPath", "TESTING" } }
-        );
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?> { { "RenaOptions:TSProtoPath", "TESTING" } });
         builder.SetRenaServices<TestGame, GameState, GameAction>();
 
         _app = builder.Build();
@@ -56,12 +52,7 @@ public class GameSocketTests
         var messageToSend = "Hello Integration Test";
         var sendBuffer = Encoding.UTF8.GetBytes(messageToSend);
 
-        await webSocket.SendAsync(
-            new ArraySegment<byte>(sendBuffer),
-            WebSocketMessageType.Text,
-            endOfMessage: true,
-            CancellationToken.None
-        );
+        await webSocket.SendAsync(new ArraySegment<byte>(sendBuffer), WebSocketMessageType.Text, endOfMessage: true, CancellationToken.None);
 
         var receiveBuffer = new byte[1024];
         using var ms = new MemoryStream();

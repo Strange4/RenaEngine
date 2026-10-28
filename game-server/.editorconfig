@@ -32,7 +32,7 @@ dotnet_style_allow_multiple_blank_lines_experimental = false:warning
 # Indentation and spacing
 indent_size = 4
 tab_width = 4
-max_line_length = 120
+max_line_length = 150
 
 # New line preferences
 insert_final_newline = true

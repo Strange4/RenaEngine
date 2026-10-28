@@ -12,9 +12,7 @@ internal class SDKBuilder<G, S, A>
         ILanguageSDKGenerator[] generators = [new TypescriptSDKGenerator(options.TSProtoPath)];
         foreach (ILanguageSDKGenerator generator in generators)
         {
-            string zipName = Path.GetFullPath(
-                Path.Combine(options.GenerationDirectory, generator.LanguageName + ".zip")
-            );
+            string zipName = Path.GetFullPath(Path.Combine(options.GenerationDirectory, generator.LanguageName + ".zip"));
             await SDKGenerator<S, A>.GenerateSDK(options.GenerationDirectory, zipName, generator);
         }
     }

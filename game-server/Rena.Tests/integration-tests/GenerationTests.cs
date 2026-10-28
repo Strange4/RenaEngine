@@ -18,11 +18,7 @@ public class SDKGenerationTests
         };
         ILanguageSDKGenerator typescriptGenerator = new TypescriptSDKGenerator(options.TSProtoPath);
         string zipFilePath = Path.Combine(options.GenerationDirectory, "typescript.zip");
-        await SDKGenerator<GameState, GameAction>.GenerateSDK(
-            options.GenerationDirectory,
-            zipFilePath,
-            typescriptGenerator
-        );
+        await SDKGenerator<GameState, GameAction>.GenerateSDK(options.GenerationDirectory, zipFilePath, typescriptGenerator);
         Assert.That(zipFilePath, Does.Exist);
         ZipArchive archive = await ZipFile.OpenReadAsync(zipFilePath);
         var generatedTypesEntry = archive.GetEntry("generated/game.ts");

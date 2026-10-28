@@ -28,11 +28,7 @@ public class GameSocketConnection<G, S, A>(WebSocket webSocket, string playerId,
             if (result.MessageType == WebSocketMessageType.Close)
             {
                 // Respond to the client's close request to complete the handshake cleanly
-                await webSocket.CloseOutputAsync(
-                    WebSocketCloseStatus.NormalClosure,
-                    "Closing Normally",
-                    CancellationToken.None
-                );
+                await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing Normally", CancellationToken.None);
                 break;
             }
 

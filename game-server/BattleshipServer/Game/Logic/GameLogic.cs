@@ -24,8 +24,7 @@ public class GameLogic
             return ActionStatus.InvalidPlacement;
         return action switch
         {
-            PlaceShipsAction placeAction => this.ProcessShipPlacement(playerNumber, placeAction.Ships)
-            == PlacementResult.Success
+            PlaceShipsAction placeAction => this.ProcessShipPlacement(playerNumber, placeAction.Ships) == PlacementResult.Success
                 ? ActionStatus.Success
                 : ActionStatus.InvalidPlacement,
             ShootAction shootAction => this.ProcessAction(playerNumber, shootAction.ShootAt).Status,

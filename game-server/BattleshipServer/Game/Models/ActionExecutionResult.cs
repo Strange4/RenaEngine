@@ -16,11 +16,7 @@ public record ActionExecutionResult
 
     public ActionExecutionResult() { }
 
-    public ActionExecutionResult(
-        ActionStatus status,
-        ShotResult shotResult = ShotResult.ShotResultUnknown,
-        bool isWin = false
-    )
+    public ActionExecutionResult(ActionStatus status, ShotResult shotResult = ShotResult.ShotResultUnknown, bool isWin = false)
     {
         this.Status = status;
         this.ShotResult = shotResult;

@@ -104,11 +104,7 @@ public class OrchestratorTests
         Assert.That(result.IsSome);
         result.IfSome(response => Assert.That(response.ID, Is.EqualTo(this._fixture.CreateContainerResponse.ID)));
         this._fixture.Containers.Verify(
-            c =>
-                c.CreateContainerAsync(
-                    It.Is<CreateContainerParameters>(p => p.Image == imageId && p.Name == containerName),
-                    default
-                ),
+            c => c.CreateContainerAsync(It.Is<CreateContainerParameters>(p => p.Image == imageId && p.Name == containerName), default),
             Times.Once
         );
     }
@@ -211,9 +207,7 @@ public class OrchestratorTests
     public async Task StartContainer_WhenGenericException_ReturnsFalse()
     {
         this._fixture.ContainerResponses = [new() { ID = "c-1", State = "exited" }];
-        this.ContainerOperationsMock.Setup(c =>
-                c.StartContainerAsync("c-1", It.IsAny<ContainerStartParameters>(), default)
-            )
+        this.ContainerOperationsMock.Setup(c => c.StartContainerAsync("c-1", It.IsAny<ContainerStartParameters>(), default))
             .ThrowsAsync(new Exception("Unexpected"));
 
         bool result = await this.Orchestrator.StartContainer("c-1");
@@ -231,9 +225,7 @@ public class OrchestratorTests
     public async Task StopContainer_WhenDockerApiException_ReturnsFalse()
     {
         this._fixture.ContainerResponses = [new() { ID = "c-1", State = "running" }];
-        this.ContainerOperationsMock.Setup(c =>
-                c.StopContainerAsync("c-1", It.IsAny<ContainerStopParameters>(), default)
-            )
+        this.ContainerOperationsMock.Setup(c => c.StopContainerAsync("c-1", It.IsAny<ContainerStopParameters>(), default))
             .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.InternalServerError, "Error"));
 
         bool result = await this.Orchestrator.StopContainer("c-1");
@@ -309,9 +301,7 @@ public class OrchestratorTests
     public async Task DeleteContainer_WhenDockerApiException_ReturnsFalse()
     {
         this._fixture.ContainerResponses = [new() { ID = "c-1", State = "exited" }];
-        this.ContainerOperationsMock.Setup(c =>
-                c.RemoveContainerAsync("c-1", It.IsAny<ContainerRemoveParameters>(), default)
-            )
+        this.ContainerOperationsMock.Setup(c => c.RemoveContainerAsync("c-1", It.IsAny<ContainerRemoveParameters>(), default))
             .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.InternalServerError, "Error"));
 
         bool result = await this.Orchestrator.DeleteContainer("c-1");

@@ -27,17 +27,13 @@ internal class RenaServerHandlers<G, S, A>
         string zipName = Path.GetFullPath(Path.Combine(options.Value.GenerationDirectory, languageName + ".zip"));
 
         return !Path.Exists(zipName)
-            ? Results.InternalServerError(
-                "Couldn't find the necessary zip file. Make sure that your game developper generated it"
-            )
+            ? Results.InternalServerError("Couldn't find the necessary zip file. Make sure that your game developper generated it")
             : Results.File(zipName, contentType: "application/zip");
     }
 
     public static IResult GetFeatureSetting(string featureKey, CompetitionSettingsState settings)
     {
-        return settings.TryGetFeature(featureKey, out bool enabled)
-            ? Results.Ok(new FeatureSettingResponse(enabled))
-            : Results.NotFound();
+        return settings.TryGetFeature(featureKey, out bool enabled) ? Results.Ok(new FeatureSettingResponse(enabled)) : Results.NotFound();
     }
 
     public static IResult UpdateFeatureSetting(
@@ -71,16 +67,13 @@ internal class RenaServerHandlers<G, S, A>
             return Results.BadRequest("enabled must be a boolean");
         }
 
-        return settings.TrySetFeature(featureKey, enabled)
-            ? Results.Ok(new FeatureSettingResponse(enabled))
-            : Results.NotFound();
+        return settings.TrySetFeature(featureKey, enabled) ? Results.Ok(new FeatureSettingResponse(enabled)) : Results.NotFound();
     }
 
     private static bool TokensMatch(string suppliedToken, string expectedToken)
     {
         byte[] suppliedBytes = Encoding.UTF8.GetBytes(suppliedToken);
         byte[] expectedBytes = Encoding.UTF8.GetBytes(expectedToken);
-        return suppliedBytes.Length == expectedBytes.Length
-            && CryptographicOperations.FixedTimeEquals(suppliedBytes, expectedBytes);
+        return suppliedBytes.Length == expectedBytes.Length && CryptographicOperations.FixedTimeEquals(suppliedBytes, expectedBytes);
     }
 }

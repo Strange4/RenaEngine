@@ -11,11 +11,7 @@ internal class SDKGenerator<S, A>
     /// <summary>
     /// Generates an SDK for a specific language in that language's directory.
     /// </summary>
-    public static async Task GenerateSDK(
-        string generationDirectory,
-        string zipFilePath,
-        ILanguageSDKGenerator languageSDKGenerator
-    )
+    public static async Task GenerateSDK(string generationDirectory, string zipFilePath, ILanguageSDKGenerator languageSDKGenerator)
     {
         generationDirectory = Path.GetFullPath(generationDirectory);
         zipFilePath = Path.GetFullPath(zipFilePath);
@@ -25,10 +21,7 @@ internal class SDKGenerator<S, A>
         string protoFilePath = Path.Combine(generationDirectory, protoFileName);
         ProtoTypeInformation typeInfo = await GenerateProtoFile(protoFilePath);
 
-        string specificLanguageGenerationDirectory = Path.Combine(
-            generationDirectory,
-            languageSDKGenerator.LanguageName
-        );
+        string specificLanguageGenerationDirectory = Path.Combine(generationDirectory, languageSDKGenerator.LanguageName);
         Directory.CreateDirectory(specificLanguageGenerationDirectory);
         await languageSDKGenerator.GenerateSDK(typeInfo, specificLanguageGenerationDirectory, protoFilePath);
 

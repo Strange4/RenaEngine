@@ -41,8 +41,7 @@ internal static class RenaServerSetup
         app.MapGet("/downloads/{languageName}", RenaServerHandlers<G, S, A>.HandleDownloads);
         app.Map(
             "/game/connect/{playerId}",
-            async (string playerId, HttpContext context, GameSocketHandler<G, S, A> handler) =>
-                await handler.GameConnect(context, playerId)
+            async (string playerId, HttpContext context, GameSocketHandler<G, S, A> handler) => await handler.GameConnect(context, playerId)
         );
         app.MapGet("/settings/features/{featureKey}", RenaServerHandlers<G, S, A>.GetFeatureSetting);
         app.MapPut("/settings/features/{featureKey}", RenaServerHandlers<G, S, A>.UpdateFeatureSetting);

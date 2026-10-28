@@ -45,11 +45,7 @@ public class GameSocketConnectionTests
 
         _mockWebSocket.State.Returns(WebSocketState.Open);
 
-        var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(
-            _mockWebSocket,
-            playerId,
-            _mockLogger
-        );
+        var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(_mockWebSocket, playerId, _mockLogger);
 
         Assert.That(socketConnection.PlayerId, Is.EqualTo(playerId));
 
@@ -69,11 +65,7 @@ public class GameSocketConnectionTests
                     var bufferArg = callInfo.ArgAt<ArraySegment<byte>>(0);
                     Array.Copy(testMessageBytes, 0, bufferArg.Array!, bufferArg.Offset, testMessageBytes.Length);
 
-                    return new WebSocketReceiveResult(
-                        testMessageBytes.Length,
-                        WebSocketMessageType.Text,
-                        endOfMessage: true
-                    );
+                    return new WebSocketReceiveResult(testMessageBytes.Length, WebSocketMessageType.Text, endOfMessage: true);
                 }
 
                 return new WebSocketReceiveResult(0, WebSocketMessageType.Close, endOfMessage: true);
@@ -105,29 +97,16 @@ public class GameSocketConnectionTests
             .ReceiveAsync(Arg.Any<ArraySegment<byte>>(), Arg.Any<CancellationToken>())
             .Returns(_ => new WebSocketReceiveResult(0, WebSocketMessageType.Close, endOfMessage: true));
 
-        var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(
-            _mockWebSocket,
-            playerId,
-            _mockLogger
-        );
+        var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(_mockWebSocket, playerId, _mockLogger);
 
         await socketConnection.HandleConnection();
 
         await _mockWebSocket
             .Received(1)
-            .CloseOutputAsync(
-                Arg.Is(WebSocketCloseStatus.NormalClosure),
-                Arg.Is("Closing Normally"),
-                Arg.Is(CancellationToken.None)
-            );
+            .CloseOutputAsync(Arg.Is(WebSocketCloseStatus.NormalClosure), Arg.Is("Closing Normally"), Arg.Is(CancellationToken.None));
 
         await _mockWebSocket
             .DidNotReceive()
-            .SendAsync(
-                Arg.Any<ArraySegment<byte>>(),
-                Arg.Any<WebSocketMessageType>(),
-                Arg.Any<bool>(),
-                Arg.Any<CancellationToken>()
-            );
+            .SendAsync(Arg.Any<ArraySegment<byte>>(), Arg.Any<WebSocketMessageType>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }
 }

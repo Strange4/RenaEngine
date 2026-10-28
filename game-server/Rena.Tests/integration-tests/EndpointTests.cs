@@ -18,9 +18,7 @@ public class EndpointTests
     [OneTimeSetUp]
     public async Task OneTimeSetUp()
     {
-        var builder = WebApplication.CreateBuilder(
-            new WebApplicationOptions { EnvironmentName = "Testing", Args = [] }
-        );
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Testing", Args = [] });
 
         builder.WebHost.UseTestServer();
         builder.Configuration.AddInMemoryCollection(
@@ -76,17 +74,13 @@ public class EndpointTests
     {
         using HttpResponseMessage initialResponse = await _client.GetAsync("/settings/features/test-feature");
         Assert.That(initialResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        TestFeatureSettingDto? initialSetting =
-            await initialResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
+        TestFeatureSettingDto? initialSetting = await initialResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
         Assert.That(initialSetting?.Enabled, Is.False);
 
         using HttpResponseMessage unknownFeatureResponse = await _client.GetAsync("/settings/features/unknown");
         Assert.That(unknownFeatureResponse.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
 
-        using HttpResponseMessage missingTokenResponse = await _client.PutAsJsonAsync(
-            "/settings/features/test-feature",
-            new { enabled = true }
-        );
+        using HttpResponseMessage missingTokenResponse = await _client.PutAsJsonAsync("/settings/features/test-feature", new { enabled = true });
         Assert.That(missingTokenResponse.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
 
         using HttpRequestMessage wrongTokenRequest = CreateSettingRequest(true, "WRONG-TOKEN");
@@ -110,8 +104,7 @@ public class EndpointTests
         Assert.That(missingEnabledResponse.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
 
         using HttpResponseMessage unchangedResponse = await _client.GetAsync("/settings/features/test-feature");
-        TestFeatureSettingDto? unchangedSetting =
-            await unchangedResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
+        TestFeatureSettingDto? unchangedSetting = await unchangedResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
         Assert.That(unchangedSetting?.Enabled, Is.False);
 
         using HttpRequestMessage enableRequest = CreateSettingRequest(true, "TEST-ADMIN-TOKEN");
@@ -121,24 +114,19 @@ public class EndpointTests
         Assert.That(enabledSetting?.Enabled, Is.True);
 
         using HttpResponseMessage currentResponse = await _client.GetAsync("/settings/features/test-feature");
-        TestFeatureSettingDto? currentSetting =
-            await currentResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
+        TestFeatureSettingDto? currentSetting = await currentResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
         Assert.That(currentSetting?.Enabled, Is.True);
 
         using HttpRequestMessage disableRequest = CreateSettingRequest(false, "TEST-ADMIN-TOKEN");
         using HttpResponseMessage disableResponse = await _client.SendAsync(disableRequest);
         Assert.That(disableResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        TestFeatureSettingDto? disabledSetting =
-            await disableResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
+        TestFeatureSettingDto? disabledSetting = await disableResponse.Content.ReadFromJsonAsync<TestFeatureSettingDto>();
         Assert.That(disabledSetting?.Enabled, Is.False);
     }
 
     private static HttpRequestMessage CreateSettingRequest(bool enabled, string token)
     {
-        HttpRequestMessage request = new(HttpMethod.Put, "/settings/features/test-feature")
-        {
-            Content = JsonContent.Create(new { enabled }),
-        };
+        HttpRequestMessage request = new(HttpMethod.Put, "/settings/features/test-feature") { Content = JsonContent.Create(new { enabled }) };
         request.Headers.Authorization = new("Bearer", token);
         return request;
     }

@@ -45,11 +45,7 @@ public class GameSocketHandler<G, S, A>(ILogger<GameSocketHandler<G, S, A>> logg
             );
             if (webSocket.State == WebSocketState.Open)
             {
-                await webSocket.CloseAsync(
-                    WebSocketCloseStatus.InternalServerError,
-                    "Something unnexpected happened",
-                    CancellationToken.None
-                );
+                await webSocket.CloseAsync(WebSocketCloseStatus.InternalServerError, "Something unnexpected happened", CancellationToken.None);
             }
         }
         finally

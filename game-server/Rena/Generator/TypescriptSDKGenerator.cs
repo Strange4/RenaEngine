@@ -60,11 +60,7 @@ internal class TypescriptSDKGenerator(string tsProtoPath) : ILanguageSDKGenerato
         );
     }
 
-    private static async Task GenerateDefaultFile(
-        ProtoTypeInformation typeInfo,
-        string defaultFilePath,
-        string protoFilePath
-    )
+    private static async Task GenerateDefaultFile(ProtoTypeInformation typeInfo, string defaultFilePath, string protoFilePath)
     {
         string importPath = Path.GetFileName(protoFilePath)[..^".proto".Length];
         string actionTypeName = typeInfo.ActionTypeName;
