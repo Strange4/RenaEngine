@@ -178,3 +178,77 @@ button {
   width: 100%;
   height: 100%;
 }
+
+.token-page {
+  max-width: 960px;
+}
+
+.token-reveal {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: auto;
+  margin-bottom: 1rem;
+}
+
+.token-reveal input {
+  width: auto;
+  margin: 0;
+}
+
+.token-table-wrapper {
+  overflow-x: auto;
+}
+
+.token-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.token-table caption {
+  text-align: left;
+  margin-bottom: 0.5rem;
+  color: #d1d5db;
+}
+
+.token-table th,
+.token-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid #374151;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.token-status {
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+}
+
+.token-status-active {
+  background: #064e3b;
+  color: #a7f3d0;
+}
+
+.token-status-inactive {
+  background: #374151;
+  color: #d1d5db;
+}
+
+.token-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.copy-token {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.copy-token button {
+  width: auto;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.875rem;
+}
