@@ -22,19 +22,39 @@ indent_size = 2
 # C# files
 [*.cs]
 
+#### Line formatting stuff
+
+# Disallow multiple consecutive blank lines
+dotnet_style_allow_multiple_blank_lines_experimental = false:warning
+
 #### Core EditorConfig Options ####
 
 # Indentation and spacing
 indent_size = 4
 tab_width = 4
+max_line_length = 120
 
 # New line preferences
 insert_final_newline = true
 
 #### .NET Coding Conventions ####
 
-dotnet_diagnostic.IDE0003.severity = none
 dotnet_diagnostic.IDE0005.severity = warning
+dotnet_diagnostic.IDE0056.severity = warning
+dotnet_diagnostic.CA1822.severity = warning
+dotnet_diagnostic.IDE1006.severity = warning
+dotnet_diagnostic.IDE0028.severity = warning
+dotnet_diagnostic.IDE0059.severity = warning
+
+
+dotnet_diagnostic.IDE0003.severity = none
+dotnet_diagnostic.IDE0090.severity = none
+dotnet_diagnostic.IDE0046.severity = none
+dotnet_diagnostic.PBN3013.severity = none
+dotnet_diagnostic.NUnit2045.severity = none
+
+
+
 
 # Enforce 'this.' for property access
 dotnet_style_qualification_for_property = true:error
