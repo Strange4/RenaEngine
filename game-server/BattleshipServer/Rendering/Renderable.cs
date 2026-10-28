@@ -50,6 +50,6 @@ public class ViewerStup
     public int TileSize { get; init; } = 40;
 
     [JsonPropertyName("resolution")]
-    public required int[] Resolution { get; init; } = [800, 800];
+    public required int[] Resolution { get; init; } = [920, 480];
 }
 
