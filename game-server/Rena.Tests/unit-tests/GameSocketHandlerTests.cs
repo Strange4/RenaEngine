@@ -1,5 +1,5 @@
 using System.Net.WebSockets;
-using System.Text;
+using System.Threading.Channels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -14,8 +14,8 @@ public class GameSocketHandlerTests
     private HttpContext _mockHttpContext;
     private WebSocketManager _mockWebSocketManager;
     private WebSocket _mockWebSocket;
-
     private GameSocketHandler<MockGame, MockState, MockAction> _gameSocketHandler;
+    private ChannelReader<Result<bool>> _mockChannel;
 
     [SetUp]
     public void BeforeEach()
@@ -26,7 +26,10 @@ public class GameSocketHandlerTests
         ILogger<GameSocketHandler<MockGame, MockState, MockAction>> logger = Substitute.For<
             ILogger<GameSocketHandler<MockGame, MockState, MockAction>>
         >();
-        _gameSocketHandler = new(logger);
+        _mockChannel = Substitute.For<ChannelReader<Result<bool>>>();
+        IGameRoomManager mockManager = Substitute.For<IGameRoomManager>();
+        mockManager.Register(Arg.Any<string>(), Arg.Is(_mockWebSocket)).Returns(_mockChannel);
+        _gameSocketHandler = new(mockManager, logger);
 
         _mockWebSocketManager.IsWebSocketRequest.Returns(true);
         _mockWebSocketManager.AcceptWebSocketAsync().Returns(Task.FromResult(_mockWebSocket));
@@ -40,52 +43,20 @@ public class GameSocketHandlerTests
     }
 
     [Test]
-    public async Task OnConnectedAsync_ValidWebSocketRequest_SpawnsConnectionAndExecutes()
+    public async Task OnConnectedAsync_ValidWebSocketRequest_SpawnsConnection()
     {
         _mockWebSocket.State.Returns(WebSocketState.Open);
+        _mockChannel.ReadAsync().Returns(new Result<bool>(true));
 
-        int callcount = 0;
+        var playerId = "player-executes";
 
-        var testMessage = "Hello Game Server";
-        var testMessageBytes = Encoding.UTF8.GetBytes(testMessage);
-
-        // Setup the receive to transfer the test message into the input array
-        _mockWebSocket
-            .ReceiveAsync(Arg.Any<ArraySegment<byte>>(), Arg.Any<CancellationToken>())
-            .Returns(async callInfo =>
-            {
-                callcount++;
-                if (callcount == 1)
-                {
-                    var bufferArg = callInfo.ArgAt<ArraySegment<byte>>(0);
-                    Array.Copy(testMessageBytes, 0, bufferArg.Array!, bufferArg.Offset, testMessageBytes.Length);
-
-                    return new WebSocketReceiveResult(testMessageBytes.Length, WebSocketMessageType.Text, endOfMessage: true);
-                }
-
-                return new WebSocketReceiveResult(0, WebSocketMessageType.Close, endOfMessage: true);
-            });
-
-        byte[]? capturedResponseBytes = Encoding.UTF8.GetBytes("Send Async is failing");
-
-        // Setup the send to transfer the test message back to the test
-        await _mockWebSocket.SendAsync(
-            Arg.Do<ArraySegment<byte>>(bytes => capturedResponseBytes = [.. bytes]),
-            Arg.Any<WebSocketMessageType>(),
-            Arg.Any<bool>(),
-            Arg.Any<CancellationToken>()
-        );
-
-        await _gameSocketHandler.GameConnect(_mockHttpContext, "player-executes");
-
-        string serverResponse = Encoding.UTF8.GetString(capturedResponseBytes);
+        await _gameSocketHandler.GameConnect(_mockHttpContext, playerId);
 
         await _mockWebSocketManager.Received(1).AcceptWebSocketAsync();
         await _mockWebSocket
             .Received(1)
             .CloseOutputAsync(Arg.Is(WebSocketCloseStatus.NormalClosure), Arg.Is("Closing Normally"), Arg.Is(CancellationToken.None));
-
-        Assert.That(serverResponse, Is.EqualTo($"Echo: {testMessage}\n"));
+        _mockWebSocket.Received(1).Dispose();
     }
 
     [Test]
@@ -113,9 +84,7 @@ public class GameSocketHandlerTests
     [Test]
     public async Task OnConnectedAsync_UnexpectedError_AbortsConnection()
     {
-        _mockWebSocket
-            .ReceiveAsync(Arg.Any<ArraySegment<byte>>(), Arg.Any<CancellationToken>())
-            .Throws(new Exception("Something really weird happened"));
+        _mockChannel.ReadAsync().Throws(new Exception("Something really weird happened"));
         _mockWebSocket.State.Returns(WebSocketState.Open);
 
         _mockWebSocketManager.AcceptWebSocketAsync().Returns(Task.FromResult(_mockWebSocket));
@@ -124,6 +93,11 @@ public class GameSocketHandlerTests
 
         await _mockWebSocket
             .Received(1)
-            .CloseAsync(Arg.Is(WebSocketCloseStatus.InternalServerError), Arg.Is("Something unnexpected happened"), Arg.Is(CancellationToken.None));
+            .CloseOutputAsync(
+                Arg.Is(WebSocketCloseStatus.InternalServerError),
+                Arg.Is("Something unnexpected happened"),
+                Arg.Is(CancellationToken.None)
+            );
+        _mockWebSocket.Received(1).Dispose();
     }
 }
