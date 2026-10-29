@@ -17,7 +17,7 @@ public class Ship
     [DataMember(Order = 4)]
     public int Size
     {
-        // We need to have an init; since Protobuf may want to desirialze this.
+        // We need to have an init; since Protobuf may want to deserialize this.
         // But we don't really want to deserialize this. And this must always be set to the size of the name of the ship
 #pragma warning disable CS9266
         get => GetShipSize(this.Name);
