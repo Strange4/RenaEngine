@@ -1,8 +1,6 @@
 ﻿using System.Threading.Channels;
-
 using BattleshipServer.Game;
 using BattleshipServer.Game.Models;
-
 using Rena.Server.Rendering;
 
 namespace BattleshipServer.Tests.Unit;
@@ -19,13 +17,14 @@ public class BattleshipRenderingTests
     {
         _broadcaster = new RenderableBroadcaster();
         _game = new BattleshipGame { Broadcaster = _broadcaster };
+        // csharpier-ignore
         _validFleet =
         [
-            new Ship { Name = ShipName.Carrier, StartCoordinate = new Coordinate { X = 0, Y = 0 }, Orientation = ShipOrientation.Horizontal },
-            new Ship { Name = ShipName.Battleship, StartCoordinate = new Coordinate { X = 0, Y = 1 }, Orientation = ShipOrientation.Horizontal },
-            new Ship { Name = ShipName.Cruiser, StartCoordinate = new Coordinate { X = 0, Y = 2 }, Orientation = ShipOrientation.Horizontal },
-            new Ship { Name = ShipName.Submarine, StartCoordinate = new Coordinate { X = 0, Y = 3 }, Orientation = ShipOrientation.Horizontal },
-            new Ship { Name = ShipName.Destroyer, StartCoordinate = new Coordinate { X = 0, Y = 4 }, Orientation = ShipOrientation.Horizontal }
+            new Ship{Name = ShipName.Carrier,StartCoordinate = new Coordinate { X = 0, Y = 0 },Orientation = ShipOrientation.Horizontal,},
+            new Ship{Name = ShipName.Battleship,StartCoordinate = new Coordinate { X = 0, Y = 1 },Orientation = ShipOrientation.Horizontal,},
+            new Ship{Name = ShipName.Cruiser,StartCoordinate = new Coordinate { X = 0, Y = 2 },Orientation = ShipOrientation.Horizontal,},
+            new Ship{Name = ShipName.Submarine,StartCoordinate = new Coordinate { X = 0, Y = 3 },Orientation = ShipOrientation.Horizontal,},
+            new Ship{Name = ShipName.Destroyer,StartCoordinate = new Coordinate { X = 0, Y = 4 },Orientation = ShipOrientation.Horizontal,},
         ];
     }
 
@@ -51,8 +50,8 @@ public class BattleshipRenderingTests
                 AssetPath = "/sprites/test.test",
                 Size = [1, 1],
                 Type = RenderableType.MAP,
-                Layer = 0
-            }
+                Layer = 0,
+            },
         ];
 
         _broadcaster.BroadcastChange(dummyChanges);
@@ -103,11 +102,14 @@ public class BattleshipRenderingTests
 
         _game.GetInitial(["p1", "p2"]);
 
+        // csharpier-ignore
         _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", new PlaceShipsAction { Ships = _validFleet } } });
+        // csharpier-ignore
         _game.DoAction(new Dictionary<string, PlayerAction> { { "p2", new PlaceShipsAction { Ships = _validFleet } } });
 
         while (channel.Reader.TryRead(out _)) { } // clears the queue from placement messages.
 
+        // csharpier-ignore
         ShootAction shootAction = new ShootAction { ShootAt = new Coordinate { X = 0, Y = 0 } };
         _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", shootAction } });
 
@@ -132,8 +134,13 @@ public class BattleshipRenderingTests
         {
             Ships =
             [
-                new Ship{Name = ShipName.Destroyer, StartCoordinate = new Coordinate { X = 0, Y = 0 }, Orientation = ShipOrientation.Vertical}
-            ]
+                new Ship
+                {
+                    Name = ShipName.Destroyer,
+                    StartCoordinate = new Coordinate { X = 0, Y = 0 },
+                    Orientation = ShipOrientation.Vertical,
+                },
+            ],
         };
 
         List<GameRenderable> renderables = _game.CollectRenderables(1, placeAction);
@@ -146,12 +153,14 @@ public class BattleshipRenderingTests
     {
         _game.GetInitial(["p1", "p2"]);
 
-        ShootAction shootAction = new ShootAction { ShootAt = new Coordinate { X = 9, Y = 9 } };
+        ShootAction shootAction = new ShootAction
+        {
+            ShootAt = new Coordinate { X = 9, Y = 9 },
+        };
         List<GameRenderable> renderables = _game.CollectRenderables(1, shootAction);
 
         Assert.That(renderables[0].AssetPath, Is.EqualTo("/sprites/miss.png"));
     }
-
 
     // This test is needed: if it fails, it probably means the defaults in Rendering/Renderable.cs changed,
     // which is a problem because battleship currently assumes that the default are exactly these values: 40 tilesize, [920, 480] resolution
@@ -168,11 +177,7 @@ public class BattleshipRenderingTests
     [Test]
     public void TestViewerSetup_CustomValues()
     {
-        ViewerSetup setup = new ViewerSetup
-        {
-            TileSize = 32,
-            Resolution = [1024, 768]
-        };
+        ViewerSetup setup = new ViewerSetup { TileSize = 32, Resolution = [1024, 768] };
 
         Assert.That(setup.TileSize, Is.EqualTo(32));
         int[] expected = [1024, 768];

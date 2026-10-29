@@ -1,6 +1,5 @@
 using BattleshipServer.Game.Logic;
 using BattleshipServer.Game.Models;
-
 using Rena.GameEngine;
 using Rena.Server.Rendering;
 
@@ -24,10 +23,7 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
         _player1Id = playerIDs.First();
         _player2Id = playerIDs.Last();
 
-        return new Dictionary<string, PlayerState>
-        {
-            { _player1Id, this.Logic.GetPlayerState(1) }
-        };
+        return new Dictionary<string, PlayerState> { { _player1Id, this.Logic.GetPlayerState(1) } };
     }
 
     public Dictionary<string, PlayerState> DoAction(Dictionary<string, PlayerAction> playerToAction)
@@ -57,11 +53,7 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
             nextPlayerId = this.Logic.IsPlayer1Turn ? _player1Id : _player2Id;
         }
 
-        return new Dictionary<string, PlayerState>
-        {
-            {nextPlayerId, this.Logic.GetPlayerState(nextPlayerNumber) }
-        };
-
+        return new Dictionary<string, PlayerState> { { nextPlayerId, this.Logic.GetPlayerState(nextPlayerNumber) } };
     }
 
     public List<GameRenderable> CollectRenderables(int playerNumber, PlayerAction action)
@@ -75,15 +67,17 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
             {
                 Ship ship = place.Ships[i];
                 bool isHorizontal = ship.Orientation == ShipOrientation.Horizontal;
-                changes.Add(new GameRenderable
-                {
-                    Id = $"p{playerNumber}-ship-{i}",
-                    Position = [offsetX + ship.StartCoordinate.X, offsetY + ship.StartCoordinate.Y],
-                    Size = isHorizontal ? [ship.Size, 1] : [1, ship.Size],
-                    AssetPath = "sprites/ship1.png", // can change depending on where the asset is stored
-                    Type = RenderableType.OBJECT,
-                    Layer = 1
-                });
+                changes.Add(
+                    new GameRenderable
+                    {
+                        Id = $"p{playerNumber}-ship-{i}",
+                        Position = [offsetX + ship.StartCoordinate.X, offsetY + ship.StartCoordinate.Y],
+                        Size = isHorizontal ? [ship.Size, 1] : [1, ship.Size],
+                        AssetPath = "sprites/ship1.png", // can change depending on where the asset is stored
+                        Type = RenderableType.OBJECT,
+                        Layer = 1,
+                    }
+                );
             }
         }
         if (action is ShootAction shoot)
@@ -92,17 +86,18 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
             Player player = this.Logic.GetPlayer(playerNumber);
             ShotRecord? lastShot = player.ShotsFired.LastOrDefault();
             string sprite = (lastShot?.Result is ShotResult.Hit or ShotResult.Sunk) ? "/sprites/hit.png" : "/sprites/miss.png";
-            changes.Add(new GameRenderable
-            {
-                Id = $"shot-{playerNumber}-{shoot.ShootAt.X}-{shoot.ShootAt.Y}",
-                Position = [targetOffsetX + shoot.ShootAt.X, offsetY + shoot.ShootAt.Y],
-                Size = [1, 1],
-                AssetPath = sprite,
-                Type = RenderableType.DECORATION,
-                Layer = 0
-            });
+            changes.Add(
+                new GameRenderable
+                {
+                    Id = $"shot-{playerNumber}-{shoot.ShootAt.X}-{shoot.ShootAt.Y}",
+                    Position = [targetOffsetX + shoot.ShootAt.X, offsetY + shoot.ShootAt.Y],
+                    Size = [1, 1],
+                    AssetPath = sprite,
+                    Type = RenderableType.DECORATION,
+                    Layer = 0,
+                }
+            );
         }
         return changes;
-
     }
 }

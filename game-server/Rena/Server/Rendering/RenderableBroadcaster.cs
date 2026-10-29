@@ -10,11 +10,7 @@ public class RenderableBroadcaster
 
     public void BroadcastChange(List<GameRenderable> changes)
     {
-        RenderableChange change = new()
-        {
-            Index = Interlocked.Increment(ref _index),
-            Changes = changes
-        };
+        RenderableChange change = new() { Index = Interlocked.Increment(ref _index), Changes = changes };
 
         foreach (Channel<RenderableChange> subscriber in _subscribers.Keys)
         {
@@ -34,5 +30,4 @@ public class RenderableBroadcaster
         _subscribers.TryRemove(channel, out _);
         channel.Writer.TryComplete();
     }
-
 }

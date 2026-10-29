@@ -2,13 +2,11 @@ namespace Rena.Server;
 
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Channels;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-
 using Rena.GameEngine;
 using Rena.Server.GameSockets;
 using Rena.Server.Rendering;
@@ -50,24 +48,26 @@ internal static class RenaServerSetup
         );
         app.MapGet("/settings/features/{featureKey}", RenaServerHandlers<G, S, A>.GetFeatureSetting);
         app.MapPut("/settings/features/{featureKey}", RenaServerHandlers<G, S, A>.UpdateFeatureSetting);
-        app.MapGet("/render/stream", async (
-            RenderableBroadcaster broadcaster, HttpContext context) =>
-        {
-            context.Response.Headers.ContentType = "text/event-stream";
-            Channel<RenderableChange> channel = broadcaster.Connect();
-            try
+        app.MapGet(
+            "/render/stream",
+            async (RenderableBroadcaster broadcaster, HttpContext context) =>
             {
-                await foreach (RenderableChange change in channel.Reader.ReadAllAsync(context.RequestAborted))
+                context.Response.Headers.ContentType = "text/event-stream";
+                Channel<RenderableChange> channel = broadcaster.Connect();
+                try
                 {
-                    string json = System.Text.Json.JsonSerializer.Serialize(change);
-                    await context.Response.WriteAsync($"event: change\ndata: {json}\n\n");
-                    await context.Response.Body.FlushAsync();
+                    await foreach (RenderableChange change in channel.Reader.ReadAllAsync(context.RequestAborted))
+                    {
+                        string json = System.Text.Json.JsonSerializer.Serialize(change);
+                        await context.Response.WriteAsync($"event: change\ndata: {json}\n\n");
+                        await context.Response.Body.FlushAsync();
+                    }
+                }
+                finally
+                {
+                    broadcaster.Disconnect(channel);
                 }
             }
-            finally
-            {
-                broadcaster.Disconnect(channel);
-            }
-        });
+        );
     }
 }
