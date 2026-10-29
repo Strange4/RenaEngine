@@ -14,6 +14,15 @@ class MockSprite {
     },
   };
 
+  anchor = {
+    x: 0,
+    y: 0,
+    set: (x: number, y: number) => {
+      this.anchor.x = x;
+      this.anchor.y = y;
+    },
+  };
+
   width = 0;
   height = 0;
   angle = 0;
@@ -130,8 +139,10 @@ describe("LiveViewRenderer", () => {
       "/sprites/test.png",
     );
     expect(sprite.texture).toEqual({ path: "/sprites/test.png" });
-    expect(sprite.position.x).toBe(64);
-    expect(sprite.position.y).toBe(96);
+    expect(sprite.position.x).toBe(80);
+    expect(sprite.position.y).toBe(112);
+    expect(sprite.anchor.x).toBe(0.125);
+    expect(sprite.anchor.y).toBe(0.1);
     expect(sprite.width).toBe(128);
     expect(sprite.height).toBe(160);
     expect(sprite.angle).toBe(0);
@@ -239,8 +250,8 @@ describe("LiveViewRenderer", () => {
       renderer.getContainer(RenderableType.OBJECT).children,
     ).toHaveLength(1);
 
-    expect(second.position.x).toBe(64);
-    expect(second.position.y).toBe(96);
+    expect(second.position.x).toBe(80);
+    expect(second.position.y).toBe(112);
   });
 
   it("adds all category containers to the stage in order", () => {

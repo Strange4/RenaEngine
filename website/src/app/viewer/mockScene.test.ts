@@ -13,6 +13,14 @@ class MockSprite {
       this.position.y = y;
     },
   };
+  anchor = {
+    x: 0,
+    y: 0,
+    set: (x: number, y: number) => {
+      this.anchor.x = x;
+      this.anchor.y = y;
+    },
+  };
   width = 0;
   height = 0;
   zIndex = 0;
@@ -131,7 +139,14 @@ describe("rendering the mock scene", () => {
       const sprite = renderer.getSprite(r.id) as unknown as MockSprite;
       expect(sprite).toBeDefined();
       expect(sprite.texture).toEqual({ assetPath: r.assetPath });
-      expect(sprite.position).toMatchObject({ x: r.position[0] * tile, y: r.position[1] * tile });
+      expect(sprite.position).toMatchObject({
+        x: r.position[0] * tile + tile / 2,
+        y: r.position[1] * tile + tile / 2,
+      });
+      expect(sprite.anchor).toMatchObject({
+        x: 0.5 / r.size[0],
+        y: 0.5 / r.size[1],
+      });
       expect(sprite.width).toBe(r.size[0] * tile);
       expect(sprite.height).toBe(r.size[1] * tile);
       expect(sprite.zIndex).toBe(r.layer);

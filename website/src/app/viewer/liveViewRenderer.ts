@@ -70,11 +70,16 @@ export class LiveViewRenderer {
 
         const sprite = new Sprite(texture);
 
-        // Set the sprite's position, size, and layer based on the renderable's properties
-        // Convert tile-based position to pixel position
+        // Anchor at the center of the position tile while keeping its top-left
+        // corner at the renderable's tile position.
+        const tileCenter = this.viewerSetup.tileSize / 2;
+        sprite.anchor.set(
+            0.5 / renderable.size[0],
+            0.5 / renderable.size[1],
+        );
         sprite.position.set(
-            renderable.position[0] * this.viewerSetup.tileSize,
-            renderable.position[1] * this.viewerSetup.tileSize,
+            renderable.position[0] * this.viewerSetup.tileSize + tileCenter,
+            renderable.position[1] * this.viewerSetup.tileSize + tileCenter,
         );
         // Set the zIndex for layering
         sprite.zIndex = renderable.layer;

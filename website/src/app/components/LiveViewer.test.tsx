@@ -238,13 +238,15 @@ describe("LiveViewer", () => {
     const [spriteOne, spriteTwo] = __spriteInstances;
 
     expect(spriteOne.texture).toBe("mock-texture");
-    expect(spriteOne.position.set).toHaveBeenCalledWith(64, 64);
+    expect(spriteOne.position.set).toHaveBeenCalledWith(80, 80);
+    expect(spriteOne.anchor.set).toHaveBeenCalledWith(1 / 6, 1 / 6);
     expect(spriteOne.zIndex).toBe(1);
     expect(spriteOne.width).toBe(96);
     expect(spriteOne.height).toBe(96);
 
     expect(spriteTwo.texture).toBe("mock-texture");
-    expect(spriteTwo.position.set).toHaveBeenCalledWith(0, 0);
+    expect(spriteTwo.position.set).toHaveBeenCalledWith(16, 16);
+    expect(spriteTwo.anchor.set).toHaveBeenCalledWith(1 / 6, 1 / 6);
     expect(spriteTwo.zIndex).toBe(2);
     expect(spriteTwo.width).toBe(96);
     expect(spriteTwo.height).toBe(96);
