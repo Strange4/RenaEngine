@@ -110,8 +110,9 @@ public class BattleshipRenderingTests
         while (channel.Reader.TryRead(out _)) { } // clears the queue from placement messages.
 
         // csharpier-ignore
-        ShootAction shootAction = new ShootAction { ShootAt = new Coordinate { X = 0, Y = 0 } };
-        _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", shootAction } });
+        ShootAction shootAction1 = new ShootAction { ShootAt = new Coordinate { X = 0, Y = 0 } };
+        Dictionary<string, PlayerState> stateAfter1 = _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", shootAction1 } });
+        Assert.That(stateAfter1.ContainsKey("p2"), Is.True);
 
         Assert.That(channel.Reader.TryRead(out RenderableChange? change), Is.True);
         Assert.That(change, Is.Not.Null);
@@ -124,7 +125,22 @@ public class BattleshipRenderingTests
         Assert.That(change.Changes[0].Type, Is.EqualTo(RenderableType.DECORATION));
         Assert.That(change.Changes[0].AssetPath, Is.EqualTo("/sprites/hit.png"));
 
+        // csharpier-ignore
+        ShootAction shootAction2 = new ShootAction { ShootAt = new Coordinate { X = 9, Y = 9 } };
+        Dictionary<string, PlayerState> stateAfter2 = _game.DoAction(new Dictionary<string, PlayerAction> { { "p2", shootAction2 } });
+        Assert.That(stateAfter2.ContainsKey("p1"), Is.True);
+
         _broadcaster.Disconnect(channel);
+    }
+
+    [Test]
+    public void TestDoAction_WhenBroadcasterIsNull_DoesNotThrow()
+    {
+        BattleshipGame gameWithoutBroadcaster = new BattleshipGame { Broadcaster = null };
+        gameWithoutBroadcaster.GetInitial(["p1", "p2"]);
+
+        PlaceShipsAction action = new PlaceShipsAction { Ships = _validFleet };
+        Assert.DoesNotThrow(() => gameWithoutBroadcaster.DoAction(new Dictionary<string, PlayerAction> { { "p1", action } }));
     }
 
     [Test]

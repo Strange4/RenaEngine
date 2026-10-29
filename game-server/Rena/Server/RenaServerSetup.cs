@@ -53,6 +53,7 @@ internal static class RenaServerSetup
             async (RenderableBroadcaster broadcaster, HttpContext context) =>
             {
                 context.Response.Headers.ContentType = "text/event-stream";
+                await context.Response.Body.FlushAsync();
                 Channel<RenderableChange> channel = broadcaster.Connect();
                 try
                 {
