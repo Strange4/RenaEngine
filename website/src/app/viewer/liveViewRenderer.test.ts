@@ -16,6 +16,7 @@ class MockSprite {
 
   width = 0;
   height = 0;
+  angle = 0;
   zIndex = 0;
 
   constructor(texture: unknown) {
@@ -68,6 +69,7 @@ const baseRenderable: GameRenderable = {
   position: [2, 3],
   assetPath: "/sprites/test.png",
   size: [4, 5],
+  rotation: 0,
   type: RenderableType.OBJECT,
   layer: 3,
 };
@@ -132,7 +134,13 @@ describe("LiveViewRenderer", () => {
     expect(sprite.position.y).toBe(96);
     expect(sprite.width).toBe(128);
     expect(sprite.height).toBe(160);
+    expect(sprite.angle).toBe(0);
     expect(sprite.zIndex).toBe(3);
+
+    const rotatedSprite = renderer.addGameRenderable(
+      renderable({ id: "rotated", rotation: 90 }),
+    );
+    expect(rotatedSprite.angle).toBe(90);
 
     expect(
       renderer.getContainer(RenderableType.OBJECT).children,

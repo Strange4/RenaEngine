@@ -83,6 +83,7 @@ export class LiveViewRenderer {
         // Convert tile-based size to pixel size
         sprite.width = renderable.size[0] * this.viewerSetup.tileSize;
         sprite.height = renderable.size[1] * this.viewerSetup.tileSize;
+        sprite.angle = renderable.rotation ?? 0;
 
         this.getContainer(renderable.type).addChild(sprite);
         this.addSprite(renderable.id, sprite);
