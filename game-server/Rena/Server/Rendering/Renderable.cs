@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace BattleshipServer.Rendering;
+namespace Rena.Server.Rendering;
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum RenderableType
@@ -41,15 +41,15 @@ public class RenderableChange
     public required int Index { get; init; }  //position of the action change (keep a sequence of changes-- helps us jump to moments backwards, forwards etc)
 
     [JsonPropertyName("changes")]
-    public required GameRenderable Changes { get; init; }
+    public required List<GameRenderable> Changes { get; init; }
 }
 
-public class ViewerStup
+public class ViewerSetup
 {
     [JsonPropertyName("tileSize")]
     public int TileSize { get; init; } = 40;
 
     [JsonPropertyName("resolution")]
-    public required int[] Resolution { get; init; } = [920, 480];
+    public int[] Resolution { get; init; } = [920, 480];
 }
 
