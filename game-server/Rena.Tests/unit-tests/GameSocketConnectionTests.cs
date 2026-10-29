@@ -1,5 +1,4 @@
 using System.Net.WebSockets;
-using System.Text;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
