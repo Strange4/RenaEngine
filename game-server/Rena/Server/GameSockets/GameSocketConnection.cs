@@ -4,13 +4,12 @@ using System.Text;
 namespace Rena.Server.GameSockets;
 
 using Microsoft.Extensions.Logging;
-
 using Rena.GameEngine;
 
 public class GameSocketConnection<G, S, A>(WebSocket webSocket, string playerId, ILogger logger)
-where G : IGame<S, A>
-where S : class
-where A : class
+    where G : IGame<S, A>
+    where S : class
+    where A : class
 {
     private const int BUFFER_SIZE = 1024;
 
@@ -24,15 +23,12 @@ where A : class
 
         while (true)
         {
-
             WebSocketReceiveResult result = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
 
             if (result.MessageType == WebSocketMessageType.Close)
             {
                 // Respond to the client's close request to complete the handshake cleanly
-                await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure,
-                    "Closing Normally",
-                    CancellationToken.None);
+                await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing Normally", CancellationToken.None);
                 break;
             }
 

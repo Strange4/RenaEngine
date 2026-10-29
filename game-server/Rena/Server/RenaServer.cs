@@ -1,13 +1,12 @@
 using Microsoft.AspNetCore.Builder;
-
 using Rena.GameEngine;
 
 namespace Rena.Server;
 
 public class RenaServer<G, S, A>
-where G : IGame<S, A>, new()
-where S : class
-where A : class
+    where G : IGame<S, A>, new()
+    where S : class
+    where A : class
 {
     private readonly WebApplication _app;
 

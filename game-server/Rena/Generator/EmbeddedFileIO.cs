@@ -23,9 +23,9 @@ internal class EmbeddedFileIO
     public static async Task WriteEmbededFile(string directory, string namespacedSourceDirectory, string sourceFileName)
     {
         var assembly = Assembly.GetExecutingAssembly();
-        using Stream? stream = assembly.GetManifestResourceStream("Rena." + namespacedSourceDirectory + "." + sourceFileName)
+        using Stream? stream =
+            assembly.GetManifestResourceStream("Rena." + namespacedSourceDirectory + "." + sourceFileName)
             ?? throw new ArgumentNullException(nameof(sourceFileName), "Coudldn't read the embedded file");
-
 
         StreamReader reader = new(stream);
         string text = await reader.ReadToEndAsync();

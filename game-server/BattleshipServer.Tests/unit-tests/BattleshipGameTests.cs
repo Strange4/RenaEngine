@@ -1,6 +1,6 @@
 ﻿using BattleshipServer.Game;
 
-namespace BattleshipServer.Tests.unit_tests;
+namespace BattleshipServer.Tests.Unit;
 
 [TestFixture]
 public class BattleshipGameTests
@@ -11,5 +11,4 @@ public class BattleshipGameTests
         var game = new BattleshipGame();
         Assert.That(game.GetName(), Is.EqualTo("Battleship"));
     }
-
 }

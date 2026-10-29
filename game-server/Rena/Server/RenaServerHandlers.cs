@@ -1,18 +1,16 @@
 using System.Security.Cryptography;
 using System.Text;
-
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-
 using Rena.GameEngine;
 using Rena.Generator;
 
 namespace Rena.Server;
 
 internal class RenaServerHandlers<G, S, A>
-where G : IGame<S, A>, new()
-where S : class
-where A : class
+    where G : IGame<S, A>, new()
+    where S : class
+    where A : class
 {
     public static async Task<IResult> GetGameName()
     {
@@ -33,13 +31,9 @@ where A : class
             : Results.File(zipName, contentType: "application/zip");
     }
 
-    public static IResult GetFeatureSetting(
-        string featureKey,
-        CompetitionSettingsState settings)
+    public static IResult GetFeatureSetting(string featureKey, CompetitionSettingsState settings)
     {
-        return settings.TryGetFeature(featureKey, out bool enabled)
-            ? Results.Ok(new FeatureSettingResponse(enabled))
-            : Results.NotFound();
+        return settings.TryGetFeature(featureKey, out bool enabled) ? Results.Ok(new FeatureSettingResponse(enabled)) : Results.NotFound();
     }
 
     public static IResult UpdateFeatureSetting(
@@ -47,7 +41,8 @@ where A : class
         UpdateFeatureSettingRequest request,
         HttpRequest httpRequest,
         CompetitionSettingsState settings,
-        IOptions<RenaOptions> options)
+        IOptions<RenaOptions> options
+    )
     {
         string authorization = httpRequest.Headers.Authorization.ToString();
         if (string.IsNullOrEmpty(authorization))
@@ -72,16 +67,13 @@ where A : class
             return Results.BadRequest("enabled must be a boolean");
         }
 
-        return settings.TrySetFeature(featureKey, enabled)
-            ? Results.Ok(new FeatureSettingResponse(enabled))
-            : Results.NotFound();
+        return settings.TrySetFeature(featureKey, enabled) ? Results.Ok(new FeatureSettingResponse(enabled)) : Results.NotFound();
     }
 
     private static bool TokensMatch(string suppliedToken, string expectedToken)
     {
         byte[] suppliedBytes = Encoding.UTF8.GetBytes(suppliedToken);
         byte[] expectedBytes = Encoding.UTF8.GetBytes(expectedToken);
-        return suppliedBytes.Length == expectedBytes.Length
-            && CryptographicOperations.FixedTimeEquals(suppliedBytes, expectedBytes);
+        return suppliedBytes.Length == expectedBytes.Length && CryptographicOperations.FixedTimeEquals(suppliedBytes, expectedBytes);
     }
 }
