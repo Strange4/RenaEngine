@@ -10,8 +10,8 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
     public GameLogic Logic { get; } = new();
     public RenderableBroadcaster? Broadcaster { get; set; }
 
-    private string _player1Id = string.Empty;
-    private string _player2Id = string.Empty;
+    private string _player1Id = null!; // normally getInitial is called before doAction so that it is not null
+    private string _player2Id = null!;
 
     public string GetName()
     {
