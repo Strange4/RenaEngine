@@ -1,8 +1,6 @@
 using Docker.DotNet;
 using Docker.DotNet.Models;
-
 using Microsoft.Extensions.Logging;
-
 using Moq;
 
 using Rena.Server.DockerManager;
@@ -23,26 +21,17 @@ internal sealed class DockerServicesFixture : IDisposable
     {
         this.DockerClient.Setup(client => client.Containers).Returns(this.Containers.Object);
         this.DockerClient.Setup(client => client.Images).Returns(this.Images.Object);
-        this.Containers
-            .Setup(operations => operations.ListContainersAsync(It.IsAny<ContainersListParameters>(), default))
+        this.Containers.Setup(operations => operations.ListContainersAsync(It.IsAny<ContainersListParameters>(), default))
             .Returns(() => Task.FromResult(this.ContainerResponses));
-        this.Containers
-            .Setup(operations => operations.CreateContainerAsync(It.IsAny<CreateContainerParameters>(), default))
+        this.Containers.Setup(operations => operations.CreateContainerAsync(It.IsAny<CreateContainerParameters>(), default))
             .Returns(() => Task.FromResult(this.CreateContainerResponse));
-        this.Containers
-            .Setup(operations => operations.StartContainerAsync(
-                It.IsAny<string>(), It.IsAny<ContainerStartParameters>(), default))
+        this.Containers.Setup(operations => operations.StartContainerAsync(It.IsAny<string>(), It.IsAny<ContainerStartParameters>(), default))
             .ReturnsAsync(true);
-        this.Containers
-            .Setup(operations => operations.StopContainerAsync(
-                It.IsAny<string>(), It.IsAny<ContainerStopParameters>(), default))
+        this.Containers.Setup(operations => operations.StopContainerAsync(It.IsAny<string>(), It.IsAny<ContainerStopParameters>(), default))
             .ReturnsAsync(true);
-        this.Containers
-            .Setup(operations => operations.RemoveContainerAsync(
-                It.IsAny<string>(), It.IsAny<ContainerRemoveParameters>(), default))
+        this.Containers.Setup(operations => operations.RemoveContainerAsync(It.IsAny<string>(), It.IsAny<ContainerRemoveParameters>(), default))
             .Returns(Task.CompletedTask);
-        this.Images
-            .Setup(operations => operations.ListImagesAsync(It.IsAny<ImagesListParameters>(), default))
+        this.Images.Setup(operations => operations.ListImagesAsync(It.IsAny<ImagesListParameters>(), default))
             .Returns(() => Task.FromResult(this.ImageResponses));
         this.Images
             .Setup(operations => operations.DeleteImageAsync(It.IsAny<string>(), It.IsAny<ImageDeleteParameters>(), default))

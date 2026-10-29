@@ -16,7 +16,7 @@ public enum ShipOrientation
 {
     ShipOrientationUnknown = 0,
     Horizontal = 1,
-    Vertical = 2
+    Vertical = 2,
 }
 
 [DataContract]
@@ -27,7 +27,7 @@ public enum ShipName
     Battleship = 2,
     Cruiser = 3,
     Submarine = 4,
-    Destroyer = 5
+    Destroyer = 5,
 }
 
 public enum PlacementResult
@@ -44,7 +44,6 @@ public enum PlacementResult
     NullFleet,
     NullCoordinate,
     NullShip,
-
 }
 
 public enum ActionStatus
@@ -60,5 +59,5 @@ public enum ActionStatus
     NotReadyToStart,
     GameOver,
     InvalidPlacement,
-    InvalidAction
+    InvalidAction,
 }
