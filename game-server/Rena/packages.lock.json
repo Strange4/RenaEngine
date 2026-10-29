@@ -2,6 +2,12 @@
   "version": 1,
   "dependencies": {
     "net10.0": {
+      "AsyncAwaitBestPractices": {
+        "type": "Direct",
+        "requested": "[10.0.0, )",
+        "resolved": "10.0.0",
+        "contentHash": "HRK/K4MSlx0b3FZ+LMP3ZvbTS+Ts361lhwp47CQZaESX/9cl5UIKOC0fWb5AbGNZxj96pKRvl7/Wrxj/J8LG/g=="
+      },
       "Docker.DotNet": {
         "type": "Direct",
         "requested": "[3.125.15, )",
