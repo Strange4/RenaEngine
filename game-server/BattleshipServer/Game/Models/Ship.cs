@@ -18,6 +18,7 @@ public class Ship
     public int Size
     {
         // We need to have an init; since Protobuf may want to deserialize this.
+        // when protobuf deserializes this it needs a setter (or init) to set the value that was in the message
         // But we don't really want to deserialize this. And this must always be set to the size of the name of the ship
 #pragma warning disable CS9266
         get => GetShipSize(this.Name);
