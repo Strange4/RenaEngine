@@ -67,10 +67,10 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
     public List<GameRenderable> CollectRenderables(int playerNumber, PlayerAction action)
     {
         var changes = new List<GameRenderable>();
+        int offsetY = 1;
         if (action is PlaceShipsAction place)
         {
             int offsetX = playerNumber == 1 ? 1 : 12; // default x-range is 0 to 22 (look at Rena/Server/Rendering/Renderable.cs for Viewer resolution)
-            int offsetY = 2;
             for (int i = 0; i < place.Ships.Count; i++)
             {
                 Ship ship = place.Ships[i];
@@ -89,7 +89,6 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
         if (action is ShootAction shoot)
         {
             int targetOffsetX = playerNumber == 1 ? 12 : 1; // notice that it is opposite of offsetX from placeship action above
-            int offsetY = 2;
             Player player = this.Logic.GetPlayer(playerNumber);
             ShotRecord? lastShot = player.ShotsFired.LastOrDefault();
             string sprite = (lastShot?.Result is ShotResult.Hit or ShotResult.Miss) ? "/sprites/hit.png" : "/sprites/miss.png";
