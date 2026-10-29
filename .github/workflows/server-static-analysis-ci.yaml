@@ -34,5 +34,8 @@ jobs:
       - name: DotNet Restore
         run: dotnet restore
 
+      - name: DotNet Tool Restore
+        run: dotnet tool restore
+
       - name: Verify Formatting
-        run: dotnet format --verify-no-changes --verbosity diagnostic
+        run: dotnet csharpier check .

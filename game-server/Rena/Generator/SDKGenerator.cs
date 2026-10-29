@@ -1,13 +1,12 @@
 using System.IO.Compression;
 using System.Runtime.Serialization;
-
 using ProtoBuf;
 
 namespace Rena.Generator;
 
 internal class SDKGenerator<S, A>
-where S : class
-where A : class
+    where S : class
+    where A : class
 {
     /// <summary>
     /// Generates an SDK for a specific language in that language's directory.
@@ -52,7 +51,12 @@ where A : class
         string protoText = Serializer.GetProto<SchemaContainer>();
         string stateTypeName = stateType.Name;
         string actionTypeName = actionType.Name;
-        return new ProtoTypeInformation { TextContents = protoText, StateTypeName = stateTypeName, ActionTypeName = actionTypeName };
+        return new ProtoTypeInformation
+        {
+            TextContents = protoText,
+            StateTypeName = stateTypeName,
+            ActionTypeName = actionTypeName,
+        };
     }
 
     [DataContract]
@@ -61,6 +65,7 @@ where A : class
 #pragma warning disable CS8618, IDE0051, CS0169
         [DataMember(Order = 1)]
         S _s;
+
         [DataMember(Order = 2)]
         A _a;
 #pragma warning restore CS8618, IDE0051, CS0169

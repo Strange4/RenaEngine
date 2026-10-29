@@ -1,6 +1,5 @@
 using BattleshipServer.Game.Logic;
 using BattleshipServer.Game.Models;
-
 using Rena.GameEngine;
 using Rena.Server.Rendering;
 

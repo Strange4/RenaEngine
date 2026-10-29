@@ -1,5 +1,4 @@
 ﻿using System.Runtime.Serialization;
-
 using ProtoBuf;
 
 namespace BattleshipServer.Game.Models;
@@ -15,7 +14,8 @@ public abstract class PlayerAction;
 public class PlaceShipsAction : PlayerAction
 {
     [ProtoMember(1)]
-    [DataMember(Order = 1)] public List<Ship> Ships { get; init; } = [];
+    [DataMember(Order = 1)]
+    public List<Ship> Ships { get; init; } = [];
 }
 
 [DataContract]
@@ -23,6 +23,6 @@ public class PlaceShipsAction : PlayerAction
 public class ShootAction : PlayerAction
 {
     [ProtoMember(1, IsRequired = true)]
-    [DataMember(Order = 1)] public Coordinate ShootAt { get; init; } = new Coordinate();
+    [DataMember(Order = 1)]
+    public Coordinate ShootAt { get; init; } = new Coordinate();
 }
-
