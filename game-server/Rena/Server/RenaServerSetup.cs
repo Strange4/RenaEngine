@@ -1,6 +1,7 @@
 namespace Rena.Server;
 
 using System.ComponentModel.DataAnnotations;
+using System.Threading.Channels;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Rena.GameEngine;
 using Rena.Server.GameSockets;
+using Rena.Server.Rendering;
 
 internal static class RenaServerSetup
 {
@@ -28,6 +30,7 @@ internal static class RenaServerSetup
         builder.Services.AddSingleton<RenaServerHandlers<G, S, A>>();
         builder.Services.AddSingleton<CompetitionSettingsState>();
         builder.Services.AddTransient<GameSocketHandler<G, S, A>>();
+        builder.Services.AddSingleton<RenderableBroadcaster>();
 
         builder.Services.AddOptions<RenaOptions>()
             .BindConfiguration(RenaOptions.SectionName)
@@ -52,5 +55,24 @@ internal static class RenaServerSetup
         app.MapPut(
             "/settings/features/{featureKey}",
             RenaServerHandlers<G, S, A>.UpdateFeatureSetting);
+        app.MapGet("/render/stream", async (
+            RenderableBroadcaster broadcaster, HttpContext context) =>
+        {
+            context.Response.Headers.ContentType = "text/event-stream";
+            Channel<RenderableChange> channel = broadcaster.Connect();
+            try
+            {
+                await foreach (RenderableChange change in channel.Reader.ReadAllAsync(context.RequestAborted))
+                {
+                    string json = System.Text.Json.JsonSerializer.Serialize(change);
+                    await context.Response.WriteAsync($"event: change\ndata: {json}\n\n");
+                    await context.Response.Body.FlushAsync();
+                }
+            }
+            finally
+            {
+                broadcaster.Disconnect(channel);
+            }
+        });
     }
 }
