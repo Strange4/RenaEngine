@@ -74,6 +74,7 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
                         Position = [offsetX + ship.StartCoordinate.X, offsetY + ship.StartCoordinate.Y],
                         Size = isHorizontal ? [ship.Size, 1] : [1, ship.Size],
                         AssetPath = "sprites/ship1.png", // can change depending on where the asset is stored
+                        Rotation = isHorizontal ? 0 : 90,
                         Type = RenderableType.OBJECT,
                         Layer = 1,
                     }

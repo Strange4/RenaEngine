@@ -49,6 +49,7 @@ public class BattleshipRenderingTests
                 Position = [0, 0],
                 AssetPath = "/sprites/test.test",
                 Size = [1, 1],
+                Rotation = 0,
                 Type = RenderableType.MAP,
                 Layer = 0,
             },
@@ -162,6 +163,7 @@ public class BattleshipRenderingTests
         List<GameRenderable> renderables = _game.CollectRenderables(1, placeAction);
         int[] expected = [1, 2];
         Assert.That(renderables[0].Size, Is.EqualTo(expected));
+        Assert.That(renderables[0].Rotation, Is.EqualTo(90));
     }
 
     [Test]

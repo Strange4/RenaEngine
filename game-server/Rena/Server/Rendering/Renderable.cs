@@ -24,6 +24,10 @@ public class GameRenderable
     [JsonPropertyName("size")]
     public required int[] Size { get; init; } //how big the object is tile-wise [width, height]
 
+    [JsonPropertyName("rotation")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Rotation { get; init; } // 0, 90, 180, 270. Clockwise. Around the position tile
+
     [JsonPropertyName("type")]
     public required RenderableType Type { get; init; } // (bottom, this is the game texture), objectContainer (middle), decorationContainer (top)
 
