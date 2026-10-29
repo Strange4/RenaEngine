@@ -1,5 +1,6 @@
 using BattleshipServer.Game.Logic;
 using BattleshipServer.Game.Models;
+
 using Rena.GameEngine;
 using Rena.Server.Rendering;
 
@@ -90,7 +91,7 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
             int targetOffsetX = playerNumber == 1 ? 12 : 1; // notice that it is opposite of offsetX from placeship action above
             Player player = this.Logic.GetPlayer(playerNumber);
             ShotRecord? lastShot = player.ShotsFired.LastOrDefault();
-            string sprite = (lastShot?.Result is ShotResult.Hit or ShotResult.Miss) ? "/sprites/hit.png" : "/sprites/miss.png";
+            string sprite = (lastShot?.Result is ShotResult.Hit or ShotResult.Sunk) ? "/sprites/hit.png" : "/sprites/miss.png";
             changes.Add(new GameRenderable
             {
                 Id = $"shot-{playerNumber}-{shoot.ShootAt.X}-{shoot.ShootAt.Y}",
