@@ -1,27 +1,22 @@
 import type { Container } from "pixi.js";
 import { RenderableType, type GameRenderable, type ViewerSetup } from "@/shared/renderable";
 
+class MockPoint {
+  x = 0;
+  y = 0;
+  set(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+}
+
 class MockSprite {
   texture: unknown;
   parent: MockContainer | null = null;
 
-  position = {
-    x: 0,
-    y: 0,
-    set: (x: number, y: number) => {
-      this.position.x = x;
-      this.position.y = y;
-    },
-  };
+  position = new MockPoint();
 
-  anchor = {
-    x: 0,
-    y: 0,
-    set: (x: number, y: number) => {
-      this.anchor.x = x;
-      this.anchor.y = y;
-    },
-  };
+  anchor = new MockPoint();
 
   width = 0;
   height = 0;
