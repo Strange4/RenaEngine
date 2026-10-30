@@ -1,5 +1,5 @@
 using System.Net.WebSockets;
-using System.Text;
+using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Rena.GameEngine;
@@ -24,12 +24,18 @@ public class GameSocketConnectionTests
 {
     private WebSocket _mockWebSocket;
     private ILogger _mockLogger;
+    private ChannelReader<Result<bool>> _mockChannel;
+
+    private IGameRoomManager _mockManager;
 
     [SetUp]
     public async Task BeforeEach()
     {
         _mockWebSocket = Substitute.For<WebSocket>();
         _mockLogger = Substitute.For<ILogger>();
+        _mockManager = Substitute.For<IGameRoomManager>();
+        _mockChannel = Substitute.For<ChannelReader<Result<bool>>>();
+        _mockManager.Register(Arg.Any<string>(), Arg.Is(_mockWebSocket)).Returns(_mockChannel);
     }
 
     [TearDown]
@@ -39,74 +45,83 @@ public class GameSocketConnectionTests
     }
 
     [Test]
-    public async Task HandleConnection_ReadsMessage_AndEchoesCorrectly()
+    public async Task HandleConnection_RegistersConnection_ExitsGracefully()
     {
         var playerId = "player-123";
 
         _mockWebSocket.State.Returns(WebSocketState.Open);
 
-        var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(_mockWebSocket, playerId, _mockLogger);
+        var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(_mockWebSocket, playerId, _mockManager, _mockLogger);
 
         Assert.That(socketConnection.PlayerId, Is.EqualTo(playerId));
 
-        var testMessage = "Hello Game Server";
-        var testMessageBytes = Encoding.UTF8.GetBytes(testMessage);
-
-        int callcount = 0;
-
-        // Setup the receive to transfer the test message into the input array
-        _mockWebSocket
-            .ReceiveAsync(Arg.Any<ArraySegment<byte>>(), Arg.Any<CancellationToken>())
-            .Returns(async callInfo =>
-            {
-                callcount++;
-                if (callcount == 1)
-                {
-                    var bufferArg = callInfo.ArgAt<ArraySegment<byte>>(0);
-                    Array.Copy(testMessageBytes, 0, bufferArg.Array!, bufferArg.Offset, testMessageBytes.Length);
-
-                    return new WebSocketReceiveResult(testMessageBytes.Length, WebSocketMessageType.Text, endOfMessage: true);
-                }
-
-                return new WebSocketReceiveResult(0, WebSocketMessageType.Close, endOfMessage: true);
-            });
-
-        byte[]? capturedResponseBytes = Encoding.UTF8.GetBytes("Send Async is failing");
-
-        // Setup the send to transfer the test message back to the test
-        await _mockWebSocket.SendAsync(
-            Arg.Do<ArraySegment<byte>>(bytes => capturedResponseBytes = [.. bytes]),
-            Arg.Any<WebSocketMessageType>(),
-            Arg.Any<bool>(),
-            Arg.Any<CancellationToken>()
-        );
+        _mockChannel.ReadAsync().Returns(new Result<bool>(true));
 
         await socketConnection.HandleConnection();
 
-        string serverResponse = Encoding.UTF8.GetString(capturedResponseBytes);
+        await _mockChannel.Received(1).ReadAsync();
 
-        Assert.That(serverResponse, Is.EqualTo($"Echo: {testMessage}\n"));
-    }
-
-    [Test]
-    public async Task HandleConnection_ClosesConnection_OnWebSocketClose()
-    {
-        var playerId = "player-who-is-done";
-
-        _mockWebSocket
-            .ReceiveAsync(Arg.Any<ArraySegment<byte>>(), Arg.Any<CancellationToken>())
-            .Returns(_ => new WebSocketReceiveResult(0, WebSocketMessageType.Close, endOfMessage: true));
-
-        var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(_mockWebSocket, playerId, _mockLogger);
-
-        await socketConnection.HandleConnection();
+        await _mockManager.Received(1).Register(Arg.Is(playerId), Arg.Is(_mockWebSocket));
+        await _mockManager.Received(1).UnRegister(Arg.Is(playerId));
 
         await _mockWebSocket
             .Received(1)
             .CloseOutputAsync(Arg.Is(WebSocketCloseStatus.NormalClosure), Arg.Is("Closing Normally"), Arg.Is(CancellationToken.None));
+    }
+
+    [Test]
+    public async Task HandleConnection_DuplicateRegister_ExitsGracefully()
+    {
+        var playerId = "player-123";
+
+        _mockWebSocket.State.Returns(WebSocketState.Open);
+
+        var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(_mockWebSocket, playerId, _mockManager, _mockLogger);
+
+        Assert.That(socketConnection.PlayerId, Is.EqualTo(playerId));
+
+        var exception = new ArgumentException("Test message");
+        _mockChannel.ReadAsync().Returns(new Result<bool>(exception));
+
+        await socketConnection.HandleConnection();
+
+        await _mockChannel.Received(1).ReadAsync();
+
+        await _mockManager.Received(1).Register(Arg.Is(playerId), Arg.Is(_mockWebSocket));
+        await _mockManager.Received(1).UnRegister(Arg.Is(playerId));
 
         await _mockWebSocket
-            .DidNotReceive()
-            .SendAsync(Arg.Any<ArraySegment<byte>>(), Arg.Any<WebSocketMessageType>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+            .Received(1)
+            .CloseOutputAsync(Arg.Is(WebSocketCloseStatus.PolicyViolation), Arg.Is(exception.Message), Arg.Is(CancellationToken.None));
+    }
+
+    [Test]
+    public async Task HandleConnection_UnnexpectedError_ExitsGracefully()
+    {
+        var playerId = "player-123";
+
+        _mockWebSocket.State.Returns(WebSocketState.Open);
+
+        var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(_mockWebSocket, playerId, _mockManager, _mockLogger);
+
+        Assert.That(socketConnection.PlayerId, Is.EqualTo(playerId));
+
+        var exception = new Exception("I'm Unnexpected");
+        _mockChannel.ReadAsync().Returns(new Result<bool>(exception));
+
+        await socketConnection.HandleConnection();
+
+        await _mockChannel.Received(1).ReadAsync();
+
+        await _mockManager.Received(1).Register(Arg.Is(playerId), Arg.Is(_mockWebSocket));
+        await _mockManager.Received(1).UnRegister(Arg.Is(playerId));
+
+        await _mockWebSocket
+            .Received(1)
+            .CloseOutputAsync(
+                Arg.Is(WebSocketCloseStatus.InternalServerError),
+                Arg.Is("Something unnexpected happened"),
+                Arg.Is(CancellationToken.None)
+            );
     }
 }
