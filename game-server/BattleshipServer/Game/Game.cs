@@ -94,8 +94,8 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
                     Position = [targetOffsetX + shoot.ShootAt.X, offsetY + shoot.ShootAt.Y],
                     Size = [1, 1],
                     AssetPath = sprite,
-                    Type = RenderableType.DECORATION,
-                    Layer = 0,
+                    Type = RenderableType.OBJECT,
+                    Layer = 2,
                 }
             );
         }

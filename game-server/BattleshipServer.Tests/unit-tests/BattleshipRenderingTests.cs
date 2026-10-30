@@ -123,7 +123,7 @@ public class BattleshipRenderingTests
             return;
         }
         Assert.That(change.Changes, Has.Count.EqualTo(1));
-        Assert.That(change.Changes[0].Type, Is.EqualTo(RenderableType.DECORATION));
+        Assert.That(change.Changes[0].Type, Is.EqualTo(RenderableType.OBJECT));
         Assert.That(change.Changes[0].AssetPath, Is.EqualTo("/sprites/hit.png"));
 
         // csharpier-ignore
