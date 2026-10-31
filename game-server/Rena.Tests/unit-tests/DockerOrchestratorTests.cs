@@ -12,13 +12,13 @@ namespace Rena.Tests.Unit;
 public class DockerOrchestratorTests
 {
     private DockerServicesFixture _fixture = null!;
-    private AbstractDockerService _service = null!;
+    private DockerService _service = null!;
 
     [SetUp]
     public void SetUp()
     {
         this._fixture = new DockerServicesFixture();
-        this._service = new AbstractDockerService(this._fixture.DockerClient.Object, this._fixture.Logger.Object);
+        this._service = new DockerService(this._fixture.DockerClient.Object, this._fixture.Logger.Object);
     }
 
     [TearDown]

@@ -23,7 +23,7 @@ public interface IDockerContainerService
     Task<Result<Unit>> StopContainerAsync(string id);
 }
 
-public class DockerContainerService(IDockerClient dockerClient, ILogger logger) : DockerService(dockerClient, logger), IDockerContainerService
+public class DockerContainerService(IDockerClient dockerClient, ILogger logger) : AbstractDockerService(dockerClient, logger), IDockerContainerService
 {
     public async Task<Result<CreateContainerResponse>> CreateContainerAsync(
         string imageId,

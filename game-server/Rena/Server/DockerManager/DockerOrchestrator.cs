@@ -15,13 +15,13 @@ public interface IDockerService
     public Task<Result<Unit>> KillContainerWithIdAsync(string containerId);
 }
 
-public abstract class DockerService(IDockerClient dockerClient, ILogger logger)
+public abstract class AbstractDockerService(IDockerClient dockerClient, ILogger logger)
 {
     protected readonly IDockerClient _client = dockerClient;
     protected readonly ILogger _logger = logger;
 }
 
-public class AbstractDockerService(IDockerClient dockerClient, ILogger logger) : DockerService(dockerClient, logger), IDockerService
+public class DockerService(IDockerClient dockerClient, ILogger logger) : AbstractDockerService(dockerClient, logger), IDockerService
 {
     private readonly IDockerContainerService _containers = new DockerContainerService(dockerClient, logger);
     private readonly IDockerBuildContextFactory _buildContexts = new TemporaryFileDockerBuildContextFactory();

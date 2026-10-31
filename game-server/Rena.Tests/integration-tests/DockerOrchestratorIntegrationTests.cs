@@ -12,7 +12,7 @@ public sealed class DockerOrchestratorIntegrationTests
 {
     private DockerApiStub _api = null!;
     private IDockerClient _dockerClient = null!;
-    private AbstractDockerService _orchestrator = null!;
+    private DockerService _orchestrator = null!;
 
     [SetUp]
     public async Task SetUp()
@@ -20,7 +20,7 @@ public sealed class DockerOrchestratorIntegrationTests
         this._api = new DockerApiStub();
         await this._api.StartAsync();
         this._dockerClient = new DockerClientConfiguration(this._api.Endpoint).CreateClient();
-        this._orchestrator = new AbstractDockerService(this._dockerClient, NullLogger.Instance);
+        this._orchestrator = new DockerService(this._dockerClient, NullLogger.Instance);
     }
 
     [TearDown]
