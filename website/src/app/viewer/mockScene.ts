@@ -27,6 +27,7 @@ function tiles(
         position: [x, y],
         assetPath,
         size: [1, 1],
+        rotation: 0,
         type: RenderableType.MAP,
         layer,
       });
@@ -43,16 +44,16 @@ const MAP: GameRenderable[] = [
 ];
 
 const OBJECTS: GameRenderable[] = [
-  { id: "ship-1", position: [12, 3], assetPath: "/sprites/ship1.png", size: [4, 1], type: RenderableType.OBJECT, layer: 1 },
-  { id: "ship-2", position: [13, 6], assetPath: "/sprites/ship1.png", size: [4, 1], type: RenderableType.OBJECT, layer: 1 },
-  { id: "rena-front", position: [4, 8], assetPath: "/sprites/rena.png", size: [2, 2], type: RenderableType.OBJECT, layer: 2 },
-  { id: "rena-back", position: [5, 9], assetPath: "/sprites/rena.png", size: [2, 2], type: RenderableType.OBJECT, layer: 1 },
+  { id: "ship-1", position: [12, 3], assetPath: "/sprites/ship1.png", size: [4, 1], rotation: 0, type: RenderableType.OBJECT, layer: 1 },
+  { id: "ship-2", position: [13, 6], assetPath: "/sprites/ship1.png", size: [4, 1], rotation: 0, type: RenderableType.OBJECT, layer: 1 },
+  { id: "rena-front", position: [4, 8], assetPath: "/sprites/rena.png", size: [2, 2], rotation: 0, type: RenderableType.OBJECT, layer: 2 },
+  { id: "rena-back", position: [5, 9], assetPath: "/sprites/rena.png", size: [2, 2], rotation: 0, type: RenderableType.OBJECT, layer: 1 },
 ];
 
 const DECORATIONS: GameRenderable[] = [
-  { id: "flag-1", position: [2, 2], assetPath: "/sprites/flag.svg", size: [1, 1], type: RenderableType.DECORATION, layer: 0 },
-  { id: "flag-2", position: [17, 11], assetPath: "/sprites/flag.svg", size: [1, 1], type: RenderableType.DECORATION, layer: 0 },
-  { id: "cloud", position: [12, 5], assetPath: "/sprites/cloud.svg", size: [3, 3], type: RenderableType.DECORATION, layer: 0 },
+  { id: "flag-1", position: [2, 2], assetPath: "/sprites/flag.svg", size: [1, 1], rotation: 0, type: RenderableType.DECORATION, layer: 0 },
+  { id: "flag-2", position: [17, 11], assetPath: "/sprites/flag.svg", size: [1, 1], rotation: 0, type: RenderableType.DECORATION, layer: 0 },
+  { id: "cloud", position: [12, 5], assetPath: "/sprites/cloud.svg", size: [3, 3], rotation: 0, type: RenderableType.DECORATION, layer: 0 },
 ];
 
 export const MOCK_SCENE: GameRenderable[] = [...MAP, ...OBJECTS, ...DECORATIONS];
