@@ -48,6 +48,7 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
 
         if (status == ActionStatus.Success)
         {
+            // TODO #137: Move renderable diffing into RenaEngine
             List<GameRenderable> changes = this.CollectRenderables(playerNumber, action);
             this.Broadcaster?.BroadcastChange(changes);
         }

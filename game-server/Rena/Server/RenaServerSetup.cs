@@ -52,6 +52,7 @@ internal static class RenaServerSetup
             "/render/stream/{playerId}",
             async (string playerId, RenderableBroadcaster broadcaster, HttpContext context) =>
             {
+                // TODO: Connect playerId to IGameRoomManager once PR #132 is merged
                 context.Response.Headers.ContentType = "text/event-stream";
                 await context.Response.Body.FlushAsync();
                 Channel<RenderableChange> channel = broadcaster.Connect();
