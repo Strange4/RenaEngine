@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
@@ -78,7 +79,24 @@ public class RenderStreamTests
         string? dataLine = await streamReader.ReadLineAsync(cts.Token);
 
         Assert.That(eventLine, Is.EqualTo("event: change"));
-        Assert.That(dataLine, Contains.Substring("sse-test"));
+        string expectedJson = """
+                {
+                    "index": 1,
+                    "changes": [
+                    {
+                        "id": "sse-test",
+                        "position": [1, 1],
+                        "assetPath": "/sprites/test.png",
+                        "size": [1, 1],
+                        "type": "MAP",
+                        "layer": 0
+                    }
+                    ]
+                }
+            """;
+        string serializedJson = JsonSerializer.Serialize(JsonDocument.Parse(expectedJson));
+        string expectedData = $"data: {serializedJson}";
+        Assert.That(dataLine, Is.EqualTo(expectedData));
 
         cts.Cancel();
     }
