@@ -31,7 +31,7 @@ WORKDIR /game-server/BattleshipServer
 ARG RenaOptions__TSProtoPath
 ARG RenaOptions__GenerationDirectory
 
-RUN dotnet publish -c release -o /app --no-restore \
+RUN dotnet publish -c release -o /app \
     && dotnet /app/BattleshipServer.dll --generate
 
 # final stage/image
