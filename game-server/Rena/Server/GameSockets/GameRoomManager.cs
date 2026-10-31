@@ -41,11 +41,11 @@ public class GameRoomManager<G, S, A>(int roomSize, ILogger logger) : IGameRoomM
         {
             if (this.IsCompetitionMode)
             {
-                // TODO (not sure which issue) Implement the matchmaker to keep track of who needs to play who
+                // TODO #133 Implement the matchmaker to keep track of who needs to play who
             }
             else
             {
-                // TODO (not sure which issue) Connect the docker orchestrator to spin up host agents to fill the room
+                // TODO #134 Connect the docker orchestrator to spin up host agents to fill the room
 
                 // TEMPORARY CODE
                 // Fill room with the first x number of connections that are free
