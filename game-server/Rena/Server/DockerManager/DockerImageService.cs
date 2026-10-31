@@ -27,7 +27,7 @@ public interface IDockerImageService
     public Task<Result<ImagesListResponse>> FindImageByIdAsync(string id);
 }
 
-public class DockerImageService(IDockerClient dockerClient, ILogger logger) : AbstractDockerService(dockerClient, logger), IDockerImageService
+public class DockerImageService(IDockerClient dockerClient, ILogger logger) : DockerService(dockerClient, logger), IDockerImageService
 {
 
     private async Task<Result<IList<ImagesListResponse>>> GetAllImages(Option<ImagesListParameters> parameters = default)
