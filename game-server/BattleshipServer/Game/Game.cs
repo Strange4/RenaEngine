@@ -66,8 +66,10 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
             nextPlayerId = this.Logic.IsPlayer1Turn ? _player1Id : _player2Id;
         }
 
-        // Boomerang effect: we only return the state of the player whose turn is next
-        // The player will call DoAction and the next turn player is the player whose state is returned next, completing 1 iteration of boomerang effect
+        // Boomerang effect: we only return the state of the player whose turn is next.
+        // That player shall complete one action and we will receive this action the next time DoAction is called.
+        // By always returning the state of the next player, we will be taking turns by using a boomerang effect.
+        // The boomerang effect is sending a message and expect to be called back when the message arrives.
         return new Dictionary<string, PlayerState> { { nextPlayerId, this.Logic.GetPlayerState(nextPlayerNumber) } };
     }
 
