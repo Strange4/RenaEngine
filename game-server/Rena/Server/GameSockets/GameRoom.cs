@@ -2,6 +2,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Channels;
 using Rena.GameEngine;
+using Rena.Utility;
 
 namespace Rena.Server.GameSockets;
 

@@ -3,6 +3,7 @@ using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Rena.GameEngine;
+using Rena.Utility;
 using Rena.Server.GameSockets;
 
 namespace Rena.Tests.Unit;
