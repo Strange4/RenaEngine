@@ -35,9 +35,9 @@ public class DockerOrchestratorTests
         Directory.CreateDirectory(directory);
         string zipPath = Path.Combine(directory, "player.zip");
         string dockerfilePath = Path.Combine(directory, "Dockerfile");
-        using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+        using (var archive = await ZipFile.OpenAsync(zipPath, ZipArchiveMode.Create))
         {
-            await using var entry = archive.CreateEntry("app.js").Open();
+            await using var entry = await archive.CreateEntry("app.js").OpenAsync();
             await using var writer = new StreamWriter(entry);
             await writer.WriteAsync("console.log('ready');");
         }

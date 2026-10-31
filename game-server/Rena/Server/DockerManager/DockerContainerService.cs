@@ -114,7 +114,7 @@ public class DockerContainerService(IDockerClient dockerClient, ILogger logger) 
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Unexpected Error] {ex.Message}");
+            _logger.LogError(ex, "[Unexpected Error] {Message}", ex.Message);
             return new Result<Unit>(Error.New(ex));
         }
     }
