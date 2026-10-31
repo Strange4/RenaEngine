@@ -24,6 +24,8 @@ public class GameRoomManager<G, S, A>(int roomSize, ILogger logger) : IGameRoomM
     private readonly ConcurrentDictionary<string, GameRoom<G, S, A>> _rooms = [];
     public bool IsCompetitionMode { get; set; } = false;
 
+    private readonly Lock _roomCreationLock = new();
+
     public async Task<ChannelReader<Result<bool>>> Register(string playerId, WebSocket socket)
     {
         var channel = Channel.CreateBounded<Result<bool>>(EXPECTED_NUM_MESSAGES);
@@ -35,32 +37,35 @@ public class GameRoomManager<G, S, A>(int roomSize, ILogger logger) : IGameRoomM
 
         _connections[playerId] = new(socket, channel.Writer);
 
-        if (this.IsCompetitionMode)
+        lock (_roomCreationLock)
         {
-            // TODO (not sure which issue) Implement the matchmaker to keep track of who needs to play who
-        }
-        else
-        {
-            // TODO (not sure which issue) Connect the docker orchestrator to spin up host agents to fill the room
-
-            // TEMPORARY CODE
-            // Fill room with the first x number of connections that are free
-            var freeConnections = _connections.Where(connectionRecord =>
-                !_rooms.ContainsKey(connectionRecord.Key) && connectionRecord.Key != playerId
-            );
-            if (freeConnections.Count() >= roomSize - 1) // current newest connection will be in the room
+            if (this.IsCompetitionMode)
             {
-                var roomConnections = freeConnections.Take(roomSize - 1).ToDictionary();
-                roomConnections[playerId] = _connections[playerId];
+                // TODO (not sure which issue) Implement the matchmaker to keep track of who needs to play who
+            }
+            else
+            {
+                // TODO (not sure which issue) Connect the docker orchestrator to spin up host agents to fill the room
 
-                var room = new GameRoom<G, S, A>(roomConnections);
-
-                foreach (string id in roomConnections.Keys)
+                // TEMPORARY CODE
+                // Fill room with the first x number of connections that are free
+                var freeConnections = _connections.Where(connectionRecord =>
+                    !_rooms.ContainsKey(connectionRecord.Key) && connectionRecord.Key != playerId
+                );
+                if (freeConnections.Count() >= roomSize - 1) // current newest connection will be in the room
                 {
-                    _rooms[id] = room;
-                }
+                    var roomConnections = freeConnections.Take(roomSize - 1).ToDictionary();
+                    roomConnections[playerId] = _connections[playerId];
 
-                Task.Run(room.RunRoom).SafeFireAndForget(async exception => await this.HandleRoomExceptions(exception, roomConnections));
+                    var room = new GameRoom<G, S, A>(roomConnections);
+
+                    foreach (string id in roomConnections.Keys)
+                    {
+                        _rooms[id] = room;
+                    }
+
+                    Task.Run(room.RunRoom).SafeFireAndForget(async exception => await this.HandleRoomExceptions(exception, roomConnections));
+                }
             }
         }
 
