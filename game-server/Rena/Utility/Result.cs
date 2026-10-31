@@ -1,4 +1,5 @@
 namespace Rena.Utility;
+
 public class Result<T>
 {
     public bool IsSuccess { get; }
