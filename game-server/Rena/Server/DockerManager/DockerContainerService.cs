@@ -2,6 +2,7 @@ using Docker.DotNet;
 using Docker.DotNet.Models;
 
 using LanguageExt;
+using LanguageExt.Common;
 
 using Microsoft.Extensions.Logging;
 
@@ -9,21 +10,21 @@ using static LanguageExt.Prelude;
 
 namespace Rena.Server.DockerManager;
 
-interface IDockerContainerService
+public interface IDockerContainerService
 {
-    Task<Option<ContainerListResponse>> GetContainerByIdAsync(string id, bool isRunning = true);
+    Task<Result<ContainerListResponse>> GetContainerByIdAsync(string id, bool isRunning = true);
 
-    Task<Option<CreateContainerResponse>> CreateContainerAsync(string imageId, string containerName, Option<CreateContainerParameters> parameters = default);
+    Task<Result<CreateContainerResponse>> CreateContainerAsync(string imageId, string containerName, Option<CreateContainerParameters> parameters = default);
 
-    Task<bool> DeleteContainerAsync(string id, Option<ContainerRemoveParameters> parameters = default);
+    Task<Result<Unit>> DeleteContainerAsync(string id, Option<ContainerRemoveParameters> parameters = default);
 
-    Task<bool> StartContainerAsync(string id, Option<ContainerStartParameters> parameters = default);
-    Task<bool> StopContainerAsync(string id);
+    Task<Result<Unit>> StartContainerAsync(string id, Option<ContainerStartParameters> parameters = default);
+    Task<Result<Unit>> StopContainerAsync(string id);
 }
 
-public class DockerContainerService(IDockerClient dockerClient, ILogger logger) : DockerService(dockerClient, logger), IDockerContainerService
+public class DockerContainerService(IDockerClient dockerClient, ILogger logger) : AbstractDockerService(dockerClient, logger), IDockerContainerService
 {
-    public async Task<Option<CreateContainerResponse>> CreateContainerAsync(string imageId, string containerName, Option<CreateContainerParameters> parameters = default)
+    public async Task<Result<CreateContainerResponse>> CreateContainerAsync(string imageId, string containerName, Option<CreateContainerParameters> parameters = default)
     {
         try
         {
@@ -31,43 +32,41 @@ public class DockerContainerService(IDockerClient dockerClient, ILogger logger) 
             createParams.Image = imageId;
             createParams.Name = containerName;
 
-            var response = await this._client.Containers.CreateContainerAsync(createParams);
-            return Optional(response);
+            return await this._client.Containers.CreateContainerAsync(createParams);
         }
         catch (DockerApiException ex)
         {
             _logger.LogError(ex, "[Docker API Error] Status: {StatusCode} | Message: {Message}", ex.StatusCode, ex.Message);
-            return Option<CreateContainerResponse>.None;
+            return new Result<CreateContainerResponse>(Error.New(ex));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "[Unexpected Error] {Message}", ex.Message);
-            return Option<CreateContainerResponse>.None;
+            return new Result<CreateContainerResponse>(Error.New(ex));
         }
     }
 
-    public async Task<bool> DeleteContainerAsync(string id, Option<ContainerRemoveParameters> parameters = default)
+    public async Task<Result<Unit>> DeleteContainerAsync(string id, Option<ContainerRemoveParameters> parameters = default)
     {
         try
         {
-            Option<ContainerListResponse> container = await this.GetContainerByIdAsync(id, false);
+            Result<ContainerListResponse> container = await this.GetContainerByIdAsync(id, false);
             return await container.Match(
-                Some: async _ =>
+                async c =>
                 {
-                    await this._client.Containers.RemoveContainerAsync(id, parameters.IfNone(new ContainerRemoveParameters()));
-                    return true;
+                    await this._client.Containers.RemoveContainerAsync(c.ID, parameters.IfNone(new ContainerRemoveParameters()));
+                    return new Result<Unit>(unit);
                 },
-                None: () => Task.FromResult(false)
-            );
+                error => Task.FromResult(new Result<Unit>(error)));
         }
         catch (DockerApiException ex)
         {
             _logger.LogError(ex, "Failed to delete container {Id}", id);
-            return false;
+            return new Result<Unit>(Error.New(ex));
         }
     }
 
-    public async Task<Option<ContainerListResponse>> GetContainerByIdAsync(string id, bool isRunning = true)
+    public async Task<Result<ContainerListResponse>> GetContainerByIdAsync(string id, bool isRunning = true)
     {
         IDictionary<string, IDictionary<string, bool>> idFilter = new Dictionary<string, IDictionary<string, bool>>()
         {
@@ -77,44 +76,58 @@ public class DockerContainerService(IDockerClient dockerClient, ILogger logger) 
             }
         };
         IList<ContainerListResponse> result = await this._client.Containers.ListContainersAsync(new ContainersListParameters() { Filters = idFilter, All = !isRunning });
-        return result.Find(_ => _.ID == id);
+        return result.Find(_ => _.ID == id).Match(
+            Some: _ => new Result<ContainerListResponse>(_),
+            None: () =>
+            {
+                var isRunningText = isRunning ? "" : "not ";
+                return new Result<ContainerListResponse>(Error.FromObject($"No container found for {id} that is {isRunningText}running"));
+            }
+        );
     }
 
-    public async Task<bool> StartContainerAsync(string id, Option<ContainerStartParameters> parameters = default)
+    public async Task<Result<Unit>> StartContainerAsync(string id, Option<ContainerStartParameters> parameters = default)
     {
         try
         {
-            Option<ContainerListResponse> container = await this.GetContainerByIdAsync(id, false);
+            Result<ContainerListResponse> container = await this.GetContainerByIdAsync(id, false);
             return await container.Match(
-                Some: async _ => await this._client.Containers.StartContainerAsync(id, parameters.IfNone(new ContainerStartParameters())),
-                None: () => Task.FromResult(false));
+                async c =>
+                {
+                    await this._client.Containers.StartContainerAsync(c.ID, parameters.IfNone(new ContainerStartParameters()));
+                    return new Result<Unit>(unit);
+                },
+                error => Task.FromResult(new Result<Unit>(error)));
         }
         catch (DockerApiException ex)
         {
             _logger.LogError(ex, "Failed to start container {Id}", id);
-            return false;
+            return new Result<Unit>(Error.New(ex));
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[Unexpected Error] {ex.Message}");
-            return false;
+            return new Result<Unit>(Error.New(ex));
         }
     }
 
-    public async Task<bool> StopContainerAsync(string id)
+    public async Task<Result<Unit>> StopContainerAsync(string id)
     {
         try
         {
-            Option<ContainerListResponse> container = await this.GetContainerByIdAsync(id);
+            Result<ContainerListResponse> container = await this.GetContainerByIdAsync(id);
             return await container.Match(
-                Some: async _ => await this._client.Containers.StopContainerAsync(id, new ContainerStopParameters()),
-                None: () => Task.FromResult(false)
-            );
+                async c =>
+                {
+                    await this._client.Containers.StopContainerAsync(c.ID, new ContainerStopParameters());
+                    return new Result<Unit>(unit);
+                },
+                error => Task.FromResult(new Result<Unit>(error)));
         }
         catch (DockerApiException ex)
         {
             _logger.LogError(ex, "Failed to stop container {Id}", id);
-            return false;
+            return new Result<Unit>(Error.New(ex));
         }
     }
 }

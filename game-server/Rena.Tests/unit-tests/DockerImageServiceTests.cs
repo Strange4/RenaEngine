@@ -1,6 +1,8 @@
 using Docker.DotNet;
 using Docker.DotNet.Models;
 
+using LanguageExt.Common;
+
 using Moq;
 
 using Rena.Server.DockerManager;
@@ -24,6 +26,10 @@ public class DockerImageServiceTests
     [TearDown]
     public void TearDown() => this._fixture.Dispose();
 
+    private static bool IsSuccess<T>(Result<T> result) => result.Match(_ => true, _ => false);
+
+    private static bool IsFailure<T>(Result<T> result) => result.Match(_ => false, _ => true);
+
     [Test]
     public async Task FindImageByIdAsync_FindsExactOrPartialId()
     {
@@ -32,20 +38,20 @@ public class DockerImageServiceTests
 
         var result = await this._service.FindImageByIdAsync("123456");
 
-        Assert.That(result.IsSome, Is.True);
-        result.IfSome(image => Assert.That(image.ID, Is.EqualTo(imageId)));
+        Assert.That(IsSuccess(result), Is.True);
+        result.IfSucc(image => Assert.That(image.ID, Is.EqualTo(imageId)));
     }
 
     [Test]
-    public async Task FindImageByIdAsync_ReturnsNoneWhenImageIsMissing()
+    public async Task FindImageByIdAsync_ReturnsFailureWhenImageIsMissing()
     {
         var result = await this._service.FindImageByIdAsync("missing");
 
-        Assert.That(result.IsNone, Is.True);
+        Assert.That(IsFailure(result), Is.True);
     }
 
     [Test]
-    public async Task FindImageByIdAsync_ReturnsNoneWhenListingImagesFails()
+    public async Task FindImageByIdAsync_ReturnsFailureWhenListingImagesFails()
     {
         this._fixture.Images
             .Setup(operations => operations.ListImagesAsync(It.IsAny<ImagesListParameters>(), default))
@@ -53,7 +59,7 @@ public class DockerImageServiceTests
 
         var result = await this._service.FindImageByIdAsync("image-123");
 
-        Assert.That(result.IsNone, Is.True);
+        Assert.That(IsFailure(result), Is.True);
     }
 
     [Test]
@@ -62,26 +68,26 @@ public class DockerImageServiceTests
         const string imageId = "sha256:1234567890";
         this._fixture.ImageResponses = [new() { ID = imageId }];
 
-        bool result = await this._service.DeleteImageAsync(imageId);
+        var result = await this._service.DeleteImageAsync(imageId);
 
-        Assert.That(result, Is.True);
+        Assert.That(IsSuccess(result), Is.True);
         this._fixture.Images.Verify(operations => operations.DeleteImageAsync(
             imageId,
             It.Is<ImageDeleteParameters>(parameters => parameters.Force == true && parameters.NoPrune == false)), Times.Once);
     }
 
     [Test]
-    public async Task DeleteImageAsync_WhenImageDoesNotExistReturnsFalse()
+    public async Task DeleteImageAsync_WhenImageDoesNotExistReturnsFailure()
     {
-        bool result = await this._service.DeleteImageAsync("missing");
+        var result = await this._service.DeleteImageAsync("missing");
 
-        Assert.That(result, Is.False);
+        Assert.That(IsFailure(result), Is.True);
         this._fixture.Images.Verify(operations => operations.DeleteImageAsync(
             It.IsAny<string>(), It.IsAny<ImageDeleteParameters>()), Times.Never);
     }
 
     [Test]
-    public async Task DeleteImageAsync_WhenDockerApiFailsReturnsFalse()
+    public async Task DeleteImageAsync_WhenDockerApiFailsReturnsFailure()
     {
         this._fixture.ImageResponses = [new() { ID = "image-123" }];
         this._fixture.Images
@@ -89,9 +95,9 @@ public class DockerImageServiceTests
                 It.IsAny<string>(), It.IsAny<ImageDeleteParameters>()))
             .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.InternalServerError, "Error"));
 
-        bool result = await this._service.DeleteImageAsync("image-123");
+        var result = await this._service.DeleteImageAsync("image-123");
 
-        Assert.That(result, Is.False);
+        Assert.That(IsFailure(result), Is.True);
     }
 
     [Test]
@@ -105,10 +111,10 @@ public class DockerImageServiceTests
 
         try
         {
-            bool result = await this._service.CreateImageAsync(
+            var result = await this._service.CreateImageAsync(
                 dockerfilePath, "test-image:latest", contextPath, buildArgs);
 
-            Assert.That(result, Is.True);
+            Assert.That(IsSuccess(result), Is.True);
             this._fixture.Images.Verify(operations => operations.BuildImageFromDockerfileAsync(
                 It.Is<ImageBuildParameters>(parameters =>
                     parameters.Dockerfile == "Dockerfile" &&
@@ -137,9 +143,9 @@ public class DockerImageServiceTests
 
         try
         {
-            bool result = await this._service.CreateImageAsync(dockerfilePath, "test-image:latest", contextPath);
+            var result = await this._service.CreateImageAsync(dockerfilePath, "test-image:latest", contextPath);
 
-            Assert.That(result, Is.False);
+            Assert.That(IsFailure(result), Is.True);
             this._fixture.Images.Verify(operations => operations.BuildImageFromDockerfileAsync(
                 It.IsAny<ImageBuildParameters>(),
                 It.IsAny<Stream>(),
@@ -155,15 +161,15 @@ public class DockerImageServiceTests
     }
 
     [Test]
-    public async Task CreateImageAsync_ReturnsFalseForNullRequiredInputs()
+    public async Task CreateImageAsync_ReturnsFailureForNullRequiredInputs()
     {
-        Assert.That(await this._service.CreateImageAsync(null!, "test-image:latest"), Is.False);
+        Assert.That(IsFailure(await this._service.CreateImageAsync(null!, "test-image:latest")), Is.True);
 
         string dockerfilePath = Path.Combine(Path.GetTempPath(), $"Dockerfile-{Guid.NewGuid():N}");
         await File.WriteAllTextAsync(dockerfilePath, "FROM scratch");
         try
         {
-            Assert.That(await this._service.CreateImageAsync(dockerfilePath, null!), Is.False);
+            Assert.That(IsFailure(await this._service.CreateImageAsync(dockerfilePath, null!)), Is.True);
         }
         finally
         {

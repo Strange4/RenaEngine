@@ -1,6 +1,8 @@
 using Docker.DotNet;
 using Docker.DotNet.Models;
 
+using LanguageExt.Common;
+
 using Moq;
 
 using Rena.Server.DockerManager;
@@ -24,6 +26,10 @@ public class DockerContainerServiceTests
     [TearDown]
     public void TearDown() => this._fixture.Dispose();
 
+    private static bool IsSuccess<T>(Result<T> result) => result.Match(_ => true, _ => false);
+
+    private static bool IsFailure<T>(Result<T> result) => result.Match(_ => false, _ => true);
+
     [Test]
     public async Task GetContainerByIdAsync_ReturnsMatchingContainerAndListsAllWhenRequested()
     {
@@ -32,8 +38,8 @@ public class DockerContainerServiceTests
 
         var result = await this._service.GetContainerByIdAsync(containerId, isRunning: false);
 
-        Assert.That(result.IsSome, Is.True);
-        result.IfSome(container => Assert.That(container.ID, Is.EqualTo(containerId)));
+        Assert.That(IsSuccess(result), Is.True);
+        result.IfSucc(container => Assert.That(container.ID, Is.EqualTo(containerId)));
         this._fixture.Containers.Verify(operations => operations.ListContainersAsync(
             It.Is<ContainersListParameters>(parameters =>
                 parameters.All == true &&
@@ -42,11 +48,11 @@ public class DockerContainerServiceTests
     }
 
     [Test]
-    public async Task GetContainerByIdAsync_ReturnsNoneWhenContainerIsMissing()
+    public async Task GetContainerByIdAsync_ReturnsFailureWhenContainerIsMissing()
     {
         var result = await this._service.GetContainerByIdAsync("missing");
 
-        Assert.That(result.IsNone, Is.True);
+        Assert.That(IsFailure(result), Is.True);
     }
 
     [Test]
@@ -56,8 +62,8 @@ public class DockerContainerServiceTests
 
         var result = await this._service.CreateContainerAsync("image-123", "test-container", parameters);
 
-        Assert.That(result.IsSome, Is.True);
-        result.IfSome(response => Assert.That(response.ID, Is.EqualTo(this._fixture.CreateContainerResponse.ID)));
+        Assert.That(IsSuccess(result), Is.True);
+        result.IfSucc(response => Assert.That(response.ID, Is.EqualTo(this._fixture.CreateContainerResponse.ID)));
         this._fixture.Containers.Verify(operations => operations.CreateContainerAsync(
             It.Is<CreateContainerParameters>(value =>
                 value.Image == "image-123" &&
@@ -68,7 +74,7 @@ public class DockerContainerServiceTests
     }
 
     [Test]
-    public async Task CreateContainerAsync_ReturnsNoneWhenDockerApiFails()
+    public async Task CreateContainerAsync_ReturnsFailureWhenDockerApiFails()
     {
         this._fixture.Containers
             .Setup(operations => operations.CreateContainerAsync(It.IsAny<CreateContainerParameters>(), default))
@@ -76,11 +82,11 @@ public class DockerContainerServiceTests
 
         var result = await this._service.CreateContainerAsync("image-123", "test-container");
 
-        Assert.That(result.IsNone, Is.True);
+        Assert.That(IsFailure(result), Is.True);
     }
 
     [Test]
-    public async Task CreateContainerAsync_ReturnsNoneWhenUnexpectedErrorOccurs()
+    public async Task CreateContainerAsync_ReturnsFailureWhenUnexpectedErrorOccurs()
     {
         this._fixture.Containers
             .Setup(operations => operations.CreateContainerAsync(It.IsAny<CreateContainerParameters>(), default))
@@ -88,7 +94,7 @@ public class DockerContainerServiceTests
 
         var result = await this._service.CreateContainerAsync("image-123", "test-container");
 
-        Assert.That(result.IsNone, Is.True);
+        Assert.That(IsFailure(result), Is.True);
     }
 
     [Test]
@@ -96,37 +102,37 @@ public class DockerContainerServiceTests
     {
         this._fixture.ContainerResponses = [new() { ID = "container-123" }];
 
-        bool result = await this._service.StartContainerAsync("container-123");
+        var result = await this._service.StartContainerAsync("container-123");
 
-        Assert.That(result, Is.True);
+        Assert.That(IsSuccess(result), Is.True);
         this._fixture.Containers.Verify(operations => operations.StartContainerAsync(
             "container-123", It.IsAny<ContainerStartParameters>(), default), Times.Once);
     }
 
     [Test]
-    public async Task StartContainerAsync_WhenContainerIsMissingReturnsFalse()
+    public async Task StartContainerAsync_WhenContainerIsMissingReturnsFailure()
     {
-        bool result = await this._service.StartContainerAsync("missing");
+        var result = await this._service.StartContainerAsync("missing");
 
-        Assert.That(result, Is.False);
+        Assert.That(IsFailure(result), Is.True);
         this._fixture.Containers.Verify(operations => operations.StartContainerAsync(
             It.IsAny<string>(), It.IsAny<ContainerStartParameters>(), default), Times.Never);
     }
 
     [Test]
-    public async Task StartContainerAsync_WhenDockerApiFailsReturnsFalse()
+    public async Task StartContainerAsync_WhenDockerApiFailsReturnsFailure()
     {
         this._fixture.Containers
             .Setup(operations => operations.ListContainersAsync(It.IsAny<ContainersListParameters>(), default))
             .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.BadRequest, "Bad Request"));
 
-        bool result = await this._service.StartContainerAsync("container-123");
+        var result = await this._service.StartContainerAsync("container-123");
 
-        Assert.That(result, Is.False);
+        Assert.That(IsFailure(result), Is.True);
     }
 
     [Test]
-    public async Task StartContainerAsync_WhenUnexpectedErrorOccursReturnsFalse()
+    public async Task StartContainerAsync_WhenUnexpectedErrorOccursReturnsFailure()
     {
         this._fixture.ContainerResponses = [new() { ID = "container-123" }];
         this._fixture.Containers
@@ -134,9 +140,9 @@ public class DockerContainerServiceTests
                 "container-123", It.IsAny<ContainerStartParameters>(), default))
             .ThrowsAsync(new InvalidOperationException("Unexpected"));
 
-        bool result = await this._service.StartContainerAsync("container-123");
+        var result = await this._service.StartContainerAsync("container-123");
 
-        Assert.That(result, Is.False);
+        Assert.That(IsFailure(result), Is.True);
     }
 
     [Test]
@@ -144,25 +150,25 @@ public class DockerContainerServiceTests
     {
         this._fixture.ContainerResponses = [new() { ID = "container-123", State = "running" }];
 
-        bool result = await this._service.StopContainerAsync("container-123");
+        var result = await this._service.StopContainerAsync("container-123");
 
-        Assert.That(result, Is.True);
+        Assert.That(IsSuccess(result), Is.True);
         this._fixture.Containers.Verify(operations => operations.StopContainerAsync(
             "container-123", It.IsAny<ContainerStopParameters>(), default), Times.Once);
     }
 
     [Test]
-    public async Task StopContainerAsync_WhenContainerIsMissingReturnsFalse()
+    public async Task StopContainerAsync_WhenContainerIsMissingReturnsFailure()
     {
-        bool result = await this._service.StopContainerAsync("missing");
+        var result = await this._service.StopContainerAsync("missing");
 
-        Assert.That(result, Is.False);
+        Assert.That(IsFailure(result), Is.True);
         this._fixture.Containers.Verify(operations => operations.StopContainerAsync(
             It.IsAny<string>(), It.IsAny<ContainerStopParameters>(), default), Times.Never);
     }
 
     [Test]
-    public async Task StopContainerAsync_WhenDockerApiFailsReturnsFalse()
+    public async Task StopContainerAsync_WhenDockerApiFailsReturnsFailure()
     {
         this._fixture.ContainerResponses = [new() { ID = "container-123" }];
         this._fixture.Containers
@@ -170,9 +176,9 @@ public class DockerContainerServiceTests
                 "container-123", It.IsAny<ContainerStopParameters>(), default))
             .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.InternalServerError, "Error"));
 
-        bool result = await this._service.StopContainerAsync("container-123");
+        var result = await this._service.StopContainerAsync("container-123");
 
-        Assert.That(result, Is.False);
+        Assert.That(IsFailure(result), Is.True);
     }
 
     [Test]
@@ -180,25 +186,25 @@ public class DockerContainerServiceTests
     {
         this._fixture.ContainerResponses = [new() { ID = "container-123", State = "exited" }];
 
-        bool result = await this._service.DeleteContainerAsync("container-123");
+        var result = await this._service.DeleteContainerAsync("container-123");
 
-        Assert.That(result, Is.True);
+        Assert.That(IsSuccess(result), Is.True);
         this._fixture.Containers.Verify(operations => operations.RemoveContainerAsync(
             "container-123", It.IsAny<ContainerRemoveParameters>(), default), Times.Once);
     }
 
     [Test]
-    public async Task DeleteContainerAsync_WhenContainerIsMissingReturnsFalse()
+    public async Task DeleteContainerAsync_WhenContainerIsMissingReturnsFailure()
     {
-        bool result = await this._service.DeleteContainerAsync("missing");
+        var result = await this._service.DeleteContainerAsync("missing");
 
-        Assert.That(result, Is.False);
+        Assert.That(IsFailure(result), Is.True);
         this._fixture.Containers.Verify(operations => operations.RemoveContainerAsync(
             It.IsAny<string>(), It.IsAny<ContainerRemoveParameters>(), default), Times.Never);
     }
 
     [Test]
-    public async Task DeleteContainerAsync_WhenDockerApiFailsReturnsFalse()
+    public async Task DeleteContainerAsync_WhenDockerApiFailsReturnsFailure()
     {
         this._fixture.ContainerResponses = [new() { ID = "container-123" }];
         this._fixture.Containers
@@ -206,8 +212,8 @@ public class DockerContainerServiceTests
                 "container-123", It.IsAny<ContainerRemoveParameters>(), default))
             .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.InternalServerError, "Error"));
 
-        bool result = await this._service.DeleteContainerAsync("container-123");
+        var result = await this._service.DeleteContainerAsync("container-123");
 
-        Assert.That(result, Is.False);
+        Assert.That(IsFailure(result), Is.True);
     }
 }
