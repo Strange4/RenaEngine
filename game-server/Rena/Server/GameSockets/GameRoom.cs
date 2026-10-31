@@ -27,6 +27,8 @@ public class GameRoom<G, S, A>(Dictionary<string, Tuple<WebSocket, ChannelWriter
             }
         }
 
+        // TODO implement the actual game (the very next PR) (I don't want to make it an issue
+        // since it might do more than implement the game idk)
         Thread.Sleep(1000);
 
         foreach (var id in connections.Keys.ToList())
