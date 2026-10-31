@@ -1,11 +1,8 @@
 using System.Formats.Tar;
 using System.IO.Compression;
-using System.Reflection.Metadata.Ecma335;
 
 using LanguageExt;
 using LanguageExt.Common;
-
-using Microsoft.Extensions.Logging;
 
 namespace Rena.Server.DockerManager;
 

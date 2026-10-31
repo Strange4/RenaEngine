@@ -16,7 +16,6 @@ public interface IDockerService
     public Task<Result<Unit>> StartContainerWithIdAsync(string containerId);
     public Task<Result<Unit>> CreateAndStartContainerWithIdAsync(string containerId, string imageId);
     public Task<Result<Unit>> KillContainerWithIdAsync(string containerId);
-    // public Task GetContainerStatusAndLogs(string containerId);
 }
 
 public abstract class DockerService(IDockerClient dockerClient, ILogger logger)
