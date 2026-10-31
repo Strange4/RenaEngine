@@ -50,9 +50,6 @@ public class RenderableChange
 
 public class ViewerSetup
 {
-    [JsonPropertyName("tileSize")]
-    public int TileSize { get; init; } = 40;
-
     [JsonPropertyName("resolution")]
     public int[] Resolution { get; init; } = [920, 480];
 }

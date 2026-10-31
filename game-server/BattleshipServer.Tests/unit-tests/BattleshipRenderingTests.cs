@@ -187,7 +187,6 @@ public class BattleshipRenderingTests
     {
         ViewerSetup setup = new ViewerSetup();
 
-        Assert.That(setup.TileSize, Is.EqualTo(40));
         int[] expected = [920, 480];
         Assert.That(setup.Resolution, Is.EqualTo(expected));
     }
@@ -195,9 +194,8 @@ public class BattleshipRenderingTests
     [Test]
     public void TestViewerSetup_CustomValues()
     {
-        ViewerSetup setup = new ViewerSetup { TileSize = 32, Resolution = [1024, 768] };
+        ViewerSetup setup = new ViewerSetup { Resolution = [1024, 768] };
 
-        Assert.That(setup.TileSize, Is.EqualTo(32));
         int[] expected = [1024, 768];
         Assert.That(setup.Resolution, Is.EqualTo(expected));
     }
