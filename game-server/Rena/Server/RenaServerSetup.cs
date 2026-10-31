@@ -49,8 +49,8 @@ internal static class RenaServerSetup
         app.MapGet("/settings/features/{featureKey}", RenaServerHandlers<G, S, A>.GetFeatureSetting);
         app.MapPut("/settings/features/{featureKey}", RenaServerHandlers<G, S, A>.UpdateFeatureSetting);
         app.MapGet(
-            "/render/stream",
-            async (RenderableBroadcaster broadcaster, HttpContext context) =>
+            "/render/stream/{playerId}",
+            async (string playerId, RenderableBroadcaster broadcaster, HttpContext context) =>
             {
                 context.Response.Headers.ContentType = "text/event-stream";
                 await context.Response.Body.FlushAsync();

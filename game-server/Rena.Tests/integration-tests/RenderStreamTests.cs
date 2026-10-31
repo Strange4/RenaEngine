@@ -54,7 +54,7 @@ public class RenderStreamTests
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
 
-        using HttpRequestMessage request = new(HttpMethod.Get, "/render/stream");
+        using HttpRequestMessage request = new(HttpMethod.Get, "/render/stream/pid123");
         using HttpResponseMessage response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token);
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
