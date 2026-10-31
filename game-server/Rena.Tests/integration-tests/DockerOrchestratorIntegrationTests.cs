@@ -1,10 +1,7 @@
 using System.IO.Compression;
-
 using Docker.DotNet;
 using Docker.DotNet.Models;
-
 using Microsoft.Extensions.Logging.Abstractions;
-
 using Rena.Server.DockerManager;
 
 namespace Rena.Tests.Integration;
@@ -63,7 +60,8 @@ public sealed class DockerOrchestratorIntegrationTests
 
             await File.WriteAllTextAsync(
                 dockerfilePath,
-                "FROM busybox:1.36\nCOPY run.sh /run.sh\nCOPY payload.txt /payload.txt\nRUN chmod +x /run.sh\nCMD [\"/run.sh\"]\n");
+                "FROM busybox:1.36\nCOPY run.sh /run.sh\nCOPY payload.txt /payload.txt\nRUN chmod +x /run.sh\nCMD [\"/run.sh\"]\n"
+            );
 
             var imageResult = await this._orchestrator.CreateOrReplaceImageAsync(imageName, archivePath, dockerfilePath);
             string? builtImageName = null;
@@ -82,10 +80,13 @@ public sealed class DockerOrchestratorIntegrationTests
             Assert.That(this._api.BuildContext, Does.ContainKey("Dockerfile"));
             Assert.That(this._api.BuildContext["Dockerfile"], Does.Contain("CMD [\"/run.sh\"]"));
 
-            using (var logs = await this._dockerClient.Containers.GetContainerLogsAsync(
-                this._api.ContainerId,
-                tty: false,
-                new ContainerLogsParameters { ShowStdout = true, ShowStderr = true }))
+            using (
+                var logs = await this._dockerClient.Containers.GetContainerLogsAsync(
+                    this._api.ContainerId,
+                    tty: false,
+                    new ContainerLogsParameters { ShowStdout = true, ShowStderr = true }
+                )
+            )
             {
                 (string stdout, string stderr) = await logs.ReadOutputToEndAsync(CancellationToken.None);
                 Assert.That(stdout + stderr, Is.EqualTo(expectedOutput), "The container should log the ZIP payload.");
@@ -95,24 +96,39 @@ public sealed class DockerOrchestratorIntegrationTests
             Assert.That(stopResult.Match(_ => true, _ => false), Is.True, "The orchestrator should stop the running container.");
             Assert.That(this._api.ContainerRunning, Is.False, "The mock daemon should report the container as stopped.");
 
-            Assert.That(this._api.Requests, Has.Some.Matches<DockerApiRequest>(request =>
-                request.Method == "POST" &&
-                request.Path.EndsWith("/build", StringComparison.Ordinal) &&
-                request.Query["t"] == imageName));
-            Assert.That(this._api.Requests, Has.Some.Matches<DockerApiRequest>(request =>
-                request.Method == "POST" &&
-                request.Path.EndsWith("/containers/create", StringComparison.Ordinal) &&
-                request.ImageName == imageName &&
-                request.Query["name"] == containerName));
-            Assert.That(this._api.Requests, Has.Some.Matches<DockerApiRequest>(request =>
-                request.Method == "POST" &&
-                request.Path.EndsWith($"/containers/{this._api.ContainerId}/start", StringComparison.Ordinal)));
-            Assert.That(this._api.Requests, Has.Some.Matches<DockerApiRequest>(request =>
-                request.Method == "GET" &&
-                request.Path.EndsWith($"/containers/{this._api.ContainerId}/logs", StringComparison.Ordinal)));
-            Assert.That(this._api.Requests, Has.Some.Matches<DockerApiRequest>(request =>
-                request.Method == "POST" &&
-                request.Path.EndsWith($"/containers/{this._api.ContainerId}/stop", StringComparison.Ordinal)));
+            Assert.That(
+                this._api.Requests,
+                Has.Some.Matches<DockerApiRequest>(request =>
+                    request.Method == "POST" && request.Path.EndsWith("/build", StringComparison.Ordinal) && request.Query["t"] == imageName
+                )
+            );
+            Assert.That(
+                this._api.Requests,
+                Has.Some.Matches<DockerApiRequest>(request =>
+                    request.Method == "POST"
+                    && request.Path.EndsWith("/containers/create", StringComparison.Ordinal)
+                    && request.ImageName == imageName
+                    && request.Query["name"] == containerName
+                )
+            );
+            Assert.That(
+                this._api.Requests,
+                Has.Some.Matches<DockerApiRequest>(request =>
+                    request.Method == "POST" && request.Path.EndsWith($"/containers/{this._api.ContainerId}/start", StringComparison.Ordinal)
+                )
+            );
+            Assert.That(
+                this._api.Requests,
+                Has.Some.Matches<DockerApiRequest>(request =>
+                    request.Method == "GET" && request.Path.EndsWith($"/containers/{this._api.ContainerId}/logs", StringComparison.Ordinal)
+                )
+            );
+            Assert.That(
+                this._api.Requests,
+                Has.Some.Matches<DockerApiRequest>(request =>
+                    request.Method == "POST" && request.Path.EndsWith($"/containers/{this._api.ContainerId}/stop", StringComparison.Ordinal)
+                )
+            );
         }
         finally
         {
@@ -144,7 +160,8 @@ public sealed class DockerOrchestratorIntegrationTests
 
             await File.WriteAllTextAsync(
                 dockerfilePath,
-                $"FROM busybox:1.36\nENV PLAYER_MESSAGE={expectedOutput}\nCOPY run.sh /run.sh\nRUN chmod +x /run.sh\nCMD [\"/run.sh\"]\n");
+                $"FROM busybox:1.36\nENV PLAYER_MESSAGE={expectedOutput}\nCOPY run.sh /run.sh\nRUN chmod +x /run.sh\nCMD [\"/run.sh\"]\n"
+            );
 
             var imageResult = await this._orchestrator.CreateOrReplaceImageAsync(imageName, archivePath, dockerfilePath);
             string? builtImageName = null;
@@ -161,7 +178,8 @@ public sealed class DockerOrchestratorIntegrationTests
             using var logs = await this._dockerClient.Containers.GetContainerLogsAsync(
                 this._api.ContainerId,
                 tty: false,
-                new ContainerLogsParameters { ShowStdout = true, ShowStderr = true });
+                new ContainerLogsParameters { ShowStdout = true, ShowStderr = true }
+            );
             (string stdout, string stderr) = await logs.ReadOutputToEndAsync(CancellationToken.None);
             Assert.That(stdout + stderr, Is.EqualTo(expectedOutput + Environment.NewLine));
 

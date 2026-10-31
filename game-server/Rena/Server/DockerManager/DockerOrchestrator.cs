@@ -1,11 +1,8 @@
 using System.Collections.Concurrent;
-
 using Docker.DotNet;
 using Docker.DotNet.Models;
-
 using LanguageExt;
 using LanguageExt.Common;
-
 using Microsoft.Extensions.Logging;
 
 namespace Rena.Server.DockerManager;
@@ -31,8 +28,7 @@ public class AbstractDockerService(IDockerClient dockerClient, ILogger logger) :
 
     public async Task<Result<Unit>> CreateAndStartContainerWithIdAsync(string containerId, string imageId)
     {
-        Result<CreateContainerResponse> created =
-            await this._containers.CreateContainerAsync(imageId, containerId);
+        Result<CreateContainerResponse> created = await this._containers.CreateContainerAsync(imageId, containerId);
 
         return await created.Match(
             async response =>
@@ -46,7 +42,8 @@ public class AbstractDockerService(IDockerClient dockerClient, ILogger logger) :
 
                 return await this._containers.StartContainerAsync(response.ID);
             },
-            error => Task.FromResult(new Result<Unit>(error)));
+            error => Task.FromResult(new Result<Unit>(error))
+        );
     }
 
     public async Task<Result<string>> CreateOrReplaceImageAsync(string playerId, string zipFilePath, string dockerFilePath)
@@ -76,7 +73,7 @@ public class AbstractDockerService(IDockerClient dockerClient, ILogger logger) :
             {
                 ImageName = playerId,
                 Dockerfile = await File.ReadAllTextAsync(dockerFilePath),
-                FilesArchive = File.OpenRead(zipFilePath)
+                FilesArchive = File.OpenRead(zipFilePath),
             };
             await using var archive = request.FilesArchive;
             Result<IDockerBuildContext> contextResult = await this._buildContexts.CreateAsync(request);
@@ -104,16 +101,13 @@ public class AbstractDockerService(IDockerClient dockerClient, ILogger logger) :
                         });
 
                         await this._client.Images.BuildImageFromDockerfileAsync(
-                            new ImageBuildParameters
-                            {
-                                Dockerfile = "Dockerfile",
-                                Tags = [playerId]
-                            },
+                            new ImageBuildParameters { Dockerfile = "Dockerfile", Tags = [playerId] },
                             context.Content,
                             authConfigs: null,
                             headers: null,
                             progress,
-                            CancellationToken.None);
+                            CancellationToken.None
+                        );
 
                         if (!buildErrors.IsEmpty)
                         {
@@ -126,7 +120,8 @@ public class AbstractDockerService(IDockerClient dockerClient, ILogger logger) :
                         return new Result<string>(playerId);
                     }
                 },
-                error => Task.FromResult(new Result<string>(error)));
+                error => Task.FromResult(new Result<string>(error))
+            );
         }
         catch (Exception ex)
         {

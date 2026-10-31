@@ -2,7 +2,6 @@ using System.Buffers.Binary;
 using System.Formats.Tar;
 using System.Text;
 using System.Text.Json;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -36,12 +35,7 @@ internal sealed class DockerApiStub : IAsyncDisposable
     public async Task StartAsync()
     {
         await this._application.StartAsync();
-        string address = this._application.Services
-            .GetRequiredService<IServer>()
-            .Features
-            .Get<IServerAddressesFeature>()!
-            .Addresses
-            .Single();
+        string address = this._application.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
         this.Endpoint = new Uri(address);
     }
 
@@ -49,21 +43,24 @@ internal sealed class DockerApiStub : IAsyncDisposable
 
     private string RunPlayerScript()
     {
-        if (this.BuildContext.TryGetValue("run.sh", out string? script) &&
-            script.Split('\n').Any(line => line.Trim() == "cat /payload.txt") &&
-            this.BuildContext.TryGetValue("payload.txt", out string? payload))
+        if (
+            this.BuildContext.TryGetValue("run.sh", out string? script)
+            && script.Split('\n').Any(line => line.Trim() == "cat /payload.txt")
+            && this.BuildContext.TryGetValue("payload.txt", out string? payload)
+        )
         {
             return payload;
         }
 
-        string? echoLine = script?.Split('\n')
+        string? echoLine = script
+            ?.Split('\n')
             .Select(line => line.Trim())
             .FirstOrDefault(line => line.StartsWith("echo \"$", StringComparison.Ordinal) && line.EndsWith('"'));
-        if (echoLine is not null &&
-            this.BuildContext.TryGetValue("Dockerfile", out string? dockerfile))
+        if (echoLine is not null && this.BuildContext.TryGetValue("Dockerfile", out string? dockerfile))
         {
             string variableName = echoLine[7..^1];
-            string? environmentValue = dockerfile.Split('\n')
+            string? environmentValue = dockerfile
+                .Split('\n')
                 .Select(line => line.Trim())
                 .Where(line => line.StartsWith("ENV ", StringComparison.Ordinal))
                 .Select(line => line[4..].Split('=', 2))
@@ -89,7 +86,8 @@ internal sealed class DockerApiStub : IAsyncDisposable
             method,
             path,
             context.Request.Query.ToDictionary(pair => pair.Key, pair => pair.Value.ToString()),
-            requestBody.ToArray());
+            requestBody.ToArray()
+        );
         this.Requests.Add(request);
 
         switch (GetRoute(method, path, this.ContainerId))
@@ -124,34 +122,38 @@ internal sealed class DockerApiStub : IAsyncDisposable
                 await WriteResponseAsync(context, StatusCodes.Status200OK, "[]");
                 break;
             default:
-                await WriteResponseAsync(
-                    context,
-                    StatusCodes.Status404NotFound,
-                    """{"message":"Unexpected Docker API request"}""");
+                await WriteResponseAsync(context, StatusCodes.Status404NotFound, """{"message":"Unexpected Docker API request"}""");
                 break;
         }
     }
 
     private static DockerApiRoute GetRoute(string method, string path, string containerId)
     {
-        if (IsRoute(method, path, null, "/_ping")) return DockerApiRoute.Ping;
-        if (IsRoute(method, path, "POST", "/build")) return DockerApiRoute.Build;
-        if (IsRoute(method, path, "POST", "/containers/create")) return DockerApiRoute.CreateContainer;
-        if (IsRoute(method, path, "GET", "/containers/json")) return DockerApiRoute.ListContainers;
-        if (IsRoute(method, path, "POST", $"/containers/{containerId}/start")) return DockerApiRoute.StartContainer;
-        if (IsRoute(method, path, "GET", $"/containers/{containerId}/logs")) return DockerApiRoute.ContainerLogs;
-        if (IsRoute(method, path, "POST", $"/containers/{containerId}/stop")) return DockerApiRoute.StopContainer;
-        if (IsRoute(method, path, "DELETE", $"/containers/{containerId}")) return DockerApiRoute.DeleteContainer;
-        if (IsRoute(method, path, "DELETE", "/images/", contains: true)) return DockerApiRoute.DeleteImage;
+        if (IsRoute(method, path, null, "/_ping"))
+            return DockerApiRoute.Ping;
+        if (IsRoute(method, path, "POST", "/build"))
+            return DockerApiRoute.Build;
+        if (IsRoute(method, path, "POST", "/containers/create"))
+            return DockerApiRoute.CreateContainer;
+        if (IsRoute(method, path, "GET", "/containers/json"))
+            return DockerApiRoute.ListContainers;
+        if (IsRoute(method, path, "POST", $"/containers/{containerId}/start"))
+            return DockerApiRoute.StartContainer;
+        if (IsRoute(method, path, "GET", $"/containers/{containerId}/logs"))
+            return DockerApiRoute.ContainerLogs;
+        if (IsRoute(method, path, "POST", $"/containers/{containerId}/stop"))
+            return DockerApiRoute.StopContainer;
+        if (IsRoute(method, path, "DELETE", $"/containers/{containerId}"))
+            return DockerApiRoute.DeleteContainer;
+        if (IsRoute(method, path, "DELETE", "/images/", contains: true))
+            return DockerApiRoute.DeleteImage;
         return DockerApiRoute.NotFound;
     }
 
     private static bool IsRoute(string method, string path, string? expectedMethod, string suffix, bool contains = false)
     {
-        return (expectedMethod is null || method == expectedMethod) &&
-            (contains
-                ? path.Contains(suffix, StringComparison.Ordinal)
-                : path.EndsWith(suffix, StringComparison.Ordinal));
+        return (expectedMethod is null || method == expectedMethod)
+            && (contains ? path.Contains(suffix, StringComparison.Ordinal) : path.EndsWith(suffix, StringComparison.Ordinal));
     }
 
     private async Task HandleBuildAsync(HttpContext context, DockerApiRequest request)
@@ -173,15 +175,17 @@ internal sealed class DockerApiStub : IAsyncDisposable
         bool shouldList = this._containerCreated && (this.ContainerRunning || includeStopped);
         string state = this.ContainerRunning ? "running" : "exited";
         string content = shouldList
-            ? JsonSerializer.Serialize(new[]
-            {
-                new
+            ? JsonSerializer.Serialize(
+                new[]
                 {
-                    Id = this.ContainerId,
-                    Names = new[] { $"/{this.ContainerName}" },
-                    State = state
+                    new
+                    {
+                        Id = this.ContainerId,
+                        Names = new[] { $"/{this.ContainerName}" },
+                        State = state,
+                    },
                 }
-            })
+            )
             : "[]";
         await WriteResponseAsync(context, StatusCodes.Status200OK, content);
     }
@@ -215,7 +219,7 @@ internal sealed class DockerApiStub : IAsyncDisposable
         ContainerLogs,
         StopContainer,
         DeleteContainer,
-        DeleteImage
+        DeleteImage,
     }
 
     private static Dictionary<string, string> ReadBuildContext(byte[] body)
@@ -252,11 +256,7 @@ internal sealed class DockerApiStub : IAsyncDisposable
         await context.Response.Body.WriteAsync(frame, context.RequestAborted);
     }
 
-    private static async Task WriteResponseAsync(
-        HttpContext context,
-        int statusCode,
-        string content,
-        string contentType = "application/json")
+    private static async Task WriteResponseAsync(HttpContext context, int statusCode, string content, string contentType = "application/json")
     {
         byte[] contentBytes = Encoding.UTF8.GetBytes(content);
         context.Response.StatusCode = statusCode;
@@ -269,11 +269,7 @@ internal sealed class DockerApiStub : IAsyncDisposable
     }
 }
 
-internal sealed record DockerApiRequest(
-    string Method,
-    string Path,
-    IReadOnlyDictionary<string, string> Query,
-    byte[] Body)
+internal sealed record DockerApiRequest(string Method, string Path, IReadOnlyDictionary<string, string> Query, byte[] Body)
 {
     public string? ImageName
     {

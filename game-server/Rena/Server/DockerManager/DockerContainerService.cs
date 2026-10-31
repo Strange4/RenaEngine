@@ -1,11 +1,8 @@
 using Docker.DotNet;
 using Docker.DotNet.Models;
-
 using LanguageExt;
 using LanguageExt.Common;
-
 using Microsoft.Extensions.Logging;
-
 using static LanguageExt.Prelude;
 
 namespace Rena.Server.DockerManager;
@@ -14,7 +11,11 @@ public interface IDockerContainerService
 {
     Task<Result<ContainerListResponse>> GetContainerByIdAsync(string id, bool isRunning = true);
 
-    Task<Result<CreateContainerResponse>> CreateContainerAsync(string imageId, string containerName, Option<CreateContainerParameters> parameters = default);
+    Task<Result<CreateContainerResponse>> CreateContainerAsync(
+        string imageId,
+        string containerName,
+        Option<CreateContainerParameters> parameters = default
+    );
 
     Task<Result<Unit>> DeleteContainerAsync(string id, Option<ContainerRemoveParameters> parameters = default);
 
@@ -24,7 +25,11 @@ public interface IDockerContainerService
 
 public class DockerContainerService(IDockerClient dockerClient, ILogger logger) : DockerService(dockerClient, logger), IDockerContainerService
 {
-    public async Task<Result<CreateContainerResponse>> CreateContainerAsync(string imageId, string containerName, Option<CreateContainerParameters> parameters = default)
+    public async Task<Result<CreateContainerResponse>> CreateContainerAsync(
+        string imageId,
+        string containerName,
+        Option<CreateContainerParameters> parameters = default
+    )
     {
         try
         {
@@ -57,7 +62,8 @@ public class DockerContainerService(IDockerClient dockerClient, ILogger logger) 
                     await this._client.Containers.RemoveContainerAsync(c.ID, parameters.IfNone(new ContainerRemoveParameters()));
                     return new Result<Unit>(unit);
                 },
-                error => Task.FromResult(new Result<Unit>(error)));
+                error => Task.FromResult(new Result<Unit>(error))
+            );
         }
         catch (DockerApiException ex)
         {
@@ -70,20 +76,21 @@ public class DockerContainerService(IDockerClient dockerClient, ILogger logger) 
     {
         IDictionary<string, IDictionary<string, bool>> idFilter = new Dictionary<string, IDictionary<string, bool>>()
         {
-            ["id"] = new Dictionary<string, bool>()
-            {
-                { id, true }
-            }
+            ["id"] = new Dictionary<string, bool>() { { id, true } },
         };
-        IList<ContainerListResponse> result = await this._client.Containers.ListContainersAsync(new ContainersListParameters() { Filters = idFilter, All = !isRunning });
-        return result.Find(_ => _.ID == id).Match(
-            Some: _ => new Result<ContainerListResponse>(_),
-            None: () =>
-            {
-                var isRunningText = isRunning ? "" : "not ";
-                return new Result<ContainerListResponse>(Error.FromObject($"No container found for {id} that is {isRunningText}running"));
-            }
+        IList<ContainerListResponse> result = await this._client.Containers.ListContainersAsync(
+            new ContainersListParameters() { Filters = idFilter, All = !isRunning }
         );
+        return result
+            .Find(_ => _.ID == id)
+            .Match(
+                Some: _ => new Result<ContainerListResponse>(_),
+                None: () =>
+                {
+                    var isRunningText = isRunning ? "" : "not ";
+                    return new Result<ContainerListResponse>(Error.FromObject($"No container found for {id} that is {isRunningText}running"));
+                }
+            );
     }
 
     public async Task<Result<Unit>> StartContainerAsync(string id, Option<ContainerStartParameters> parameters = default)
@@ -97,7 +104,8 @@ public class DockerContainerService(IDockerClient dockerClient, ILogger logger) 
                     await this._client.Containers.StartContainerAsync(c.ID, parameters.IfNone(new ContainerStartParameters()));
                     return new Result<Unit>(unit);
                 },
-                error => Task.FromResult(new Result<Unit>(error)));
+                error => Task.FromResult(new Result<Unit>(error))
+            );
         }
         catch (DockerApiException ex)
         {
@@ -122,7 +130,8 @@ public class DockerContainerService(IDockerClient dockerClient, ILogger logger) 
                     await this._client.Containers.StopContainerAsync(c.ID, new ContainerStopParameters());
                     return new Result<Unit>(unit);
                 },
-                error => Task.FromResult(new Result<Unit>(error)));
+                error => Task.FromResult(new Result<Unit>(error))
+            );
         }
         catch (DockerApiException ex)
         {

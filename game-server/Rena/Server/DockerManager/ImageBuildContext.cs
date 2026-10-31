@@ -1,6 +1,5 @@
 using System.Formats.Tar;
 using System.IO.Compression;
-
 using LanguageExt;
 using LanguageExt.Common;
 
@@ -42,8 +41,10 @@ public sealed class TemporaryFileDockerBuildContext : IDockerBuildContext
     public async ValueTask DisposeAsync()
     {
         await this.Content.DisposeAsync();
-        if (File.Exists(_tarPath)) File.Delete(_tarPath);
-        if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, recursive: true);
+        if (File.Exists(_tarPath))
+            File.Delete(_tarPath);
+        if (Directory.Exists(_tempDir))
+            Directory.Delete(_tempDir, recursive: true);
     }
 }
 
@@ -52,7 +53,12 @@ public sealed class TemporaryFileDockerBuildContextFactory : IDockerBuildContext
     private static string ValidateEntryPath(string entryName)
     {
         var normalized = entryName.Replace('\\', '/');
-        if (string.IsNullOrWhiteSpace(normalized) || normalized.StartsWith('/') || normalized.Contains(':') || normalized.Split('/').Any(segment => segment.Contains("..")))
+        if (
+            string.IsNullOrWhiteSpace(normalized)
+            || normalized.StartsWith('/')
+            || normalized.Contains(':')
+            || normalized.Split('/').Any(segment => segment.Contains(".."))
+        )
         {
             throw new InvalidDataException($"Invalid Zip entry path: {entryName}");
         }
@@ -85,11 +91,17 @@ public sealed class TemporaryFileDockerBuildContextFactory : IDockerBuildContext
                     continue;
                 }
                 var parent = Path.GetDirectoryName(dest);
-                if (parent != null) Directory.CreateDirectory(parent);
+                if (parent != null)
+                    Directory.CreateDirectory(parent);
                 await using var source = await entry.OpenAsync(cancellationToken);
                 await using var target = new FileStream(
                     dest,
-                    FileMode.CreateNew, FileAccess.Write, FileShare.None, bufferSize, FileOptions.Asynchronous | FileOptions.SequentialScan);
+                    FileMode.CreateNew,
+                    FileAccess.Write,
+                    FileShare.None,
+                    bufferSize,
+                    FileOptions.Asynchronous | FileOptions.SequentialScan
+                );
                 await source.CopyToAsync(target, bufferSize, cancellationToken);
             }
 
@@ -98,7 +110,16 @@ public sealed class TemporaryFileDockerBuildContextFactory : IDockerBuildContext
             await File.WriteAllTextAsync(dockerfilePath, request.Dockerfile, cancellationToken);
 
             // Generate TAR inside temp dir
-            await using (var tarStream = new FileStream(tarPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None, bufferSize, FileOptions.Asynchronous | FileOptions.SequentialScan))
+            await using (
+                var tarStream = new FileStream(
+                    tarPath,
+                    FileMode.CreateNew,
+                    FileAccess.ReadWrite,
+                    FileShare.None,
+                    bufferSize,
+                    FileOptions.Asynchronous | FileOptions.SequentialScan
+                )
+            )
             {
                 using var tarWriter = new TarWriter(tarStream, TarEntryFormat.Pax, leaveOpen: true);
 
@@ -114,13 +135,21 @@ public sealed class TemporaryFileDockerBuildContextFactory : IDockerBuildContext
             }
 
             // Open TAR Stream (not sure we want to keep this, function caller should maybe decide)
-            var content = new FileStream(tarPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            var content = new FileStream(
+                tarPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                bufferSize,
+                FileOptions.Asynchronous | FileOptions.SequentialScan
+            );
 
             return new TemporaryFileDockerBuildContext(content, tarPath, tempDir);
         }
         catch
         {
-            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, recursive: true);
+            if (Directory.Exists(tempDir))
+                Directory.Delete(tempDir, recursive: true);
             throw;
         }
     }

@@ -1,10 +1,7 @@
 using Docker.DotNet;
 using Docker.DotNet.Models;
-
 using LanguageExt.Common;
-
 using Moq;
-
 using Rena.Server.DockerManager;
 
 namespace Rena.Tests.Unit;
@@ -53,8 +50,7 @@ public class DockerImageServiceTests
     [Test]
     public async Task FindImageByIdAsync_ReturnsFailureWhenListingImagesFails()
     {
-        this._fixture.Images
-            .Setup(operations => operations.ListImagesAsync(It.IsAny<ImagesListParameters>(), default))
+        this._fixture.Images.Setup(operations => operations.ListImagesAsync(It.IsAny<ImagesListParameters>(), default))
             .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.InternalServerError, "Error"));
 
         var result = await this._service.FindImageByIdAsync("image-123");
@@ -71,9 +67,14 @@ public class DockerImageServiceTests
         var result = await this._service.DeleteImageAsync(imageId);
 
         Assert.That(IsSuccess(result), Is.True);
-        this._fixture.Images.Verify(operations => operations.DeleteImageAsync(
-            imageId,
-            It.Is<ImageDeleteParameters>(parameters => parameters.Force == true && parameters.NoPrune == false)), Times.Once);
+        this._fixture.Images.Verify(
+            operations =>
+                operations.DeleteImageAsync(
+                    imageId,
+                    It.Is<ImageDeleteParameters>(parameters => parameters.Force == true && parameters.NoPrune == false)
+                ),
+            Times.Once
+        );
     }
 
     [Test]
@@ -82,17 +83,14 @@ public class DockerImageServiceTests
         var result = await this._service.DeleteImageAsync("missing");
 
         Assert.That(IsFailure(result), Is.True);
-        this._fixture.Images.Verify(operations => operations.DeleteImageAsync(
-            It.IsAny<string>(), It.IsAny<ImageDeleteParameters>()), Times.Never);
+        this._fixture.Images.Verify(operations => operations.DeleteImageAsync(It.IsAny<string>(), It.IsAny<ImageDeleteParameters>()), Times.Never);
     }
 
     [Test]
     public async Task DeleteImageAsync_WhenDockerApiFailsReturnsFailure()
     {
         this._fixture.ImageResponses = [new() { ID = "image-123" }];
-        this._fixture.Images
-            .Setup(operations => operations.DeleteImageAsync(
-                It.IsAny<string>(), It.IsAny<ImageDeleteParameters>()))
+        this._fixture.Images.Setup(operations => operations.DeleteImageAsync(It.IsAny<string>(), It.IsAny<ImageDeleteParameters>()))
             .ThrowsAsync(new DockerApiException(System.Net.HttpStatusCode.InternalServerError, "Error"));
 
         var result = await this._service.DeleteImageAsync("image-123");
@@ -111,20 +109,25 @@ public class DockerImageServiceTests
 
         try
         {
-            var result = await this._service.CreateImageAsync(
-                dockerfilePath, "test-image:latest", contextPath, buildArgs);
+            var result = await this._service.CreateImageAsync(dockerfilePath, "test-image:latest", contextPath, buildArgs);
 
             Assert.That(IsSuccess(result), Is.True);
-            this._fixture.Images.Verify(operations => operations.BuildImageFromDockerfileAsync(
-                It.Is<ImageBuildParameters>(parameters =>
-                    parameters.Dockerfile == "Dockerfile" &&
-                    parameters.Tags.Contains("test-image:latest") &&
-                    parameters.BuildArgs == buildArgs),
-                It.IsAny<Stream>(),
-                It.IsAny<IEnumerable<AuthConfig>>(),
-                It.IsAny<IDictionary<string, string>>(),
-                It.IsAny<IProgress<JSONMessage>>(),
-                It.IsAny<CancellationToken>()), Times.Once);
+            this._fixture.Images.Verify(
+                operations =>
+                    operations.BuildImageFromDockerfileAsync(
+                        It.Is<ImageBuildParameters>(parameters =>
+                            parameters.Dockerfile == "Dockerfile"
+                            && parameters.Tags.Contains("test-image:latest")
+                            && parameters.BuildArgs == buildArgs
+                        ),
+                        It.IsAny<Stream>(),
+                        It.IsAny<IEnumerable<AuthConfig>>(),
+                        It.IsAny<IDictionary<string, string>>(),
+                        It.IsAny<IProgress<JSONMessage>>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Once
+            );
         }
         finally
         {
@@ -146,13 +149,18 @@ public class DockerImageServiceTests
             var result = await this._service.CreateImageAsync(dockerfilePath, "test-image:latest", contextPath);
 
             Assert.That(IsFailure(result), Is.True);
-            this._fixture.Images.Verify(operations => operations.BuildImageFromDockerfileAsync(
-                It.IsAny<ImageBuildParameters>(),
-                It.IsAny<Stream>(),
-                It.IsAny<IEnumerable<AuthConfig>>(),
-                It.IsAny<IDictionary<string, string>>(),
-                It.IsAny<IProgress<JSONMessage>>(),
-                It.IsAny<CancellationToken>()), Times.Never);
+            this._fixture.Images.Verify(
+                operations =>
+                    operations.BuildImageFromDockerfileAsync(
+                        It.IsAny<ImageBuildParameters>(),
+                        It.IsAny<Stream>(),
+                        It.IsAny<IEnumerable<AuthConfig>>(),
+                        It.IsAny<IDictionary<string, string>>(),
+                        It.IsAny<IProgress<JSONMessage>>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Never
+            );
         }
         finally
         {

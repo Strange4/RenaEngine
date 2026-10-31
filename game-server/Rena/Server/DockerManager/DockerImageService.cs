@@ -1,14 +1,10 @@
 using System.Collections.Concurrent;
 using System.Formats.Tar;
-
 using Docker.DotNet;
 using Docker.DotNet.Models;
-
 using LanguageExt;
 using LanguageExt.Common;
-
 using Microsoft.Extensions.Logging;
-
 using static LanguageExt.Prelude;
 
 namespace Rena.Server.DockerManager;
@@ -20,7 +16,12 @@ sealed class SynchronousProgress<T>(Action<T> report) : IProgress<T>
 
 public interface IDockerImageService
 {
-    public Task<Result<Unit>> CreateImageAsync(string dockerFilePath, string imageName, string? buildContextPath = null, IDictionary<string, string>? buildArgs = null);
+    public Task<Result<Unit>> CreateImageAsync(
+        string dockerFilePath,
+        string imageName,
+        string? buildContextPath = null,
+        IDictionary<string, string>? buildArgs = null
+    );
 
     public Task<Result<Unit>> DeleteImageAsync(string imageId, Option<ImageDeleteParameters> parameters = default);
 
@@ -29,7 +30,6 @@ public interface IDockerImageService
 
 public class DockerImageService(IDockerClient dockerClient, ILogger logger) : DockerService(dockerClient, logger), IDockerImageService
 {
-
     private async Task<Result<IList<ImagesListResponse>>> GetAllImages(Option<ImagesListParameters> parameters = default)
     {
         try
@@ -52,14 +52,14 @@ public class DockerImageService(IDockerClient dockerClient, ILogger logger) : Do
             return await image.Match(
                 async found =>
                 {
-                    await this._client.Images.DeleteImageAsync(found.ID, parameters.IfNone(new ImageDeleteParameters()
-                    {
-                        Force = true,
-                        NoPrune = false,
-                    }));
+                    await this._client.Images.DeleteImageAsync(
+                        found.ID,
+                        parameters.IfNone(new ImageDeleteParameters() { Force = true, NoPrune = false })
+                    );
                     return new Result<Unit>(unit);
                 },
-                error => Task.FromResult(new Result<Unit>(error)));
+                error => Task.FromResult(new Result<Unit>(error))
+            );
         }
         catch (DockerApiException ex)
         {
@@ -67,7 +67,13 @@ public class DockerImageService(IDockerClient dockerClient, ILogger logger) : Do
             return new Result<Unit>(Error.FromObject($"Failed to delete image {imageId}"));
         }
     }
-    public async Task<Result<Unit>> CreateImageAsync(string dockerFilePath, string imageName, string? buildContextPath = null, IDictionary<string, string>? buildArgs = null)
+
+    public async Task<Result<Unit>> CreateImageAsync(
+        string dockerFilePath,
+        string imageName,
+        string? buildContextPath = null,
+        IDictionary<string, string>? buildArgs = null
+    )
     {
         if (dockerFilePath == null)
         {
@@ -83,8 +89,7 @@ public class DockerImageService(IDockerClient dockerClient, ILogger logger) : Do
 
         string fullDockerFilePath = Path.GetFullPath(dockerFilePath);
         string contextDirectory = Path.GetFullPath(buildContextPath ?? Path.GetDirectoryName(fullDockerFilePath)!);
-        string relativeDockerFilePath = Path.GetRelativePath(contextDirectory, fullDockerFilePath)
-            .Replace(Path.DirectorySeparatorChar, '/');
+        string relativeDockerFilePath = Path.GetRelativePath(contextDirectory, fullDockerFilePath).Replace(Path.DirectorySeparatorChar, '/');
         if (relativeDockerFilePath == ".." || relativeDockerFilePath.StartsWith("../", StringComparison.Ordinal))
         {
             _logger.LogError("Dockerfile {Dockerfile} must be inside build context {Context}", dockerFilePath, contextDirectory);
@@ -116,7 +121,7 @@ public class DockerImageService(IDockerClient dockerClient, ILogger logger) : Do
         {
             Dockerfile = relativeDockerFilePath,
             Tags = [imageName],
-            BuildArgs = buildArgs
+            BuildArgs = buildArgs,
         };
 
         await this._client.Images.BuildImageFromDockerfileAsync(
@@ -125,7 +130,8 @@ public class DockerImageService(IDockerClient dockerClient, ILogger logger) : Do
             authConfigs: null,
             headers: null,
             progress,
-            CancellationToken.None);
+            CancellationToken.None
+        );
 
         if (!buildErrors.IsEmpty)
         {
@@ -141,11 +147,14 @@ public class DockerImageService(IDockerClient dockerClient, ILogger logger) : Do
     {
         var result = await this.GetAllImages(new ImagesListParameters());
         return result.Match(
-            images => images.Find(_ => _.ID == id || _.ID.Contains(id))
-                .Match(
-                    Some: image => new Result<ImagesListResponse>(image),
-                    None: () => new Result<ImagesListResponse>(Error.FromObject($"No image found for id {id}"))
-                ),
-            error => new Result<ImagesListResponse>(error));
+            images =>
+                images
+                    .Find(_ => _.ID == id || _.ID.Contains(id))
+                    .Match(
+                        Some: image => new Result<ImagesListResponse>(image),
+                        None: () => new Result<ImagesListResponse>(Error.FromObject($"No image found for id {id}"))
+                    ),
+            error => new Result<ImagesListResponse>(error)
+        );
     }
 }
