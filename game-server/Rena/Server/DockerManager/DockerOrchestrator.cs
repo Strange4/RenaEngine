@@ -4,12 +4,14 @@ using Docker.DotNet.Models;
 using LanguageExt;
 using LanguageExt.Common;
 using Microsoft.Extensions.Logging;
+using Rena.Generator;
 
 namespace Rena.Server.DockerManager;
 
 public interface IDockerService
 {
     public Task<Result<string>> CreateOrReplaceImageAsync(string playerId, string zipFilePath, string dockerFilePath);
+    public Task<Result<string>> CreateOrReplaceImageAsync(string playerId, string zipFilePath, string dockerFilePath, string language);
     public Task<Result<Unit>> StartContainerWithIdAsync(string containerId);
     public Task<Result<Unit>> CreateAndStartContainerWithIdAsync(string containerId, string imageId);
     public Task<Result<Unit>> KillContainerWithIdAsync(string containerId);
@@ -21,10 +23,20 @@ public abstract class AbstractDockerService(IDockerClient dockerClient, ILogger 
     protected readonly ILogger _logger = logger;
 }
 
-public class DockerService(IDockerClient dockerClient, ILogger logger) : AbstractDockerService(dockerClient, logger), IDockerService
+public class DockerService : AbstractDockerService, IDockerService
 {
-    private readonly IDockerContainerService _containers = new DockerContainerService(dockerClient, logger);
-    private readonly IDockerBuildContextFactory _buildContexts = new TemporaryFileDockerBuildContextFactory();
+    private readonly IDockerContainerService _containers;
+    private readonly IReadOnlyDictionary<string, IDockerBuildContextStrategy> _buildContextStrategies;
+
+    public DockerService(IDockerClient dockerClient, ILogger logger)
+        : this(dockerClient, logger, [new TypeScriptDockerBuildContextStrategy()]) { }
+
+    public DockerService(IDockerClient dockerClient, ILogger logger, IEnumerable<IDockerBuildContextStrategy> buildContextStrategies)
+        : base(dockerClient, logger)
+    {
+        this._containers = new DockerContainerService(dockerClient, logger);
+        this._buildContextStrategies = buildContextStrategies.ToDictionary(strategy => strategy.LanguageName, StringComparer.Ordinal);
+    }
 
     public async Task<Result<Unit>> CreateAndStartContainerWithIdAsync(string containerId, string imageId)
     {
@@ -46,7 +58,20 @@ public class DockerService(IDockerClient dockerClient, ILogger logger) : Abstrac
         );
     }
 
-    public async Task<Result<string>> CreateOrReplaceImageAsync(string playerId, string zipFilePath, string dockerFilePath)
+    public Task<Result<string>> CreateOrReplaceImageAsync(string playerId, string zipFilePath, string dockerFilePath)
+    {
+        IReadOnlyList<string> availableLanguages = SDKBuilder.AvailableLanguageGenerators();
+        if (availableLanguages.Count != 1)
+        {
+            const string error = "Specify a language when zero or multiple SDK languages are available.";
+            this._logger.LogError(error);
+            return Task.FromResult(new Result<string>(Error.FromObject(error)));
+        }
+
+        return this.CreateOrReplaceImageAsync(playerId, zipFilePath, dockerFilePath, availableLanguages[0]);
+    }
+
+    public async Task<Result<string>> CreateOrReplaceImageAsync(string playerId, string zipFilePath, string dockerFilePath, string language)
     {
         if (string.IsNullOrWhiteSpace(playerId))
         {
@@ -69,14 +94,29 @@ public class DockerService(IDockerClient dockerClient, ILogger logger) : Abstrac
 
         try
         {
+            if (!SDKBuilder.AvailableLanguageGenerators().Contains(language, StringComparer.Ordinal))
+            {
+                string error = $"Language {language} is not supported.";
+                this._logger.LogError("Language {Languuage} is not supported", language);
+                return new Result<string>(Error.FromObject(error));
+            }
+
+            if (!this._buildContextStrategies.TryGetValue(language, out var buildContextStrategy))
+            {
+                string error = $"No Docker build context strategy is registered for supported language {language}.";
+                this._logger.LogError(error);
+                return new Result<string>(Error.FromObject(error));
+            }
+
             var request = new DockerImageBuildRequest
             {
                 ImageName = playerId,
                 Dockerfile = await File.ReadAllTextAsync(dockerFilePath),
                 FilesArchive = File.OpenRead(zipFilePath),
+                Language = language,
             };
             await using var archive = request.FilesArchive;
-            Result<IDockerBuildContext> contextResult = await this._buildContexts.CreateAsync(request);
+            Result<IDockerBuildContext> contextResult = await buildContextStrategy.CreateAsync(request);
             return await contextResult.Match(
                 async context =>
                 {

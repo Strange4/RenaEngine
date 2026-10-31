@@ -3,6 +3,7 @@ using Docker.DotNet;
 using Docker.DotNet.Models;
 using LanguageExt.Common;
 using Moq;
+using Rena.Generator;
 using Rena.Server.DockerManager;
 
 namespace Rena.Tests.Unit;
@@ -60,6 +61,134 @@ public class DockerOrchestratorTests
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
+            );
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Test]
+    public async Task CreateOrReplaceImageAsync_UsesStrategyRegisteredForLanguage()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), $"docker-orchestrator-strategy-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        string zipPath = Path.Combine(directory, "player.zip");
+        string dockerfilePath = Path.Combine(directory, "Dockerfile");
+        using (var archive = await ZipFile.OpenAsync(zipPath, ZipArchiveMode.Create))
+        {
+            await using var entry = await archive.CreateEntry("app.ts").OpenAsync();
+            await using var writer = new StreamWriter(entry);
+            await writer.WriteAsync("console.log('ready');");
+        }
+        await File.WriteAllTextAsync(dockerfilePath, "FROM scratch");
+
+        string languageName = SDKBuilder.AvailableLanguageGenerators().Single();
+        var strategy = new TestDockerBuildContextStrategy(languageName);
+        var service = new DockerService(this._fixture.DockerClient.Object, this._fixture.Logger.Object, [strategy]);
+
+        try
+        {
+            var result = await service.CreateOrReplaceImageAsync("player-123", zipPath, dockerfilePath, languageName);
+
+            Assert.That(IsSuccess(result), Is.True);
+            Assert.That(strategy.Request?.Language, Is.EqualTo(languageName));
+            Assert.That(strategy.LanguageName, Is.EqualTo(languageName));
+            Assert.That(strategy.Request?.ImageName, Is.EqualTo("player-123"));
+            Assert.That(strategy.CallCount, Is.EqualTo(1));
+            this._fixture.Images.Verify(
+                operations =>
+                    operations.BuildImageFromDockerfileAsync(
+                        It.Is<ImageBuildParameters>(parameters => parameters.Tags.Contains("player-123")),
+                        It.IsAny<Stream>(),
+                        It.IsAny<IEnumerable<AuthConfig>>(),
+                        It.IsAny<IDictionary<string, string>>(),
+                        It.IsAny<IProgress<JSONMessage>>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Once
+            );
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Test]
+    public async Task CreateOrReplaceImageAsync_ReturnsFailureWhenLanguageIsNotAvailableFromSdkGenerator()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), $"docker-orchestrator-unsupported-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        string zipPath = Path.Combine(directory, "player.zip");
+        string dockerfilePath = Path.Combine(directory, "Dockerfile");
+        using (var archive = await ZipFile.OpenAsync(zipPath, ZipArchiveMode.Create))
+        {
+            await using var entry = await archive.CreateEntry("app.ts").OpenAsync();
+            await using var writer = new StreamWriter(entry);
+            await writer.WriteAsync("console.log('ready');");
+        }
+        await File.WriteAllTextAsync(dockerfilePath, "FROM scratch");
+
+        try
+        {
+            var result = await this._service.CreateOrReplaceImageAsync("player-123", zipPath, dockerfilePath, "java");
+
+            Assert.That(IsFailure(result), Is.True);
+            this._fixture.Images.Verify(
+                operations =>
+                    operations.BuildImageFromDockerfileAsync(
+                        It.IsAny<ImageBuildParameters>(),
+                        It.IsAny<Stream>(),
+                        It.IsAny<IEnumerable<AuthConfig>>(),
+                        It.IsAny<IDictionary<string, string>>(),
+                        It.IsAny<IProgress<JSONMessage>>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Never
+            );
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Test]
+    public async Task CreateOrReplaceImageAsync_ReturnsFailureWhenAvailableLanguageHasNoStrategy()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), $"docker-orchestrator-no-strategy-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        string zipPath = Path.Combine(directory, "player.zip");
+        string dockerfilePath = Path.Combine(directory, "Dockerfile");
+        using (var archive = await ZipFile.OpenAsync(zipPath, ZipArchiveMode.Create))
+        {
+            await using var entry = await archive.CreateEntry("app.ts").OpenAsync();
+            await using var writer = new StreamWriter(entry);
+            await writer.WriteAsync("console.log('ready');");
+        }
+        await File.WriteAllTextAsync(dockerfilePath, "FROM scratch");
+
+        var service = new DockerService(this._fixture.DockerClient.Object, this._fixture.Logger.Object, []);
+
+        try
+        {
+            string availableLanguage = SDKBuilder.AvailableLanguageGenerators().Single();
+            var result = await service.CreateOrReplaceImageAsync("player-123", zipPath, dockerfilePath, availableLanguage);
+
+            Assert.That(IsFailure(result), Is.True);
+            this._fixture.Images.Verify(
+                operations =>
+                    operations.BuildImageFromDockerfileAsync(
+                        It.IsAny<ImageBuildParameters>(),
+                        It.IsAny<Stream>(),
+                        It.IsAny<IEnumerable<AuthConfig>>(),
+                        It.IsAny<IDictionary<string, string>>(),
+                        It.IsAny<IProgress<JSONMessage>>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Never
             );
         }
         finally
@@ -151,5 +280,29 @@ public class DockerOrchestratorTests
             operations => operations.StopContainerAsync("container-123", It.IsAny<ContainerStopParameters>(), default),
             Times.Once
         );
+    }
+
+    private sealed class TestDockerBuildContextStrategy(string languageName) : IDockerBuildContextStrategy
+    {
+        public string LanguageName => languageName;
+        public DockerImageBuildRequest? Request { get; private set; }
+        public int CallCount { get; private set; }
+
+        public Task<Result<IDockerBuildContext>> CreateAsync(DockerImageBuildRequest request, CancellationToken cancellationToken = default)
+        {
+            this.Request = request;
+            this.CallCount++;
+            return Task.FromResult<Result<IDockerBuildContext>>(new TestDockerBuildContext());
+        }
+    }
+
+    private sealed class TestDockerBuildContext : IDockerBuildContext
+    {
+        public Stream Content { get; } = new MemoryStream();
+
+        public async ValueTask DisposeAsync()
+        {
+            await this.Content.DisposeAsync();
+        }
     }
 }

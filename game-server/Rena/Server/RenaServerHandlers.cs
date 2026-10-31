@@ -19,7 +19,7 @@ internal class RenaServerHandlers<G, S, A>
 
     public static async Task<IResult> HandleDownloads(string languageName, IOptions<RenaOptions> options)
     {
-        if (!SDKBuilder<G, S, A>.AvailableLanguageGenerators().Contains(languageName))
+        if (!SDKBuilder.AvailableLanguageGenerators().Contains(languageName, StringComparer.Ordinal))
         {
             return Results.NotFound($"{languageName} isn't supported as a language");
         }

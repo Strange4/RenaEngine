@@ -2,6 +2,7 @@ using System.Formats.Tar;
 using System.IO.Compression;
 using LanguageExt;
 using LanguageExt.Common;
+using Rena.Generator;
 
 namespace Rena.Server.DockerManager;
 
@@ -10,6 +11,7 @@ public sealed class DockerImageBuildRequest
     public required string ImageName { get; init; }
     public required string Dockerfile { get; init; }
     public required Stream FilesArchive { get; init; }
+    public required string Language { get; init; }
     public IDictionary<string, string> BuildArgs { get; init; } = new Dictionary<string, string>(); // Used during image construction
     public IDictionary<string, string> EnvVars { get; init; } = new Dictionary<string, string>(); // Available when container runs
 }
@@ -19,9 +21,11 @@ public interface IDockerBuildContext : IAsyncDisposable
     Stream Content { get; }
 }
 
-public interface IDockerBuildContextFactory
+public interface IDockerBuildContextStrategy
 {
     Task<Result<IDockerBuildContext>> CreateAsync(DockerImageBuildRequest request, CancellationToken cancellationToken = default);
+
+    string LanguageName { get; }
 }
 
 public sealed class TemporaryFileDockerBuildContext : IDockerBuildContext
@@ -48,8 +52,10 @@ public sealed class TemporaryFileDockerBuildContext : IDockerBuildContext
     }
 }
 
-public sealed class TemporaryFileDockerBuildContextFactory : IDockerBuildContextFactory
+public sealed class TypeScriptDockerBuildContextStrategy : IDockerBuildContextStrategy
 {
+    public string LanguageName => TypescriptSDKGenerator.LanguageName;
+
     private static string ValidateEntryPath(string entryName)
     {
         var normalized = entryName.Replace('\\', '/');
