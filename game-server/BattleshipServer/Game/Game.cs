@@ -23,6 +23,19 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
         _player1Id = playerIDs.First();
         _player2Id = playerIDs.Last();
 
+        this.Broadcaster?.BroadcastChange([
+            new GameRenderable
+            {
+                Id = "map",
+                Position = [0, 0],
+                AssetPath = "/sprites/map.png",
+                Size = [23, 12],
+                Type = RenderableType.MAP,
+                Layer = 0,
+            },
+        ]);
+
+        // Boomerang effect: only Player 1 is returned so that Player1 knows it's his turn to start
         return new Dictionary<string, PlayerState> { { _player1Id, this.Logic.GetPlayerState(1) } };
     }
 
@@ -53,6 +66,8 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
             nextPlayerId = this.Logic.IsPlayer1Turn ? _player1Id : _player2Id;
         }
 
+        // Boomerang effect: we only return the state of the player whose turn is next
+        // The player will call DoAction and the next turn player is the player whose state is returned next, completing 1 iteration of boomerang effect
         return new Dictionary<string, PlayerState> { { nextPlayerId, this.Logic.GetPlayerState(nextPlayerNumber) } };
     }
 

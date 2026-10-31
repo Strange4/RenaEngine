@@ -77,6 +77,13 @@ public class BattleshipRenderingTests
         Assert.That(initialStates.ContainsKey("p1"), Is.True);
         Assert.That(initialStates.ContainsKey("p2"), Is.False);
 
+        // GetInitial broadcasts Map Type Renderable Change at the start of the game
+        Assert.That(channel.Reader.TryRead(out RenderableChange? mapChange), Is.True);
+        Assert.That(mapChange, Is.Not.Null);
+        Assert.That(mapChange.Index, Is.EqualTo(1));
+        Assert.That(mapChange!.Changes, Has.Count.EqualTo(1));
+        Assert.That(mapChange.Changes[0].Type, Is.EqualTo(RenderableType.MAP));
+
         PlaceShipsAction action = new PlaceShipsAction { Ships = _validFleet };
         Dictionary<string, PlayerState> nextStates = _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", action } });
 
@@ -89,7 +96,7 @@ public class BattleshipRenderingTests
             Assert.Fail("Expected a change, but received null");
             return;
         }
-        Assert.That(change.Index, Is.EqualTo(1));
+        Assert.That(change.Index, Is.EqualTo(2));
         Assert.That(change.Changes, Has.Count.EqualTo(5));
         Assert.That(change.Changes[0].Type, Is.EqualTo(RenderableType.OBJECT));
 
