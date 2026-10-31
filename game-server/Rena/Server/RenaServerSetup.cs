@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Rena.GameEngine;
 using Rena.Server.GameSockets;
 using Rena.Server.Rendering;
@@ -28,6 +29,11 @@ internal static class RenaServerSetup
         builder.Services.AddSingleton<RenaServerHandlers<G, S, A>>();
         builder.Services.AddSingleton<CompetitionSettingsState>();
         builder.Services.AddTransient<GameSocketHandler<G, S, A>>();
+        builder.Services.AddSingleton<IGameRoomManager>(sp =>
+        {
+            var logger = sp.GetRequiredService<ILogger<GameRoomManager<G, S, A>>>();
+            return new GameRoomManager<G, S, A>(renaOptions.RoomSize, logger);
+        });
         builder.Services.AddSingleton<RenderableBroadcaster>();
 
         builder.Services.AddOptions<RenaOptions>().BindConfiguration(RenaOptions.SectionName).ValidateOnStart();
