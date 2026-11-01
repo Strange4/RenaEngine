@@ -100,7 +100,7 @@ export class RenderableChangeProcessor {
         first.position[1] === second.position[1] &&
         first.size[0] === second.size[0] &&
         first.size[1] === second.size[1] &&
-        first.rotation === second.rotation
+        (first.rotation ?? 0) === (second.rotation ?? 0)
       );
     }
   }
