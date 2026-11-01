@@ -26,6 +26,7 @@ export class RenderableChangeProcessor {
   }
 
   // Processes a change, ensuring that changes are applied in order and that the current state is updated accordingly
+  // TODO: Retry logic for failed operations (like network issues) could be added here.
   async process(change: RenderableChange): Promise<void> {
     const operation = this.processing.then(() => this.enqueue(change));
     this.processing = operation.catch(() => undefined);
@@ -43,6 +44,7 @@ export class RenderableChangeProcessor {
       this.pendingChanges.set(change.index, change);
     }
 
+    // Process changes in order, applying them to the current state and calling the appropriate handlers
     while (this.pendingChanges.size > 0) {
       const nextIndex =
         this.lastProcessedIndex === null ? change.index : this.lastProcessedIndex + 1;
