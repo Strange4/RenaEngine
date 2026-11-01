@@ -2,17 +2,20 @@ import fs from "fs";
 import path from "path";
 import { RenderableType, type GameRenderable } from "@/shared/renderable";
 
+class MockPoint {
+  x = 0;
+  y = 0;
+  set(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+}
+
 class MockSprite {
   texture: unknown;
   parent: MockContainer | null = null;
-  position = {
-    x: 0,
-    y: 0,
-    set: (x: number, y: number) => {
-      this.position.x = x;
-      this.position.y = y;
-    },
-  };
+  position = new MockPoint();
+  anchor = new MockPoint();
   width = 0;
   height = 0;
   zIndex = 0;
@@ -131,7 +134,14 @@ describe("rendering the mock scene", () => {
       const sprite = renderer.getSprite(r.id) as unknown as MockSprite;
       expect(sprite).toBeDefined();
       expect(sprite.texture).toEqual({ assetPath: r.assetPath });
-      expect(sprite.position).toMatchObject({ x: r.position[0] * tile, y: r.position[1] * tile });
+      expect(sprite.position).toMatchObject({
+        x: r.position[0] * tile + tile / 2,
+        y: r.position[1] * tile + tile / 2,
+      });
+      expect(sprite.anchor).toMatchObject({
+        x: 0.5 / r.size[0],
+        y: 0.5 / r.size[1],
+      });
       expect(sprite.width).toBe(r.size[0] * tile);
       expect(sprite.height).toBe(r.size[1] * tile);
       expect(sprite.zIndex).toBe(r.layer);
