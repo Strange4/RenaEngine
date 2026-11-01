@@ -1,21 +1,26 @@
 import type { Container } from "pixi.js";
 import { RenderableType, type GameRenderable, type ViewerSetup } from "@/shared/renderable";
 
+class MockPoint {
+  x = 0;
+  y = 0;
+  set(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+}
+
 class MockSprite {
   texture: unknown;
   parent: MockContainer | null = null;
 
-  position = {
-    x: 0,
-    y: 0,
-    set: (x: number, y: number) => {
-      this.position.x = x;
-      this.position.y = y;
-    },
-  };
+  position = new MockPoint();
+
+  anchor = new MockPoint();
 
   width = 0;
   height = 0;
+  angle = 0;
   zIndex = 0;
 
   constructor(texture: unknown) {
@@ -68,6 +73,7 @@ const baseRenderable: GameRenderable = {
   position: [2, 3],
   assetPath: "/sprites/test.png",
   size: [4, 5],
+  rotation: 0,
   type: RenderableType.OBJECT,
   layer: 3,
 };
@@ -128,11 +134,19 @@ describe("LiveViewRenderer", () => {
       "/sprites/test.png",
     );
     expect(sprite.texture).toEqual({ path: "/sprites/test.png" });
-    expect(sprite.position.x).toBe(64);
-    expect(sprite.position.y).toBe(96);
+    expect(sprite.position.x).toBe(80);
+    expect(sprite.position.y).toBe(112);
+    expect(sprite.anchor.x).toBe(0.125);
+    expect(sprite.anchor.y).toBe(0.1);
     expect(sprite.width).toBe(128);
     expect(sprite.height).toBe(160);
+    expect(sprite.angle).toBe(0);
     expect(sprite.zIndex).toBe(3);
+
+    const rotatedSprite = renderer.addGameRenderable(
+      renderable({ id: "rotated", rotation: 90 }),
+    );
+    expect(rotatedSprite.angle).toBe(90);
 
     expect(
       renderer.getContainer(RenderableType.OBJECT).children,
@@ -231,8 +245,8 @@ describe("LiveViewRenderer", () => {
       renderer.getContainer(RenderableType.OBJECT).children,
     ).toHaveLength(1);
 
-    expect(second.position.x).toBe(64);
-    expect(second.position.y).toBe(96);
+    expect(second.position.x).toBe(80);
+    expect(second.position.y).toBe(112);
   });
 
   it("adds all category containers to the stage in order", () => {
