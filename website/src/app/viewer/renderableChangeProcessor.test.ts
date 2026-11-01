@@ -7,6 +7,7 @@ const baseRenderable: GameRenderable = {
   position: [0, 0],
   assetPath: "/sprites/base.png",
   size: [1, 1],
+  rotation: 0,
   type: RenderableType.OBJECT,
   layer: 0,
 };
