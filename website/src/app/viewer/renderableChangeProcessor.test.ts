@@ -89,4 +89,55 @@ describe("RenderableChangeProcessor", () => {
       { ...existing, id: "new" },
     ]);
   });
+
+  //New tests added for the missing index handling case
+  it("fetches the current scene when a missing index blocks later changes", async () => {
+    jest.useFakeTimers();
+    try {
+      // Never resolves, so this test only checks *when* the fetch starts
+      const fetchScene = jest.fn(() => new Promise<never>(() => {}));
+      const processor = new RenderableChangeProcessor(handlers(), { gapTimeout: 1000, fetchScene });
+      processor.initialize([], 0);
+
+      await processor.process(change(2, { ...baseRenderable, id: "second" }));
+
+      jest.advanceTimersByTime(999);
+      expect(fetchScene).not.toHaveBeenCalled();
+      jest.advanceTimersByTime(1);
+      expect(fetchScene).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("does not fetch the scene once the missing index arrives", async () => {
+    jest.useFakeTimers();
+    try {
+      const fetchScene = jest.fn();
+      const processor = new RenderableChangeProcessor(handlers(), { gapTimeout: 1000, fetchScene });
+      processor.initialize([], 0);
+
+      await processor.process(change(2, { ...baseRenderable, id: "second" }));
+      await processor.process(change(1, { ...baseRenderable, id: "first" }));
+
+      jest.advanceTimersByTime(5000);
+      expect(fetchScene).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("resyncs from a fresh scene and applies buffered later changes", async () => {
+    const testHandlers = handlers();
+    const processor = new RenderableChangeProcessor(testHandlers);
+    processor.initialize([{ ...baseRenderable, id: "stale" }], 0);
+
+    await processor.process(change(3, { ...baseRenderable, id: "later" }));
+    await processor.resync([{ ...baseRenderable, id: "fresh" }], 2);
+
+    expect(testHandlers.calls).toEqual(["remove:stale", "create:fresh", "create:later"]);
+    expect(processor.getLastProcessedIndex()).toBe(3);
+    processor.dispose();
+  });
+
 });
