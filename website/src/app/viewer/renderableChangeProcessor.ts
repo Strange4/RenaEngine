@@ -7,7 +7,7 @@ import type { RenderableHandlers } from "./renderableHandler";
 //With this fix, we wait for the gapTimeout milliseconds and then do an action to fetch the current state from the server
 export interface RenderableChangeProcessorOptions{
   gapTimeout?: number;
-  onGap?: (missingIndex: number) => void;
+  fetchScene?: () => Promise<{renderables: GameRenderable[]; index: number}>; //after the waiting time expires, fetch current scene from server to get the missing update we lost
 }
 const DEFAULT_GAP_TIMEOUT = 3000; //in milliseconds, some arbitrary constant- can modify the #
 
@@ -30,6 +30,7 @@ export class RenderableChangeProcessor {
   initialize(renderables: GameRenderable[], initialIndex: number): void {
     this.currentRenderables.clear();
     this.pendingChanges.clear();
+    this.clearGapTimer(); //clear the timer -- we don't want to detect old time gaps, so we must reset
 
     // Initialize the current state with the provided renderables
     for (const renderable of renderables) {
@@ -42,7 +43,7 @@ export class RenderableChangeProcessor {
   }
 
   // Processes a change, ensuring that changes are applied in order and that the current state is updated accordingly
-  // TODO: Retry logic for failed operations (like network issues) could be added here.
+  
   async process(change: RenderableChange): Promise<void> {
     const operation = this.processing.then(() => this.enqueue(change));
     this.processing = operation.catch(() => undefined);
@@ -131,5 +132,13 @@ export class RenderableChangeProcessor {
   // Returns the last processed index, or null if no changes have been processed yet
   getLastProcessedIndex(): number | null {
     return this.lastProcessedIndex;
+  }
+
+  //clears the timer
+  private clearGapTimer(): void{
+    if (this.gapTimer != null){
+      clearTimeout(this.gapTimer); //stops the timer
+      this.gapTimer = null; //clears the gap timer (detection system for missing updates from server i.e. missing index)
+    }
   }
 }
