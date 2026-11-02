@@ -2,13 +2,29 @@
 import type { GameRenderable, RenderableChange } from "@/shared/renderable";
 import type { RenderableHandlers } from "./renderableHandler";
 
+//Adding options for the default timeout. The processor needs to know how long to wait when a missing index is detected (in case of a server hiccup)
+//Case: server hiccup causes the server not to fully transfer the action/ action gets lost (ex: it has id 4).Then, id 5,6,7 are under pending and are waiting for the lost id4.
+//With this fix, we wait for the gapTimeout milliseconds and then do an action to fetch the current state from the server
+export interface RenderableChangeProcessorOptions{
+  gapTimeout?: number;
+  onGap?: (missingIndex: number) => void;
+}
+const DEFAULT_GAP_TIMEOUT = 3000; //in milliseconds, some arbitrary constant- can modify the #
+
+
 export class RenderableChangeProcessor {
   private currentRenderables = new Map<string, GameRenderable>();
   private pendingChanges = new Map<number, RenderableChange>();
   private lastProcessedIndex: number | null = null;
   private processing = Promise.resolve();
+  //Missing index process waiting fix- adding new params
+  private gapTimer: ReturnType<typeof setTimeout> | null = null;
+  private disposed = false; //boolean flag that keeps track if a process shuts down. False by default bc no shut down recorded
 
-  constructor(private handlers: RenderableHandlers) {}
+  constructor(
+    private handlers: RenderableHandlers,
+    private options: RenderableChangeProcessorOptions= {},
+  ) {}
   
   // Initializes the processor with a set of renderables and an initial index (useful for starting from a specific point in time)
   initialize(renderables: GameRenderable[], initialIndex: number): void {
