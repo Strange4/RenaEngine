@@ -6,9 +6,9 @@ namespace Rena;
 public class RenaCLI
 {
     public static void UseRenaCLI<G, S, A>(string[] args, RenaOptions options)
-    where G : IGame<S, A>, new()
-    where S : class
-    where A : class
+        where G : IGame<S, A>, new()
+        where S : class
+        where A : class
     {
         if (args.Length == 0)
         {

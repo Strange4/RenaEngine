@@ -3,9 +3,11 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /game-server
 
+# This runs on ubuntu noble
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-    protobuf-compiler=3.21.12-8.2ubuntu0.3 \
+    protobuf-compiler=3.21.12-8.2build1 \
+    libprotoc32t64=3.21.12-8.2build1 \
     nodejs=18.19.1+dfsg-6ubuntu5 \
     npm=9.2.0~ds1-2 \
     && rm -rf /var/lib/apt/lists/*

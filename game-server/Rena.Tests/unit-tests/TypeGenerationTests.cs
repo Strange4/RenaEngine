@@ -1,5 +1,4 @@
 ﻿using System.Runtime.Serialization;
-
 using Rena.GameEngine;
 using Rena.Generator;
 
@@ -10,7 +9,8 @@ public class GRPCGenerationTests
     [Test]
     public void CanGenerateGRPCServer()
     {
-        string wantedProto = @"syntax = ""proto3"";
+        string wantedProto =
+            @"syntax = ""proto3"";
 
 message GameAction {
    int32 Y = 1;
@@ -32,7 +32,6 @@ message SchemaContainer_GameState_GameAction {
         }
     }
 }
-
 
 [DataContract]
 public class GameState

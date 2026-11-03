@@ -4,14 +4,12 @@ using Microsoft.Extensions.Options;
 
 internal sealed class CompetitionSettingsState
 {
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly Dictionary<string, bool> _features;
 
     public CompetitionSettingsState(IOptions<RenaOptions> options)
     {
-        this._features = new Dictionary<string, bool>(
-            options.Value.Features,
-            StringComparer.OrdinalIgnoreCase);
+        this._features = new Dictionary<string, bool>(options.Value.Features, StringComparer.OrdinalIgnoreCase);
     }
 
     public bool TryGetFeature(string featureKey, out bool enabled)

@@ -24,6 +24,7 @@ export interface GameRenderable{
     position: [number, number]; // [x,y] position of the object in the game world
     assetPath:string; 
     size:[number, number]; //how big the object is tile-wise [width, height]
+    rotation?: number; //in degrees, clockwise, 0, 90, 180, 270 clockwise around the 'position' tile
     type:RenderableType; 
     layer:number; //zIndex within its type's container only: the type decides the draw order (MAP < OBJECT < DECORATION), so a DECORATION always draws above an OBJECT whatever their layers
     removed?: boolean; //optional, might need this for games like Battleship where elements get removed

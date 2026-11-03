@@ -1,20 +1,23 @@
 namespace Rena.Server;
 
 using System.ComponentModel.DataAnnotations;
-
+using System.Threading.Channels;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-
+using Microsoft.Extensions.Logging;
 using Rena.GameEngine;
+using Rena.Server.GameSockets;
+using Rena.Server.Rendering;
 
 internal static class RenaServerSetup
 {
     public static RenaOptions SetRenaServices<G, S, A>(this WebApplicationBuilder builder)
-    where G : IGame<S, A>, new()
-    where S : class
-    where A : class
+        where G : IGame<S, A>, new()
+        where S : class
+        where A : class
     {
         RenaOptions renaOptions = new();
         builder.Configuration.GetSection(RenaOptions.SectionName).Bind(renaOptions);
@@ -25,26 +28,54 @@ internal static class RenaServerSetup
 
         builder.Services.AddSingleton<RenaServerHandlers<G, S, A>>();
         builder.Services.AddSingleton<CompetitionSettingsState>();
+        builder.Services.AddTransient<GameSocketHandler<G, S, A>>();
+        builder.Services.AddSingleton<IGameRoomManager>(sp =>
+        {
+            var logger = sp.GetRequiredService<ILogger<GameRoomManager<G, S, A>>>();
+            return new GameRoomManager<G, S, A>(renaOptions.RoomSize, logger);
+        });
+        builder.Services.AddSingleton<RenderableBroadcaster>();
 
-        builder.Services.AddOptions<RenaOptions>()
-            .BindConfiguration(RenaOptions.SectionName)
-            .ValidateOnStart();
+        builder.Services.AddOptions<RenaOptions>().BindConfiguration(RenaOptions.SectionName).ValidateOnStart();
         return renaOptions;
     }
 
     public static void UseRenaEndpoints<G, S, A>(this WebApplication app)
-    where G : IGame<S, A>, new()
-    where S : class
-    where A : class
+        where G : IGame<S, A>, new()
+        where S : class
+        where A : class
     {
         app.MapGet("/", () => "Hello World!");
         app.MapGet("/name", RenaServerHandlers<G, S, A>.GetGameName);
         app.MapGet("/downloads/{languageName}", RenaServerHandlers<G, S, A>.HandleDownloads);
+        app.Map(
+            "/game/connect/{playerId}",
+            async (string playerId, HttpContext context, GameSocketHandler<G, S, A> handler) => await handler.GameConnect(context, playerId)
+        );
+        app.MapGet("/settings/features/{featureKey}", RenaServerHandlers<G, S, A>.GetFeatureSetting);
+        app.MapPut("/settings/features/{featureKey}", RenaServerHandlers<G, S, A>.UpdateFeatureSetting);
         app.MapGet(
-            "/settings/features/{featureKey}",
-            RenaServerHandlers<G, S, A>.GetFeatureSetting);
-        app.MapPut(
-            "/settings/features/{featureKey}",
-            RenaServerHandlers<G, S, A>.UpdateFeatureSetting);
+            "/render/stream/{playerId}",
+            async (string playerId, RenderableBroadcaster broadcaster, HttpContext context) =>
+            {
+                // TODO: Connect playerId to IGameRoomManager once PR #132 is merged
+                context.Response.Headers.ContentType = "text/event-stream";
+                await context.Response.Body.FlushAsync();
+                Channel<RenderableChange> channel = broadcaster.Connect();
+                try
+                {
+                    await foreach (RenderableChange change in channel.Reader.ReadAllAsync(context.RequestAborted))
+                    {
+                        string json = System.Text.Json.JsonSerializer.Serialize(change);
+                        await context.Response.WriteAsync($"event: change\ndata: {json}\n\n");
+                        await context.Response.Body.FlushAsync();
+                    }
+                }
+                finally
+                {
+                    broadcaster.Disconnect(channel);
+                }
+            }
+        );
     }
 }

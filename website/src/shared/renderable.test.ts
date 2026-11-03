@@ -6,6 +6,7 @@ const baseRenderable: GameRenderable = {
   position: [0, 0],
   assetPath: "/sprites/test.png",
   size: [1, 1],
+  rotation: 0,
   type: RenderableType.OBJECT,
   layer: 1,
 };
@@ -40,6 +41,7 @@ describe("Renderable with JSON data",()=>{
         "layer": 1,
         "assetPath": "/sprites/player1.png",
         "size": [1,1],
+        "rotation": 0,
         "type":"OBJECT"
         }`;
         const parsed = JSON.parse(json) as GameRenderable; //as GameRenderable to know what format/shape to expect in JSON
@@ -61,6 +63,7 @@ describe("Renderable with JSON data",()=>{
             position: [2,2],
             assetPath: "/sprites/grass.png",
             size: [1,1],
+            rotation: 0,
             type: RenderableType.MAP,
             layer: 0,
         };
