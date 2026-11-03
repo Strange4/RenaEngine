@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Runtime.Serialization;
+using System.Text;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
@@ -165,6 +166,23 @@ public class EndpointTests
         Assert.That(localZip.Entries.Length, Is.EqualTo(1));
         ZipArchiveEntry? zipFile = localZip.GetEntry("main.ts");
         Assert.That(zipFile, Is.Not.Null);
+    }
+
+    [Test]
+    public async Task Uploads_RefusesNonZip()
+    {
+        // Prepare file
+        using MultipartFormDataContent formData = new();
+        ByteArrayContent content = new(Encoding.UTF8.GetBytes("I am a file"));
+        content.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
+        formData.Add(content, "file", "file.txt");
+        string playerId = "player-42";
+
+        // Send file
+        HttpResponseMessage response = await _client.PostAsync($"/upload/{playerId}", formData);
+
+        // Verify that is wasn't accepted
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotAcceptable));
     }
 }
 
