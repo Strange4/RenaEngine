@@ -104,6 +104,20 @@ export class LiveViewRenderer {
         return sprite;
     }
 
+    // Remove the sprite when its renderable gets removed so it's not shown anymore
+    removeGameRenderable(id: string): void {
+        const sprite = this.getSprite(id);
+        // If there's no sprite for this ID (never created or already removed), nothing to do
+        if (!sprite) {
+            return;
+        }
+
+        // destroy() also takes the sprite out of its container.
+        // We don't destroy the texture since other sprites can be using the same asset
+        sprite.destroy();
+        this.sprites.delete(id);
+    }
+
     async renderScene(renderables: GameRenderable[], signal?: AbortSignal): Promise<void> {
         // Load the assets before creating sprites
         await this.assetLoader.loadFor(renderables);
