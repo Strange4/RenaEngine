@@ -57,11 +57,13 @@ export default function ParticipantTokenTable({
                 </td>
                 <td>{formatLastSubmission(row.lastSubmissionAt)}</td>
                 <td className="token-cell">
-                  <code>{showTokens ? row.token : MASKED_TOKEN}</code>
-                  <CopyTokenButton
-                    token={row.token}
-                    participantId={row.participantId}
-                  />
+                  <div className="token-cell-content">
+                    <code>{showTokens ? row.token : MASKED_TOKEN}</code>
+                    <CopyTokenButton
+                      token={row.token}
+                      participantId={row.participantId}
+                    />
+                  </div>
                 </td>
               </tr>
             ))}

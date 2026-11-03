@@ -235,7 +235,7 @@ button {
   color: #d1d5db;
 }
 
-.token-cell {
+.token-cell-content {
   display: flex;
   align-items: center;
   gap: 0.75rem;
