@@ -31,6 +31,30 @@ internal class RenaServerHandlers<G, S, A>
             : Results.File(zipName, contentType: "application/zip");
     }
 
+    public static async Task<IResult> HandleUpload(string playerId, IFormFile file, HttpContext context, IOptions<RenaOptions> options)
+    {
+        if (file.Length > options.Value.MaxFileSizeBytes)
+        {
+            return Results.StatusCode(413);
+        }
+
+        if (!file.ContentType.Equals("application/zip") || !file.FileName.EndsWith(".zip"))
+        {
+            return Results.StatusCode(406);
+        }
+
+        // Creates if not exist
+        Directory.CreateDirectory(options.Value.UploadsDirectory);
+        string fileName = Path.Combine(options.Value.UploadsDirectory, playerId + ".zip");
+        using (FileStream fileStream = new(fileName, FileMode.Create, FileAccess.ReadWrite))
+        {
+            await file.CopyToAsync(fileStream);
+        }
+        // TODO (147) : build a docker image in the background
+
+        return Results.Accepted();
+    }
+
     public static IResult GetFeatureSetting(string featureKey, CompetitionSettingsState settings)
     {
         return settings.TryGetFeature(featureKey, out bool enabled) ? Results.Ok(new FeatureSettingResponse(enabled)) : Results.NotFound();

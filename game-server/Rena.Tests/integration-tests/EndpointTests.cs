@@ -1,4 +1,6 @@
+using System.IO.Compression;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Runtime.Serialization;
 using Microsoft.AspNetCore.Builder;
@@ -27,6 +29,7 @@ public class EndpointTests
                 { "RenaOptions:TSProtoPath", "TESTING" },
                 { "RenaOptions:AdminToken", "TEST-ADMIN-TOKEN" },
                 { "RenaOptions:Features:test-feature", "false" },
+                { "RenaOptions:UploadsDirectory", "./uploads" },
             }
         );
         builder.SetRenaServices<TestGame, GameState, GameAction>();
@@ -129,6 +132,39 @@ public class EndpointTests
         HttpRequestMessage request = new(HttpMethod.Put, "/settings/features/test-feature") { Content = JsonContent.Create(new { enabled }) };
         request.Headers.Authorization = new("Bearer", token);
         return request;
+    }
+
+    [Test]
+    public async Task Uploads_WritesFile()
+    {
+        // Prepare zip
+        using MultipartFormDataContent formData = new();
+        using MemoryStream zipStream = new();
+        using (ZipArchive zipArchive = new(zipStream, ZipArchiveMode.Create, true))
+        {
+            ZipArchiveEntry entry = zipArchive.CreateEntry("main.ts", CompressionLevel.NoCompression);
+
+            using StreamWriter writer = new(entry.Open());
+            writer.Write("function main() { console.log(\"Hello world!\"); }; main();");
+        }
+        ByteArrayContent content = new(zipStream.ToArray());
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
+        formData.Add(content, "file", "TestFile.zip");
+        string playerId = "player-42";
+
+        // Send zip
+        HttpResponseMessage response = await _client.PostAsync($"/upload/{playerId}", formData);
+
+        // Verify Zip
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Accepted));
+        string zipFilePath = Path.Combine("./uploads", $"{playerId}.zip");
+        Assert.That(zipFilePath, Does.Exist);
+
+        ZipArchive localZip = await ZipFile.OpenReadAsync(zipFilePath);
+
+        Assert.That(localZip.Entries.Length, Is.EqualTo(1));
+        ZipArchiveEntry? zipFile = localZip.GetEntry("main.ts");
+        Assert.That(zipFile, Is.Not.Null);
     }
 }
 

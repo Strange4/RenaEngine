@@ -15,6 +15,10 @@ public record class RenaOptions
 
     public string GenerationDirectory { get; set; } = "./sdks";
 
+    public string UploadsDirectory { get; set; } = "./uploads";
+
+    public uint MaxFileSizeBytes { get; set; } = 1 << 29; // 500 MiB
+
     [Required]
     public string AdminToken { get; set; } = "ADMIN-change-me";
 

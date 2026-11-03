@@ -25,7 +25,6 @@ internal static class RenaServerSetup
         Validator.ValidateObject(renaOptions, new ValidationContext(renaOptions));
 
         builder.WebHost.UseUrls($"http://*:{renaOptions.ServerPort}");
-
         builder.Services.AddSingleton<RenaServerHandlers<G, S, A>>();
         builder.Services.AddSingleton<CompetitionSettingsState>();
         builder.Services.AddTransient<GameSocketHandler<G, S, A>>();
@@ -54,6 +53,7 @@ internal static class RenaServerSetup
         );
         app.MapGet("/settings/features/{featureKey}", RenaServerHandlers<G, S, A>.GetFeatureSetting);
         app.MapPut("/settings/features/{featureKey}", RenaServerHandlers<G, S, A>.UpdateFeatureSetting);
+        app.MapPost("/upload/{playerId}", RenaServerHandlers<G, S, A>.HandleUpload).DisableAntiforgery();
         app.MapGet(
             "/render/stream/{playerId}",
             async (string playerId, RenderableBroadcaster broadcaster, HttpContext context) =>
