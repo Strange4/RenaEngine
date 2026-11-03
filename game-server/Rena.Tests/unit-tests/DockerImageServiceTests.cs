@@ -101,87 +101,36 @@ public class DockerImageServiceTests
     [Test]
     public async Task CreateImageAsync_BuildsDockerfileWithTagAndBuildArguments()
     {
-        string contextPath = Path.Combine(Path.GetTempPath(), $"docker-context-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(contextPath);
-        string dockerfilePath = Path.Combine(contextPath, "Dockerfile");
-        await File.WriteAllTextAsync(dockerfilePath, "FROM scratch");
         Dictionary<string, string> buildArgs = new() { ["VERSION"] = "1.2.3" };
-
-        try
+        using var filesArchive = new MemoryStream();
+        var request = new DockerImageBuildRequest
         {
-            var result = await this._service.CreateImageAsync(dockerfilePath, "test-image:latest", contextPath, buildArgs);
+            ImageName = "test-image:latest",
+            Dockerfile = "FROM scratch",
+            FilesArchive = filesArchive,
+            Language = "typescript",
+            BuildArgs = buildArgs,
+        };
+        using var buildContext = new MemoryStream();
 
-            Assert.That(IsSuccess(result), Is.True);
-            this._fixture.Images.Verify(
-                operations =>
-                    operations.BuildImageFromDockerfileAsync(
-                        It.Is<ImageBuildParameters>(parameters =>
-                            parameters.Dockerfile == "Dockerfile"
-                            && parameters.Tags.Contains("test-image:latest")
-                            && parameters.BuildArgs == buildArgs
-                        ),
-                        It.IsAny<Stream>(),
-                        It.IsAny<IEnumerable<AuthConfig>>(),
-                        It.IsAny<IDictionary<string, string>>(),
-                        It.IsAny<IProgress<JSONMessage>>(),
-                        It.IsAny<CancellationToken>()
+        var result = await this._service.CreateImageAsync(request, buildContext);
+
+        Assert.That(IsSuccess(result), Is.True);
+        this._fixture.Images.Verify(
+            operations =>
+                operations.BuildImageFromDockerfileAsync(
+                    It.Is<ImageBuildParameters>(parameters =>
+                        parameters.Dockerfile == "Dockerfile"
+                        && parameters.Tags.Contains("test-image:latest")
+                        && parameters.BuildArgs == buildArgs
                     ),
+                    buildContext,
+                    It.IsAny<IEnumerable<AuthConfig>>(),
+                    It.IsAny<IDictionary<string, string>>(),
+                    It.IsAny<IProgress<JSONMessage>>(),
+                    It.IsAny<CancellationToken>()
+                ),
                 Times.Once
-            );
-        }
-        finally
-        {
-            Directory.Delete(contextPath, recursive: true);
-        }
-    }
-
-    [Test]
-    public async Task CreateImageAsync_RejectsDockerfileOutsideBuildContext()
-    {
-        string parentPath = Path.Combine(Path.GetTempPath(), $"docker-context-{Guid.NewGuid():N}");
-        string contextPath = Path.Combine(parentPath, "context");
-        Directory.CreateDirectory(contextPath);
-        string dockerfilePath = Path.Combine(parentPath, "Dockerfile");
-        await File.WriteAllTextAsync(dockerfilePath, "FROM scratch");
-
-        try
-        {
-            var result = await this._service.CreateImageAsync(dockerfilePath, "test-image:latest", contextPath);
-
-            Assert.That(IsFailure(result), Is.True);
-            this._fixture.Images.Verify(
-                operations =>
-                    operations.BuildImageFromDockerfileAsync(
-                        It.IsAny<ImageBuildParameters>(),
-                        It.IsAny<Stream>(),
-                        It.IsAny<IEnumerable<AuthConfig>>(),
-                        It.IsAny<IDictionary<string, string>>(),
-                        It.IsAny<IProgress<JSONMessage>>(),
-                        It.IsAny<CancellationToken>()
-                    ),
-                Times.Never
-            );
-        }
-        finally
-        {
-            Directory.Delete(parentPath, recursive: true);
-        }
-    }
-
-    [Test]
-    public async Task CreateImageAsync_ReturnsFailureForNullRequiredInputs()
-    {
-        Assert.That(IsFailure(await this._service.CreateImageAsync(null!, "test-image:latest")), Is.True);
-
-        string dockerfilePath = Path.Combine(Path.GetTempPath(), $"Dockerfile-{Guid.NewGuid():N}");
-        await File.WriteAllTextAsync(dockerfilePath, "FROM scratch");
-        try
-        {
-            Assert.That(IsFailure(await this._service.CreateImageAsync(dockerfilePath, null!)), Is.True);
-        }
-        finally
-        {
-            File.Delete(dockerfilePath);
-        }
+        );
     }
 }

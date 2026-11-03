@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using LanguageExt;
@@ -11,9 +10,25 @@ namespace Rena.Server.DockerManager;
 public interface IDockerService
 {
     public Task<Result<string>> CreateOrReplaceImageAsync(string playerId, string zipFilePath, string dockerFilePath);
-    public Task<Result<string>> CreateOrReplaceImageAsync(string playerId, string zipFilePath, string dockerFilePath, string language);
+    public Task<Result<string>> CreateOrReplaceImageAsync(
+        string playerId,
+        string zipFilePath,
+        string dockerFilePath,
+        Option<IDictionary<string, string>> buildArgs
+    );
+    public Task<Result<string>> CreateOrReplaceImageAsync(
+        string playerId,
+        string zipFilePath,
+        string dockerFilePath,
+        string language,
+        Option<IDictionary<string, string>> buildArgs = default
+    );
     public Task<Result<Unit>> StartContainerWithIdAsync(string containerId);
-    public Task<Result<Unit>> CreateAndStartContainerWithIdAsync(string containerId, string imageId);
+    public Task<Result<Unit>> CreateAndStartContainerWithIdAsync(
+        string containerId,
+        string imageId,
+        Option<IDictionary<string, string>> envVars = default
+    );
     public Task<Result<Unit>> KillContainerWithIdAsync(string containerId);
 }
 
@@ -26,6 +41,7 @@ public abstract class AbstractDockerService(IDockerClient dockerClient, ILogger 
 public class DockerService : AbstractDockerService, IDockerService
 {
     private readonly IDockerContainerService _containers;
+    private readonly IDockerImageService _images;
     private readonly IReadOnlyDictionary<string, IDockerBuildContextStrategy> _buildContextStrategies;
 
     public DockerService(IDockerClient dockerClient, ILogger logger)
@@ -35,12 +51,21 @@ public class DockerService : AbstractDockerService, IDockerService
         : base(dockerClient, logger)
     {
         this._containers = new DockerContainerService(dockerClient, logger);
+        this._images = new DockerImageService(dockerClient, logger);
         this._buildContextStrategies = buildContextStrategies.ToDictionary(strategy => strategy.LanguageName, StringComparer.Ordinal);
     }
 
-    public async Task<Result<Unit>> CreateAndStartContainerWithIdAsync(string containerId, string imageId)
+    public async Task<Result<Unit>> CreateAndStartContainerWithIdAsync(
+        string containerId,
+        string imageId,
+        Option<IDictionary<string, string>> envVars = default
+    )
     {
-        Result<CreateContainerResponse> created = await this._containers.CreateContainerAsync(imageId, containerId);
+        var createParameters = new CreateContainerParameters
+        {
+            Env = envVars.IfNone(new Dictionary<string, string>()).Select(pair => $"{pair.Key}={pair.Value}").ToList(),
+        };
+        Result<CreateContainerResponse> created = await this._containers.CreateContainerAsync(imageId, containerId, createParameters);
 
         return await created.Match(
             async response =>
@@ -60,6 +85,16 @@ public class DockerService : AbstractDockerService, IDockerService
 
     public Task<Result<string>> CreateOrReplaceImageAsync(string playerId, string zipFilePath, string dockerFilePath)
     {
+        return this.CreateOrReplaceImageAsync(playerId, zipFilePath, dockerFilePath, default);
+    }
+
+    public Task<Result<string>> CreateOrReplaceImageAsync(
+        string playerId,
+        string zipFilePath,
+        string dockerFilePath,
+        Option<IDictionary<string, string>> buildArgs
+    )
+    {
         IReadOnlyList<string> availableLanguages = SDKBuilder.AvailableLanguageGenerators();
         if (availableLanguages.Count != 1)
         {
@@ -68,10 +103,16 @@ public class DockerService : AbstractDockerService, IDockerService
             return Task.FromResult(new Result<string>(Error.FromObject(error)));
         }
 
-        return this.CreateOrReplaceImageAsync(playerId, zipFilePath, dockerFilePath, availableLanguages[0]);
+        return this.CreateOrReplaceImageAsync(playerId, zipFilePath, dockerFilePath, availableLanguages[0], buildArgs);
     }
 
-    public async Task<Result<string>> CreateOrReplaceImageAsync(string playerId, string zipFilePath, string dockerFilePath, string language)
+    public async Task<Result<string>> CreateOrReplaceImageAsync(
+        string playerId,
+        string zipFilePath,
+        string dockerFilePath,
+        string language,
+        Option<IDictionary<string, string>> buildArgs = default
+    )
     {
         if (string.IsNullOrWhiteSpace(playerId))
         {
@@ -114,6 +155,7 @@ public class DockerService : AbstractDockerService, IDockerService
                 Dockerfile = await File.ReadAllTextAsync(dockerFilePath),
                 FilesArchive = File.OpenRead(zipFilePath),
                 Language = language,
+                BuildArgs = buildArgs.IfNone(new Dictionary<string, string>()),
             };
             await using var archive = request.FilesArchive;
             Result<IDockerBuildContext> contextResult = await buildContextStrategy.CreateAsync(request);
@@ -122,42 +164,11 @@ public class DockerService : AbstractDockerService, IDockerService
                 {
                     await using (context)
                     {
-                        var buildErrors = new ConcurrentQueue<string>();
-                        var progress = new SynchronousProgress<JSONMessage>(message =>
-                        {
-                            if (!string.IsNullOrEmpty(message.Stream))
-                            {
-                                this._logger.LogInformation("{BuildOutput}", message.Stream);
-                            }
-                            else if (message.Error != null)
-                            {
-                                this._logger.LogError("{BuildError}", message.Error.Message);
-                                buildErrors.Enqueue(message.Error.Message);
-                            }
-                            else if (!string.IsNullOrEmpty(message.Status))
-                            {
-                                this._logger.LogInformation("{Status} {ProgressMessage}", message.Status, message.ProgressMessage);
-                            }
-                        });
-
-                        await this._client.Images.BuildImageFromDockerfileAsync(
-                            new ImageBuildParameters { Dockerfile = "Dockerfile", Tags = [playerId] },
-                            context.Content,
-                            authConfigs: null,
-                            headers: null,
-                            progress,
-                            CancellationToken.None
+                        Result<Unit> imageResult = await this._images.CreateImageAsync(request, context.Content);
+                        return imageResult.Match(
+                            _ => new Result<string>(playerId),
+                            error => new Result<string>(error)
                         );
-
-                        if (!buildErrors.IsEmpty)
-                        {
-                            var errors = string.Join(Environment.NewLine, buildErrors);
-                            this._logger.LogError("Failed to build image {ImageName}: {Errors}", playerId, errors);
-                            return new Result<string>(Error.FromObject($"Failed to build image {playerId}: {errors}"));
-                        }
-
-                        this._logger.LogInformation("Image {ImageName} finished building", playerId);
-                        return new Result<string>(playerId);
                     }
                 },
                 error => Task.FromResult(new Result<string>(error))

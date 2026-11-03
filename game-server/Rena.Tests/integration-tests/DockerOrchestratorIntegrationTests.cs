@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Text.Json;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -147,8 +148,10 @@ public sealed class DockerOrchestratorIntegrationTests
 
         string archivePath = Path.Combine(directory, "player.zip");
         string dockerfilePath = Path.Combine(directory, "Dockerfile");
-        const string expectedOutput = "environment-value-is-available";
+        const string expectedOutput = "environment value $HOME is available";
         const string script = "#!/bin/sh\necho \"$PLAYER_MESSAGE\"\n";
+        Dictionary<string, string> buildArgs = new() { ["BUILD_VERSION"] = "1.2.3" };
+        Dictionary<string, string> envVars = new() { ["PLAYER_MESSAGE"] = expectedOutput };
 
         try
         {
@@ -158,22 +161,45 @@ public sealed class DockerOrchestratorIntegrationTests
                 await writer.WriteAsync(script);
             }
 
-            await File.WriteAllTextAsync(
-                dockerfilePath,
-                $"FROM busybox:1.36\nENV PLAYER_MESSAGE={expectedOutput}\nCOPY run.sh /run.sh\nRUN chmod +x /run.sh\nCMD [\"/run.sh\"]\n"
-            );
+            await File.WriteAllTextAsync(dockerfilePath, "FROM busybox:1.36\nCOPY run.sh /run.sh\nRUN chmod +x /run.sh\nCMD [\"/run.sh\"]\n");
 
-            var imageResult = await this._orchestrator.CreateOrReplaceImageAsync(imageName, archivePath, dockerfilePath);
+            var imageResult = await this._orchestrator.CreateOrReplaceImageAsync(
+                imageName,
+                archivePath,
+                dockerfilePath,
+                buildArgs: buildArgs
+            );
             string? builtImageName = null;
             imageResult.IfSucc(value => builtImageName = value);
             Assert.That(builtImageName, Is.EqualTo(imageName), "The player image should build successfully.");
 
-            var startResult = await this._orchestrator.CreateAndStartContainerWithIdAsync(containerName, imageName);
+            var startResult = await this._orchestrator.CreateAndStartContainerWithIdAsync(containerName, imageName, envVars);
             Assert.That(startResult.Match(_ => true, _ => false), Is.True, "The container should be created and started.");
 
-            Assert.That(this._api.BuildContext["Dockerfile"], Does.Contain($"ENV PLAYER_MESSAGE={expectedOutput}"));
+            Assert.That(this._api.BuildContext["Dockerfile"], Does.Not.Contain("ENV PLAYER_MESSAGE"));
             Assert.That(this._api.BuildContext["run.sh"], Does.Contain("echo \"$PLAYER_MESSAGE\""));
             Assert.That(this._api.ContainerOutput, Is.EqualTo(expectedOutput + Environment.NewLine));
+            DockerApiRequest containerRequest = this._api.Requests.Single(request =>
+                request.Method == "POST" && request.Path.EndsWith("/containers/create", StringComparison.Ordinal)
+            );
+            using (JsonDocument containerDocument = JsonDocument.Parse(containerRequest.Body))
+            {
+                Assert.That(
+                    containerDocument
+                        .RootElement.GetProperty("Env")
+                        .EnumerateArray()
+                        .Select(value => value.GetString()),
+                    Does.Contain($"PLAYER_MESSAGE={expectedOutput}")
+                );
+            }
+
+            DockerApiRequest buildRequest = this._api.Requests.Single(request =>
+                request.Method == "POST" && request.Path.EndsWith("/build", StringComparison.Ordinal)
+            );
+            using (JsonDocument buildArgsDocument = JsonDocument.Parse(buildRequest.Query["buildargs"]))
+            {
+                Assert.That(buildArgsDocument.RootElement.GetProperty("BUILD_VERSION").GetString(), Is.EqualTo("1.2.3"));
+            }
 
             using var logs = await this._dockerClient.Containers.GetContainerLogsAsync(
                 this._api.ContainerId,

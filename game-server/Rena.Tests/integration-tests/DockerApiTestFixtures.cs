@@ -23,6 +23,7 @@ internal sealed class DockerApiStub : IAsyncDisposable
     public bool ContainerRunning { get; private set; }
     public string ContainerOutput { get; private set; } = string.Empty;
     public IReadOnlyDictionary<string, string> BuildContext { get; private set; } = new Dictionary<string, string>();
+    public IReadOnlyDictionary<string, string> ContainerEnvironment { get; private set; } = new Dictionary<string, string>();
 
     public DockerApiStub()
     {
@@ -56,18 +57,10 @@ internal sealed class DockerApiStub : IAsyncDisposable
             ?.Split('\n')
             .Select(line => line.Trim())
             .FirstOrDefault(line => line.StartsWith("echo \"$", StringComparison.Ordinal) && line.EndsWith('"'));
-        if (echoLine is not null && this.BuildContext.TryGetValue("Dockerfile", out string? dockerfile))
+        if (echoLine is not null)
         {
             string variableName = echoLine[7..^1];
-            string? environmentValue = dockerfile
-                .Split('\n')
-                .Select(line => line.Trim())
-                .Where(line => line.StartsWith("ENV ", StringComparison.Ordinal))
-                .Select(line => line[4..].Split('=', 2))
-                .Where(parts => parts.Length == 2 && parts[0] == variableName)
-                .Select(parts => parts[1])
-                .FirstOrDefault();
-            if (environmentValue is not null)
+            if (this.ContainerEnvironment.TryGetValue(variableName, out string? environmentValue))
             {
                 return environmentValue + Environment.NewLine;
             }
@@ -99,7 +92,7 @@ internal sealed class DockerApiStub : IAsyncDisposable
                 await this.HandleBuildAsync(context, request);
                 break;
             case DockerApiRoute.CreateContainer:
-                await this.HandleCreateContainerAsync(context);
+                await this.HandleCreateContainerAsync(context, request);
                 break;
             case DockerApiRoute.ListContainers:
                 await this.HandleListContainersAsync(context);
@@ -162,9 +155,18 @@ internal sealed class DockerApiStub : IAsyncDisposable
         await WriteResponseAsync(context, StatusCodes.Status200OK, "{\"stream\":\"build complete\\n\"}\n");
     }
 
-    private async Task HandleCreateContainerAsync(HttpContext context)
+    private async Task HandleCreateContainerAsync(HttpContext context, DockerApiRequest request)
     {
         this.ContainerName = context.Request.Query["name"].ToString();
+        using JsonDocument document = JsonDocument.Parse(request.Body);
+        this.ContainerEnvironment = document.RootElement.TryGetProperty("Env", out JsonElement environment)
+            ? environment
+                .EnumerateArray()
+                .Select(value => value.GetString()!)
+                .Select(value => value.Split('=', 2))
+                .Where(parts => parts.Length == 2)
+                .ToDictionary(parts => parts[0], parts => parts[1], StringComparer.Ordinal)
+            : new Dictionary<string, string>();
         this._containerCreated = true;
         await WriteResponseAsync(context, StatusCodes.Status201Created, $$"""{"Id":"{{this.ContainerId}}","Warnings":[]}""");
     }

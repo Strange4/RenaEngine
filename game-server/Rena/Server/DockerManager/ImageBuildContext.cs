@@ -13,7 +13,6 @@ public sealed class DockerImageBuildRequest
     public required Stream FilesArchive { get; init; }
     public required string Language { get; init; }
     public IDictionary<string, string> BuildArgs { get; init; } = new Dictionary<string, string>(); // Used during image construction
-    public IDictionary<string, string> EnvVars { get; init; } = new Dictionary<string, string>(); // Available when container runs
 }
 
 public interface IDockerBuildContext : IAsyncDisposable
@@ -159,4 +158,5 @@ public sealed class TypeScriptDockerBuildContextStrategy : IDockerBuildContextSt
             throw;
         }
     }
+
 }

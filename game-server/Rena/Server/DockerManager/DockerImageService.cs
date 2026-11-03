@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Formats.Tar;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using LanguageExt;
@@ -16,12 +15,7 @@ sealed class SynchronousProgress<T>(Action<T> report) : IProgress<T>
 
 public interface IDockerImageService
 {
-    public Task<Result<Unit>> CreateImageAsync(
-        string dockerFilePath,
-        string imageName,
-        string? buildContextPath = null,
-        IDictionary<string, string>? buildArgs = null
-    );
+    public Task<Result<Unit>> CreateImageAsync(DockerImageBuildRequest request, Stream buildContext);
 
     public Task<Result<Unit>> DeleteImageAsync(string imageId, Option<ImageDeleteParameters> parameters = default);
 
@@ -68,37 +62,14 @@ public class DockerImageService(IDockerClient dockerClient, ILogger logger) : Ab
         }
     }
 
-    public async Task<Result<Unit>> CreateImageAsync(
-        string dockerFilePath,
-        string imageName,
-        string? buildContextPath = null,
-        IDictionary<string, string>? buildArgs = null
-    )
+    public async Task<Result<Unit>> CreateImageAsync(DockerImageBuildRequest request, Stream buildContext)
     {
-        if (dockerFilePath == null)
+        var buildParams = new ImageBuildParameters
         {
-            _logger.LogError("File \"{File}\" not found", dockerFilePath);
-            return new Result<Unit>(Error.FromObject($"Docker file {dockerFilePath} not found"));
-        }
-        if (imageName == null)
-        {
-            var nullImageName = "Supply an image name when building image.";
-            _logger.LogError(nullImageName);
-            return new Result<Unit>(Error.FromObject(nullImageName));
-        }
-
-        string fullDockerFilePath = Path.GetFullPath(dockerFilePath);
-        string contextDirectory = Path.GetFullPath(buildContextPath ?? Path.GetDirectoryName(fullDockerFilePath)!);
-        string relativeDockerFilePath = Path.GetRelativePath(contextDirectory, fullDockerFilePath).Replace(Path.DirectorySeparatorChar, '/');
-        if (relativeDockerFilePath == ".." || relativeDockerFilePath.StartsWith("../", StringComparison.Ordinal))
-        {
-            _logger.LogError("Dockerfile {Dockerfile} must be inside build context {Context}", dockerFilePath, contextDirectory);
-            return new Result<Unit>(Error.FromObject($"Dockerfile {dockerFilePath} must be inside build context {contextDirectory}"));
-        }
-
-        using var tarStream = new MemoryStream();
-        await TarFile.CreateFromDirectoryAsync(contextDirectory, tarStream, includeBaseDirectory: false);
-        tarStream.Position = 0;
+            Dockerfile = "Dockerfile",
+            Tags = [request.ImageName],
+            BuildArgs = request.BuildArgs,
+        };
 
         ConcurrentQueue<string> buildErrors = new();
         var progress = new SynchronousProgress<JSONMessage>(message =>
@@ -117,16 +88,10 @@ public class DockerImageService(IDockerClient dockerClient, ILogger logger) : Ab
                 _logger.LogInformation("{Status} {ProgressMessage}", message.Status, message.ProgressMessage);
             }
         });
-        var buildParams = new ImageBuildParameters
-        {
-            Dockerfile = relativeDockerFilePath,
-            Tags = [imageName],
-            BuildArgs = buildArgs,
-        };
 
         await this._client.Images.BuildImageFromDockerfileAsync(
             buildParams,
-            tarStream,
+            buildContext,
             authConfigs: null,
             headers: null,
             progress,
@@ -136,10 +101,10 @@ public class DockerImageService(IDockerClient dockerClient, ILogger logger) : Ab
         if (!buildErrors.IsEmpty)
         {
             var errors = string.Join(Environment.NewLine, buildErrors);
-            _logger.LogError("Failed to build image {ImageName}: {Errors}", imageName, errors);
-            return new Result<Unit>(Error.FromObject($"Failed to build image {imageName}: {errors}"));
+            _logger.LogError("Failed to build image {ImageName}: {Errors}", request.ImageName, errors);
+            return new Result<Unit>(Error.FromObject($"Failed to build image {request.ImageName}: {errors}"));
         }
-        _logger.LogInformation("Image {ImageName} finished building", imageName);
+        _logger.LogInformation("Image {ImageName} finished building", request.ImageName);
         return new Result<Unit>(unit);
     }
 
