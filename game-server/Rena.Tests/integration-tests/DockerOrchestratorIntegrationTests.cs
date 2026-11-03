@@ -163,12 +163,7 @@ public sealed class DockerOrchestratorIntegrationTests
 
             await File.WriteAllTextAsync(dockerfilePath, "FROM busybox:1.36\nCOPY run.sh /run.sh\nRUN chmod +x /run.sh\nCMD [\"/run.sh\"]\n");
 
-            var imageResult = await this._orchestrator.CreateOrReplaceImageAsync(
-                imageName,
-                archivePath,
-                dockerfilePath,
-                buildArgs: buildArgs
-            );
+            var imageResult = await this._orchestrator.CreateOrReplaceImageAsync(imageName, archivePath, dockerfilePath, buildArgs: buildArgs);
             string? builtImageName = null;
             imageResult.IfSucc(value => builtImageName = value);
             Assert.That(builtImageName, Is.EqualTo(imageName), "The player image should build successfully.");
@@ -185,10 +180,7 @@ public sealed class DockerOrchestratorIntegrationTests
             using (JsonDocument containerDocument = JsonDocument.Parse(containerRequest.Body))
             {
                 Assert.That(
-                    containerDocument
-                        .RootElement.GetProperty("Env")
-                        .EnumerateArray()
-                        .Select(value => value.GetString()),
+                    containerDocument.RootElement.GetProperty("Env").EnumerateArray().Select(value => value.GetString()),
                     Does.Contain($"PLAYER_MESSAGE={expectedOutput}")
                 );
             }

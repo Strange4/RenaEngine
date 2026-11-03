@@ -120,9 +120,7 @@ public class DockerImageServiceTests
             operations =>
                 operations.BuildImageFromDockerfileAsync(
                     It.Is<ImageBuildParameters>(parameters =>
-                        parameters.Dockerfile == "Dockerfile"
-                        && parameters.Tags.Contains("test-image:latest")
-                        && parameters.BuildArgs == buildArgs
+                        parameters.Dockerfile == "Dockerfile" && parameters.Tags.Contains("test-image:latest") && parameters.BuildArgs == buildArgs
                     ),
                     buildContext,
                     It.IsAny<IEnumerable<AuthConfig>>(),
@@ -130,7 +128,7 @@ public class DockerImageServiceTests
                     It.IsAny<IProgress<JSONMessage>>(),
                     It.IsAny<CancellationToken>()
                 ),
-                Times.Once
+            Times.Once
         );
     }
 }

@@ -102,9 +102,7 @@ public class DockerOrchestratorTests
             this._fixture.Images.Verify(
                 operations =>
                     operations.BuildImageFromDockerfileAsync(
-                        It.Is<ImageBuildParameters>(parameters =>
-                            parameters.Tags.Contains("player-123") && parameters.BuildArgs == buildArgs
-                        ),
+                        It.Is<ImageBuildParameters>(parameters => parameters.Tags.Contains("player-123") && parameters.BuildArgs == buildArgs),
                         It.IsAny<Stream>(),
                         It.IsAny<IEnumerable<AuthConfig>>(),
                         It.IsAny<IDictionary<string, string>>(),
@@ -234,9 +232,7 @@ public class DockerOrchestratorTests
             operations =>
                 operations.CreateContainerAsync(
                     It.Is<CreateContainerParameters>(parameters =>
-                        parameters.Name == "player-123"
-                        && parameters.Image == "image-123"
-                        && parameters.Env.Contains("PLAYER_MESSAGE=hello")
+                        parameters.Name == "player-123" && parameters.Image == "image-123" && parameters.Env.Contains("PLAYER_MESSAGE=hello")
                     ),
                     default
                 ),

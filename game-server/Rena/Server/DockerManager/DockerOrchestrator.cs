@@ -165,10 +165,7 @@ public class DockerService : AbstractDockerService, IDockerService
                     await using (context)
                     {
                         Result<Unit> imageResult = await this._images.CreateImageAsync(request, context.Content);
-                        return imageResult.Match(
-                            _ => new Result<string>(playerId),
-                            error => new Result<string>(error)
-                        );
+                        return imageResult.Match(_ => new Result<string>(playerId), error => new Result<string>(error));
                     }
                 },
                 error => Task.FromResult(new Result<string>(error))

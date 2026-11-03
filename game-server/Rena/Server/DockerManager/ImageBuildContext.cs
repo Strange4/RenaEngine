@@ -158,5 +158,4 @@ public sealed class TypeScriptDockerBuildContextStrategy : IDockerBuildContextSt
             throw;
         }
     }
-
 }
