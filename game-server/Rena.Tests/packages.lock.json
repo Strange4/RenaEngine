@@ -69,6 +69,11 @@
           "Microsoft.Testing.Platform.MSBuild": "1.5.3"
         }
       },
+      "AsyncAwaitBestPractices": {
+        "type": "Transitive",
+        "resolved": "10.0.0",
+        "contentHash": "HRK/K4MSlx0b3FZ+LMP3ZvbTS+Ts361lhwp47CQZaESX/9cl5UIKOC0fWb5AbGNZxj96pKRvl7/Wrxj/J8LG/g=="
+      },
       "Castle.Core": {
         "type": "Transitive",
         "resolved": "5.2.1",
@@ -487,6 +492,7 @@
       "rena": {
         "type": "Project",
         "dependencies": {
+          "AsyncAwaitBestPractices": "[10.0.0, )",
           "Docker.DotNet": "[3.125.15, )",
           "LanguageExt.Core": "[4.4.9, )",
           "protobuf-net": "[3.4.30, )",

@@ -6,7 +6,7 @@ namespace Rena.Server.GameSockets;
 using Microsoft.Extensions.Logging;
 using Rena.GameEngine;
 
-public class GameSocketHandler<G, S, A>(ILogger<GameSocketHandler<G, S, A>> logger)
+public class GameSocketHandler<G, S, A>(IGameRoomManager gameRoomManager, ILogger<GameSocketHandler<G, S, A>> logger)
     where G : IGame<S, A>
     where S : class
     where A : class
@@ -29,7 +29,7 @@ public class GameSocketHandler<G, S, A>(ILogger<GameSocketHandler<G, S, A>> logg
 
         WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
 
-        GameSocketConnection<G, S, A> gameConnection = new(webSocket, playerId, logger);
+        GameSocketConnection<G, S, A> gameConnection = new(webSocket, playerId, gameRoomManager, logger);
 
         try
         {
@@ -45,7 +45,7 @@ public class GameSocketHandler<G, S, A>(ILogger<GameSocketHandler<G, S, A>> logg
             );
             if (webSocket.State == WebSocketState.Open)
             {
-                await webSocket.CloseAsync(WebSocketCloseStatus.InternalServerError, "Something unnexpected happened", CancellationToken.None);
+                await webSocket.CloseOutputAsync(WebSocketCloseStatus.InternalServerError, "Something unnexpected happened", CancellationToken.None);
             }
         }
         finally

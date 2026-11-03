@@ -1,12 +1,11 @@
 using System.Net.WebSockets;
-using System.Text;
 
 namespace Rena.Server.GameSockets;
 
 using Microsoft.Extensions.Logging;
 using Rena.GameEngine;
 
-public class GameSocketConnection<G, S, A>(WebSocket webSocket, string playerId, ILogger logger)
+public class GameSocketConnection<G, S, A>(WebSocket webSocket, string playerId, IGameRoomManager gameRoomManager, ILogger logger)
     where G : IGame<S, A>
     where S : class
     where A : class
@@ -19,38 +18,36 @@ public class GameSocketConnection<G, S, A>(WebSocket webSocket, string playerId,
 
     public virtual async Task HandleConnection()
     {
-        var buffer = new byte[BUFFER_SIZE];
+        logger.LogInformation("Registering {playerId} into game manager", playerId);
+        var channel = await gameRoomManager.Register(playerId, webSocket);
 
-        while (true)
+        var result = await channel.ReadAsync();
+
+        logger.LogInformation("Unregistering {playerId} from game manager", playerId);
+        await gameRoomManager.UnRegister(playerId);
+
+        if (result.IsSuccess)
         {
-            WebSocketReceiveResult result = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
+            logger.LogInformation("Player {playerId} completed a normal game", playerId);
+            await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing Normally", CancellationToken.None);
+            return;
+        }
 
-            if (result.MessageType == WebSocketMessageType.Close)
-            {
-                // Respond to the client's close request to complete the handshake cleanly
-                await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing Normally", CancellationToken.None);
+        switch (result.Exception)
+        {
+            case ArgumentException:
+                logger.LogWarning("Player {playerId} tried to connect again while connected", playerId);
+                await webSocket.CloseOutputAsync(WebSocketCloseStatus.PolicyViolation, result.Exception.Message, CancellationToken.None);
                 break;
-            }
-
-            _currentMessage.AddRange(new ArraySegment<byte>(buffer, 0, result.Count));
-
-            // Must receive the whole message before continuing
-            // Setup for when we will be receiving Action objects from frontend
-            if (!result.EndOfMessage)
-            {
-                continue;
-            }
-
-            // Read received text string from accumulated bytes
-            string message = Encoding.UTF8.GetString([.. _currentMessage]);
-            logger.LogInformation("{PlayerId} - Received: {message}", playerId, message);
-
-            // Echo a response back
-            var responseBytes = Encoding.UTF8.GetBytes($"Echo: {message}\n");
-            await webSocket.SendAsync(responseBytes, result.MessageType, true, CancellationToken.None);
-
-            // Reset the message
-            _currentMessage.Clear();
+            default:
+                logger.LogError(
+                    "[UnnexpectedError]: Something went wrong while {playerId} was playing a game | {error message} | {stacktrace}",
+                    playerId,
+                    result.Exception!.Message,
+                    result.Exception!.StackTrace
+                );
+                await webSocket.CloseOutputAsync(WebSocketCloseStatus.InternalServerError, "Something unnexpected happened", CancellationToken.None);
+                break;
         }
     }
 }
