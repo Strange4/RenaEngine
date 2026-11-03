@@ -23,6 +23,9 @@ services:
     environment:
       GAME_SERVER_URL: http://game-server:3000
       ADMIN_TOKEN: ${ADMIN_TOKEN:-ADMIN-change-me}
+      DB_PATH: /app/data/rena.db
+    volumes:
+      - website-data:/app/data
     depends_on:
       - game-server
     ports:
@@ -33,3 +36,6 @@ services:
 networks:
   game-server-network:
     driver: bridge
+
+volumes:
+  website-data:
