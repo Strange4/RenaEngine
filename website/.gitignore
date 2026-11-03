@@ -9,3 +9,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /playwright/.cache/
+
+# Local participant token store
+/data/
