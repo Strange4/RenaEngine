@@ -95,6 +95,46 @@ describe("RenderableChangeProcessor", () => {
     ]);
   });
 
+  it("ignores removals for renderables that are not shown", async () => {
+    const testHandlers = handlers();
+    const alreadyRemoved = { ...baseRenderable, id: "already-removed", removed: true };
+    const processor = new RenderableChangeProcessor(testHandlers);
+    processor.initialize([alreadyRemoved], 0);
+
+    await processor.process(change(1, alreadyRemoved, { ...baseRenderable, id: "unknown", removed: true }));
+
+    expect(testHandlers.calls).toEqual([]);
+    expect(processor.getCurrentState()).toEqual([]);
+  });
+
+  it("removes a renderable only once even if the removal is sent again", async () => {
+    const testHandlers = handlers();
+    const ship = { ...baseRenderable, id: "ship" };
+    const flag = { ...baseRenderable, id: "flag" };
+    const processor = new RenderableChangeProcessor(testHandlers);
+    processor.initialize([ship, flag], 0);
+
+    await processor.process(change(1, { ...ship, removed: true }, flag));
+    await processor.process(change(2, { ...ship, removed: true }));
+
+    //flag wasn't marked as removed so it stays
+    expect(testHandlers.calls).toEqual(["remove:ship"]);
+    expect(processor.getCurrentState()).toEqual([flag]);
+  });
+
+  //if an id comes back after being removed, it's treated as a new renderable
+  it("creates the renderable again when a removed id comes back", async () => {
+    const testHandlers = handlers();
+    const ship = { ...baseRenderable, id: "ship" };
+    const processor = new RenderableChangeProcessor(testHandlers);
+    processor.initialize([ship], 0);
+
+    await processor.process(change(1, { ...ship, removed: true }));
+    await processor.process(change(2, ship));
+
+    expect(testHandlers.calls).toEqual(["remove:ship", "create:ship"]);
+  });
+
   //New tests added for the missing index handling case
   it("fetches the current scene when a missing index blocks later changes", async () => {
     jest.useFakeTimers();
