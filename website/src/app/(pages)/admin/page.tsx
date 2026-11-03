@@ -21,6 +21,9 @@ export default async function AdminPage() {
   return (
     <main>
       <h1>Admin</h1>
+      <p>
+        <Link href="/admin/tokens">Manage participant tokens</Link>
+      </p>
       {features.map(({ feature, setting }) => (
         <div key={feature.key}>
           <FeatureToggleControl
