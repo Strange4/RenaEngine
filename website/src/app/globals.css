@@ -13,16 +13,25 @@ main {
 
 label,
 input,
+select,
 button {
   display: block;
   width: 100%;
   box-sizing: border-box;
 }
 
-input {
+input,
+select {
   margin: 0.5rem 0;
   padding: 0.6rem;
   font-size: 1rem;
+}
+
+select {
+  border: 1px solid #4b5563;
+  border-radius: 6px;
+  background: #111827;
+  color: #f9fafb;
 }
 
 button {
@@ -37,6 +46,59 @@ button {
 
 .hint {
   color: #34d399;
+}
+
+.sdk-download-card {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  background: #1f2937;
+}
+
+.sdk-download-card h2 {
+  margin-top: 0;
+}
+
+.sdk-download-intro,
+.sdk-language-description {
+  color: #d1d5db;
+  line-height: 1.5;
+}
+
+.sdk-language-description {
+  min-height: 3rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.sdk-download-card button {
+  border: 0;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+}
+
+.sdk-download-card button:disabled,
+.sdk-download-card select:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.sdk-download-feedback {
+  min-height: 2.5rem;
+}
+
+.sdk-download-feedback p {
+  margin-bottom: 0;
+}
+
+.sdk-download-unavailable {
+  margin: 2rem 0;
+  padding: 1rem;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  color: #d1d5db;
 }
 
 .access-denied-page {
