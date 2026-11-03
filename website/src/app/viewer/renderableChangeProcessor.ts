@@ -225,6 +225,14 @@ export class RenderableChangeProcessor {
         return;
       }
       await this.resync(scene.renderables, scene.index); //wait until the viewer gets the fetched scene sent by resync
+    
+      //A PR review highlighted another edge case that we may encounter:
+      //if the fetched scene is too old to close the gap, we can keep trying fetching to get something better
+      if (!this.disposed && this.pendingChanges.size > 0 && this.gapTimer === null && this.lastProcessedIndex !== null) {
+        this.startGapTimer(this.lastProcessedIndex + 1);
+      }
+    
+    
     }
     catch(error){
       console.warn(`Could not recover missing changes`, error)
