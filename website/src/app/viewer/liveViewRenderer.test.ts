@@ -22,10 +22,16 @@ class MockSprite {
   height = 0;
   angle = 0;
   zIndex = 0;
+  destroyed = false;
 
   constructor(texture: unknown) {
     this.texture = texture;
   }
+
+  destroy = jest.fn(() => {
+    this.parent?.removeChild(this);
+    this.destroyed = true;
+  });
 }
 
 class MockContainer {
@@ -40,6 +46,13 @@ class MockContainer {
       }
 
       this.children.push(item);
+    }
+  }
+
+  removeChild(item: MockContainer | MockSprite): void {
+    this.children = this.children.filter((child) => child !== item);
+    if (item instanceof MockSprite) {
+      item.parent = null;
     }
   }
 }
@@ -247,6 +260,47 @@ describe("LiveViewRenderer", () => {
 
     expect(second.position.x).toBe(80);
     expect(second.position.y).toBe(112);
+  });
+
+  it("removes and destroys the sprite of a removed renderable", () => {
+    const { renderer } = createRenderer();
+    const removed = renderer.addGameRenderable(renderable({ id: "removed" })) as unknown as MockSprite;
+    const kept = renderer.addGameRenderable(renderable({ id: "kept" }));
+
+    renderer.removeGameRenderable("removed");
+
+    expect(renderer.getSprite("removed")).toBeUndefined();
+    expect(removed.destroyed).toBe(true);
+    // called with no options, so the shared texture is not destroyed
+    expect(removed.destroy).toHaveBeenCalledWith();
+
+    // the other sprite should still be there
+    expect(renderer.getContainer(RenderableType.OBJECT).children).toEqual([kept]);
+  });
+
+  it("ignores IDs that don't have a sprite", () => {
+    const { renderer } = createRenderer();
+    const sprite = renderer.addGameRenderable(baseRenderable) as unknown as MockSprite;
+
+    renderer.removeGameRenderable("unknown");
+    expect(renderer.getContainer(RenderableType.OBJECT).children).toHaveLength(1);
+
+    // removing twice should only destroy the sprite once
+    renderer.removeGameRenderable(baseRenderable.id);
+    renderer.removeGameRenderable(baseRenderable.id);
+    expect(sprite.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it("can add a renderable again after it was removed", () => {
+    const { renderer } = createRenderer();
+    const first = renderer.addGameRenderable(baseRenderable);
+
+    renderer.removeGameRenderable(baseRenderable.id);
+    const second = renderer.addGameRenderable(baseRenderable);
+
+    // a new sprite gets created instead of returning the destroyed one
+    expect(second).not.toBe(first);
+    expect(renderer.getSprite(baseRenderable.id)).toBe(second);
   });
 
   it("adds all category containers to the stage in order", () => {

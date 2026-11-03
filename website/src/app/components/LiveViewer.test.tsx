@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import { Application, Sprite, Container } from "pixi.js";
 import { AssetLoader } from "@/app/viewer/assetLoader";
+import { RenderableChangeProcessor } from "@/app/viewer/renderableChangeProcessor";
 import { getSceneSource } from "@/app/viewer/sceneSource";
 import { RenderableType, type GameRenderable, type ViewerSetup } from "@/shared/renderable";
 import LiveViewer from "./LiveViewer";
@@ -70,6 +71,7 @@ jest.mock("pixi.js", () => {
       zIndex: 0,
       width: 0,
       height: 0,
+      destroy: jest.fn(),
     };
 
     spriteInstances.push(sprite);
@@ -99,6 +101,19 @@ jest.mock("@/app/viewer/sceneSource", () => ({
   getSceneSource: jest.fn(() => ({ getInitialScene: mockGetInitialScene })),
 }));
 
+// Uses the real processor, wrapped so tests can get the one the viewer created
+jest.mock("@/app/viewer/renderableChangeProcessor", () => {
+  const actual = jest.requireActual("@/app/viewer/renderableChangeProcessor");
+  return {
+    RenderableChangeProcessor: jest.fn(
+      (...args: unknown[]) => new actual.RenderableChangeProcessor(...args)
+    )
+  };
+});
+
+const getViewerProcessor = () =>
+  (RenderableChangeProcessor as unknown as jest.Mock).mock.results[0].value as RenderableChangeProcessor;
+
 const getPixiMocks = () =>
   jest.requireMock("pixi.js") as {
     __appInstances: Array<{
@@ -121,6 +136,7 @@ const getPixiMocks = () =>
       zIndex: number;
       width: number;
       height: number;
+      destroy: jest.Mock;
     }>;
   };
 
@@ -341,6 +357,47 @@ describe("LiveViewer", () => {
       children: true,
     });
     expect(Sprite).not.toHaveBeenCalled();
+  });
+
+  it("removes the sprite when a change marks its renderable as removed", async () => {
+    render(<LiveViewer gameId="1" />);
+
+    await waitFor(() => {
+      expect(RenderableChangeProcessor).toHaveBeenCalledTimes(1);
+    });
+
+    const [removedSprite, keptSprite] = getPixiMocks().__spriteInstances;
+
+    await act(async () => {
+      await getViewerProcessor().process({
+        index: 1,
+        changes: [{ ...TEST_SCENE[0], removed: true }],
+      });
+    });
+
+    expect(removedSprite.destroy).toHaveBeenCalledTimes(1);
+    expect(keptSprite.destroy).not.toHaveBeenCalled();
+  });
+
+  it("stops applying changes once the viewer is unmounted", async () => {
+    const { unmount } = render(<LiveViewer gameId="1" />);
+
+    await waitFor(() => {
+      expect(RenderableChangeProcessor).toHaveBeenCalledTimes(1);
+    });
+
+    const processor = getViewerProcessor();
+    unmount();
+
+    // a change arriving after unmount should not touch the destroyed app
+    await act(async () => {
+      await processor.process({
+        index: 1,
+        changes: [{ ...TEST_SCENE[0], removed: true }]
+      });
+    });
+
+    expect(getPixiMocks().__spriteInstances[0].destroy).not.toHaveBeenCalled();
   });
 
   it("logs an error when PixiJS initialization fails", async () => {
