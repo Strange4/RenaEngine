@@ -21,6 +21,11 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
 
     const app = new Application();
     const assets = new AssetLoader();
+    // TODO UNCOMMENT: create the RenderableChangeProcessor here (one per effect run) + dispose it in the cleanup after
+    //this part 
+    /* const processor = new RenderableChangeProcessor(handlers, {
+    fetchScene: () => getSceneSource(gameId).getInitialScene(),
+  }); */
     let initialized = false;
     const unmount = new AbortController();
 
