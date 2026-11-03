@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Application } from "pixi.js";
 import { AssetLoader } from "@/app/viewer/assetLoader";
 import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
+import { RenderableChangeProcessor } from "@/app/viewer/renderableChangeProcessor";
 import { getSceneSource } from "@/app/viewer/sceneSource";
 
 interface LiveViewerProps {
@@ -21,6 +22,8 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
 
     const app = new Application();
     const assets = new AssetLoader();
+    // Created once the renderer exists
+    let processor: RenderableChangeProcessor | null = null;
     let initialized = false;
     const unmount = new AbortController();
 
@@ -49,6 +52,18 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
       container.appendChild(app.canvas);
       renderer.addContainerToStage(app.stage);
       await renderer.renderScene(renderables, unmount.signal);
+      if (unmount.signal.aborted) return;
+
+      // Applies the RenderableChanges that come after the initial scene
+      processor = new RenderableChangeProcessor({
+        // TODO #85: create the sprite of a new renderable
+        create: async () => {},
+        // TODO #86: update the sprite of an existing renderable
+        update: async () => {},
+        remove: async (id) => renderer.removeGameRenderable(id),
+      });
+      // The server's first change has index 1, so the initial scene is index 0
+      processor.initialize(renderables, 0);
     })().catch(e => {
       console.log(e);
       // TODO put actual error handling here
@@ -57,6 +72,7 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
 
     return () => {
       unmount.abort();
+      processor?.dispose();
       if (initialized) app.destroy(true, { children: true });
     };
   }, [gameId]);
