@@ -62,8 +62,11 @@ export class LiveViewRenderer {
         const existingSprite = this.getSprite(renderable.id);
         // If the sprite already exists, return it instead of creating a new one
         if (existingSprite) {
-            return existingSprite; 
+            return existingSprite;
         }
+
+        // Get the container first so an unknown type throws before any sprite is created
+        const container = this.getContainer(renderable.type);
 
         // Load the texture for the renderable's asset path
         const texture = this.assetLoader.getTexture(renderable.assetPath);
@@ -98,7 +101,7 @@ export class LiveViewRenderer {
         sprite.height = renderable.size[1] * this.viewerSetup.tileSize;
         sprite.angle = renderable.rotation ?? 0;
 
-        this.getContainer(renderable.type).addChild(sprite);
+        container.addChild(sprite);
         this.addSprite(renderable.id, sprite);
 
         return sprite;
