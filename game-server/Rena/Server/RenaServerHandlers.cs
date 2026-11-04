@@ -1,13 +1,16 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+
 using Rena.GameEngine;
 using Rena.Generator;
 
 namespace Rena.Server;
 
-internal class RenaServerHandlers<G, S, A>
+internal partial class RenaServerHandlers<G, S, A>
     where G : IGame<S, A>, new()
     where S : class
     where A : class
@@ -31,16 +34,27 @@ internal class RenaServerHandlers<G, S, A>
             : Results.File(zipName, contentType: "application/zip");
     }
 
-    public static async Task<IResult> HandleUpload(string playerId, IFormFile file, HttpContext context, IOptions<RenaOptions> options)
+    public static async Task<IResult> HandleUpload(string playerId, IFormFile file, IOptions<RenaOptions> options)
     {
-        if (file.Length > options.Value.MaxFileSizeBytes)
+        if (!PlayerIdRegex().IsMatch(playerId))
+        {
+            return Results.BadRequest("The player id is in a bad format");
+        }
+        if (file.Length > options.Value.MaxZipFileSizeBytes)
         {
             return Results.StatusCode(413);
         }
 
-        if (!file.ContentType.Equals("application/zip") || !file.FileName.EndsWith(".zip"))
+        List<string> allowedContentTypes = [
+            "application/zip",
+            "application/x-zip",
+            "application/octet-stream",
+            "application/x-zip-compressed",
+        ];
+
+        if (!allowedContentTypes.Contains(file.ContentType) || !file.FileName.EndsWith(".zip"))
         {
-            return Results.StatusCode(406);
+            return Results.StatusCode(415);
         }
 
         // Creates if not exist
@@ -100,4 +114,7 @@ internal class RenaServerHandlers<G, S, A>
         byte[] expectedBytes = Encoding.UTF8.GetBytes(expectedToken);
         return suppliedBytes.Length == expectedBytes.Length && CryptographicOperations.FixedTimeEquals(suppliedBytes, expectedBytes);
     }
+
+    [GeneratedRegex(@"PLAYER-\d+")]
+    private static partial Regex PlayerIdRegex();
 }

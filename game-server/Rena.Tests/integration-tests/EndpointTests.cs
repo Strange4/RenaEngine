@@ -30,7 +30,6 @@ public class EndpointTests
                 { "RenaOptions:TSProtoPath", "TESTING" },
                 { "RenaOptions:AdminToken", "TEST-ADMIN-TOKEN" },
                 { "RenaOptions:Features:test-feature", "false" },
-                { "RenaOptions:UploadsDirectory", "./uploads" },
             }
         );
         builder.SetRenaServices<TestGame, GameState, GameAction>();
@@ -134,6 +133,49 @@ public class EndpointTests
         request.Headers.Authorization = new("Bearer", token);
         return request;
     }
+}
+
+[TestFixture]
+public class UploadEndpointTests
+{
+    private WebApplication _app;
+    private HttpClient _client;
+
+    [OneTimeSetUp]
+    public async Task OneTimeSetUp()
+    {
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Testing", Args = [] });
+
+        builder.WebHost.UseTestServer();
+        builder.Configuration.AddInMemoryCollection(
+            new Dictionary<string, string?> { { "RenaOptions:TSProtoPath", "TESTING" }, { "RenaOptions:UploadsDirectory", "./uploads" } }
+        );
+        builder.SetRenaServices<TestGame, GameState, GameAction>();
+
+        _app = builder.Build();
+
+        _app.UseRenaEndpoints<TestGame, GameState, GameAction>();
+
+        await _app.StartAsync();
+        _client = _app.GetTestClient();
+    }
+
+    [OneTimeTearDown]
+    public async Task OneTimeTearDown()
+    {
+        _client?.Dispose();
+        if (_app is not null)
+        {
+            await _app.DisposeAsync();
+        }
+    }
+
+    [TearDown]
+    public async Task Cleanup()
+    {
+        if (Directory.Exists("./uploads"))
+            Directory.Delete("./uploads", true);
+    }
 
     [Test]
     public async Task Uploads_WritesFile()
@@ -161,7 +203,7 @@ public class EndpointTests
         string zipFilePath = Path.Combine("./uploads", $"{playerId}.zip");
         Assert.That(zipFilePath, Does.Exist);
 
-        ZipArchive localZip = await ZipFile.OpenReadAsync(zipFilePath);
+        using ZipArchive localZip = await ZipFile.OpenReadAsync(zipFilePath);
 
         Assert.That(localZip.Entries.Length, Is.EqualTo(1));
         ZipArchiveEntry? zipFile = localZip.GetEntry("main.ts");
