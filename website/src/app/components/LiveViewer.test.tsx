@@ -379,6 +379,90 @@ describe("LiveViewer", () => {
     expect(keptSprite.destroy).not.toHaveBeenCalled();
   });
 
+  it("creates a sprite when a change introduces a new renderable", async () => {
+    render(<LiveViewer gameId="1" />);
+
+    await waitFor(() => {
+      expect(RenderableChangeProcessor).toHaveBeenCalledTimes(1);
+    });
+
+    const newRenderable: GameRenderable = {
+      id: "new-flag",
+      position: [4, 1],
+      assetPath: "/sprites/flag.svg",
+      size: [1, 1],
+      type: RenderableType.DECORATION,
+      layer: 5,
+    };
+
+    await act(async () => {
+      await getViewerProcessor().process({ index: 1, changes: [newRenderable] });
+    });
+
+    const assets = (AssetLoader as jest.Mock).mock.results[0].value as {
+      loadFor: jest.Mock;
+    };
+    expect(assets.loadFor).toHaveBeenLastCalledWith([newRenderable]);
+
+    const { __spriteInstances, __containerInstances } = getPixiMocks();
+    expect(__spriteInstances).toHaveLength(3);
+
+    const created = __spriteInstances[2];
+    expect(created.texture).toBe("mock-texture");
+    expect(created.position.set).toHaveBeenCalledWith(144, 48);
+    expect(created.zIndex).toBe(5);
+    expect(created.width).toBe(32);
+    expect(created.height).toBe(32);
+
+    const decorationContainer = __containerInstances[3];
+    expect(decorationContainer.addChild).toHaveBeenCalledWith(created);
+
+    // the processor now tracks it alongside the initial scene
+    expect(getViewerProcessor().getCurrentState().map(({ id }) => id)).toEqual([
+      "test-sprite",
+      "test-sprite-two",
+      "new-flag",
+    ]);
+  });
+
+  it("does not create the sprite if unmounted while its asset is loading", async () => {
+    const { unmount } = render(<LiveViewer gameId="1" />);
+
+    await waitFor(() => {
+      expect(RenderableChangeProcessor).toHaveBeenCalledTimes(1);
+    });
+
+    let resolveAsset!: () => void;
+    const assets = (AssetLoader as jest.Mock).mock.results[0].value as {
+      loadFor: jest.Mock;
+    };
+    assets.loadFor.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveAsset = resolve;
+      }),
+    );
+
+    const pending = getViewerProcessor().process({
+      index: 1,
+      changes: [{ ...TEST_SCENE[0], id: "late-sprite" }],
+    });
+
+    // wait for the create handler to start loading the asset (first call was the initial scene)
+    await waitFor(() => {
+      expect(assets.loadFor).toHaveBeenCalledTimes(2);
+    });
+
+    unmount();
+
+    await act(async () => {
+      resolveAsset();
+      await pending;
+    });
+
+    // only the two sprites from the initial scene
+    expect(Sprite).toHaveBeenCalledTimes(2);
+  });
+
   it("stops applying changes once the viewer is unmounted", async () => {
     const { unmount } = render(<LiveViewer gameId="1" />);
 
