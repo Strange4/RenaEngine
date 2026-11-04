@@ -95,6 +95,27 @@ describe("RenderableChangeProcessor", () => {
     ]);
   });
 
+  it("passes the renderable from the change to the create handler", async () => {
+    const testHandlers = handlers();
+    const created: GameRenderable = {
+      id: "new-ship",
+      position: [5, 7],
+      assetPath: "/sprites/ship1.png",
+      size: [3, 1],
+      rotation: 90,
+      type: RenderableType.OBJECT,
+      layer: 2,
+    };
+    const processor = new RenderableChangeProcessor(testHandlers);
+    processor.initialize([], 0);
+
+    await processor.process(change(1, created));
+
+    expect(testHandlers.create).toHaveBeenCalledTimes(1);
+    expect(testHandlers.create).toHaveBeenCalledWith(created);
+    expect(processor.getCurrentState()).toEqual([created]);
+  });
+
   it("ignores removals for renderables that are not shown", async () => {
     const testHandlers = handlers();
     const alreadyRemoved = { ...baseRenderable, id: "already-removed", removed: true };
