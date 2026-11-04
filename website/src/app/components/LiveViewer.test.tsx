@@ -379,6 +379,52 @@ describe("LiveViewer", () => {
     expect(keptSprite.destroy).not.toHaveBeenCalled();
   });
 
+  it("creates a sprite when a change introduces a new renderable", async () => {
+    render(<LiveViewer gameId="1" />);
+
+    await waitFor(() => {
+      expect(RenderableChangeProcessor).toHaveBeenCalledTimes(1);
+    });
+
+    const newRenderable: GameRenderable = {
+      id: "new-flag",
+      position: [4, 1],
+      assetPath: "/sprites/flag.svg",
+      size: [1, 1],
+      type: RenderableType.DECORATION,
+      layer: 5,
+    };
+
+    await act(async () => {
+      await getViewerProcessor().process({ index: 1, changes: [newRenderable] });
+    });
+
+    const assets = (AssetLoader as jest.Mock).mock.results[0].value as {
+      loadFor: jest.Mock;
+    };
+    expect(assets.loadFor).toHaveBeenLastCalledWith([newRenderable]);
+
+    const { __spriteInstances, __containerInstances } = getPixiMocks();
+    expect(__spriteInstances).toHaveLength(3);
+
+    const created = __spriteInstances[2];
+    expect(created.texture).toBe("mock-texture");
+    expect(created.position.set).toHaveBeenCalledWith(144, 48);
+    expect(created.zIndex).toBe(5);
+    expect(created.width).toBe(32);
+    expect(created.height).toBe(32);
+
+    const decorationContainer = __containerInstances[3];
+    expect(decorationContainer.addChild).toHaveBeenCalledWith(created);
+
+    // the processor now tracks it alongside the initial scene
+    expect(getViewerProcessor().getCurrentState().map(({ id }) => id)).toEqual([
+      "test-sprite",
+      "test-sprite-two",
+      "new-flag",
+    ]);
+  });
+
   it("stops applying changes once the viewer is unmounted", async () => {
     const { unmount } = render(<LiveViewer gameId="1" />);
 
