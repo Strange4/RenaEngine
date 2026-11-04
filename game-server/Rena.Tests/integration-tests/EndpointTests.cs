@@ -4,9 +4,11 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Runtime.Serialization;
 using System.Text;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+
 using Rena.GameEngine;
 using Rena.Server;
 
@@ -225,6 +227,23 @@ public class UploadEndpointTests
 
         // Verify that is wasn't accepted
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.UnsupportedMediaType));
+    }
+
+    [Test]
+    public async Task Uploads_RefusesBadPlayerID()
+    {
+        // Prepare file
+        using MultipartFormDataContent formData = new();
+        ByteArrayContent content = new(Encoding.UTF8.GetBytes("I am a file"));
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        formData.Add(content, "file", "file.zip");
+        string playerId = "passwd.exe";
+
+        // Send file
+        HttpResponseMessage response = await _client.PostAsync($"/upload/{playerId}", formData);
+
+        // Verify that is wasn't accepted
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
     }
 }
 
