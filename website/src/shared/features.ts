@@ -1,7 +1,7 @@
 export type FeatureDefinition = {
   key: string;
   label: string;
-  path: string;
+  path?: string;
 };
 
 export const TEST_FEATURE = {
@@ -10,7 +10,13 @@ export const TEST_FEATURE = {
   path: "/test-feature",
 } as const satisfies FeatureDefinition;
 
-export const FEATURES = [TEST_FEATURE] as const;
+export const SDK_DOWNLOADS_FEATURE = {
+  key: "sdk-downloads",
+  label: "Starter SDK downloads",
+  path: undefined,
+} as const satisfies FeatureDefinition;
+
+export const FEATURES = [TEST_FEATURE, SDK_DOWNLOADS_FEATURE] as const;
 
 export type FeatureKey = (typeof FEATURES)[number]["key"];
 
