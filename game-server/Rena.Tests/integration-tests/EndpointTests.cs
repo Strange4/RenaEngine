@@ -193,7 +193,7 @@ public class UploadEndpointTests
         ByteArrayContent content = new(zipStream.ToArray());
         content.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
         formData.Add(content, "file", "TestFile.zip");
-        string playerId = "player-42";
+        string playerId = "PLAYER-42";
 
         // Send zip
         HttpResponseMessage response = await _client.PostAsync($"/upload/{playerId}", formData);
@@ -218,13 +218,13 @@ public class UploadEndpointTests
         ByteArrayContent content = new(Encoding.UTF8.GetBytes("I am a file"));
         content.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
         formData.Add(content, "file", "file.txt");
-        string playerId = "player-42";
+        string playerId = "PLAYER-42";
 
         // Send file
         HttpResponseMessage response = await _client.PostAsync($"/upload/{playerId}", formData);
 
         // Verify that is wasn't accepted
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotAcceptable));
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.UnsupportedMediaType));
     }
 }
 
