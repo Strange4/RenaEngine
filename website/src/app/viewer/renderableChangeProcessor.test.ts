@@ -116,6 +116,19 @@ describe("RenderableChangeProcessor", () => {
     expect(processor.getCurrentState()).toEqual([created]);
   });
 
+  it("does not track a renderable whose creation failed", async () => {
+    const testHandlers = handlers();
+    const error = new Error("create failed");
+    (testHandlers.create as jest.Mock).mockRejectedValueOnce(error);
+    const processor = new RenderableChangeProcessor(testHandlers);
+    processor.initialize([], 0);
+
+    await expect(processor.process(change(1, { ...baseRenderable, id: "broken" }))).rejects.toBe(error);
+
+    expect(processor.getCurrentState()).toEqual([]);
+    expect(processor.getLastProcessedIndex()).toBe(0);
+  });
+
   it("ignores removals for renderables that are not shown", async () => {
     const testHandlers = handlers();
     const alreadyRemoved = { ...baseRenderable, id: "already-removed", removed: true };
