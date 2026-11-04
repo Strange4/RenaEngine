@@ -425,6 +425,44 @@ describe("LiveViewer", () => {
     ]);
   });
 
+  it("does not create the sprite if unmounted while its asset is loading", async () => {
+    const { unmount } = render(<LiveViewer gameId="1" />);
+
+    await waitFor(() => {
+      expect(RenderableChangeProcessor).toHaveBeenCalledTimes(1);
+    });
+
+    let resolveAsset!: () => void;
+    const assets = (AssetLoader as jest.Mock).mock.results[0].value as {
+      loadFor: jest.Mock;
+    };
+    assets.loadFor.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveAsset = resolve;
+      }),
+    );
+
+    const pending = getViewerProcessor().process({
+      index: 1,
+      changes: [{ ...TEST_SCENE[0], id: "late-sprite" }],
+    });
+
+    // wait for the create handler to start loading the asset (first call was the initial scene)
+    await waitFor(() => {
+      expect(assets.loadFor).toHaveBeenCalledTimes(2);
+    });
+
+    unmount();
+
+    await act(async () => {
+      resolveAsset();
+      await pending;
+    });
+
+    // only the two sprites from the initial scene
+    expect(Sprite).toHaveBeenCalledTimes(2);
+  });
+
   it("stops applying changes once the viewer is unmounted", async () => {
     const { unmount } = render(<LiveViewer gameId="1" />);
 
