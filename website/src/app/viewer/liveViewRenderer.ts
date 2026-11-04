@@ -107,6 +107,17 @@ export class LiveViewRenderer {
         return sprite;
     }
 
+    // Create the sprite of a renderable that a change introduced (its ID isn't shown yet).
+    // Unlike the initial scene, its asset may not be loaded, so load it first.
+    async createGameRenderable(renderable: GameRenderable, signal?: AbortSignal): Promise<Sprite | undefined> {
+        await this.assetLoader.loadFor([renderable]);
+
+        // The viewer may have been destroyed while the asset was loading
+        if (signal?.aborted) return undefined;
+
+        return this.addGameRenderable(renderable);
+    }
+
     // Remove the sprite when its renderable gets removed so it's not shown anymore
     removeGameRenderable(id: string): void {
         const sprite = this.getSprite(id);
