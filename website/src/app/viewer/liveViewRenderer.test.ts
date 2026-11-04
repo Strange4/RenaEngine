@@ -262,6 +262,17 @@ describe("LiveViewRenderer", () => {
     expect(second.position.y).toBe(112);
   });
 
+  it("throws for an unknown type without creating a sprite", () => {
+    const { renderer, assetLoader } = createRenderer();
+
+    expect(() =>
+      renderer.addGameRenderable(renderable({ type: "UNKNOWN" as RenderableType })),
+    ).toThrow("Unknown renderable type: UNKNOWN");
+
+    expect(assetLoader.getTexture).not.toHaveBeenCalled();
+    expect(renderer.getSprite(baseRenderable.id)).toBeUndefined();
+  });
+
   it("removes and destroys the sprite of a removed renderable", () => {
     const { renderer } = createRenderer();
     const removed = renderer.addGameRenderable(renderable({ id: "removed" })) as unknown as MockSprite;
