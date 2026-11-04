@@ -4,11 +4,9 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Runtime.Serialization;
 using System.Text;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
-
 using Rena.GameEngine;
 using Rena.Server;
 
