@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Rena.GameEngine;
 using Rena.Generator;
@@ -32,7 +33,12 @@ internal partial class RenaServerHandlers<G, S, A>
             : Results.File(zipName, contentType: "application/zip");
     }
 
-    public static async Task<IResult> HandleUpload(string playerId, IFormFile file, IOptions<RenaOptions> options)
+    public static async Task<IResult> HandleUpload(
+        string playerId,
+        IFormFile file,
+        IOptions<RenaOptions> options,
+        ILogger<RenaServerHandlers<G, S, A>> logger
+    )
     {
         if (!PlayerIdRegex().IsMatch(playerId))
         {
@@ -53,9 +59,15 @@ internal partial class RenaServerHandlers<G, S, A>
         // Creates if not exist
         Directory.CreateDirectory(options.Value.UploadsDirectory);
         string fileName = Path.Combine(options.Value.UploadsDirectory, playerId + ".zip");
-        using (FileStream fileStream = new(fileName, FileMode.Create, FileAccess.ReadWrite))
+        try
         {
+            using FileStream fileStream = new(fileName, FileMode.Create, FileAccess.ReadWrite);
             await file.CopyToAsync(fileStream);
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Failed to save the zip file for {playerId}", playerId);
+            return Results.InternalServerError(e.Message);
         }
         // TODO (147) : build a docker image in the background
 
