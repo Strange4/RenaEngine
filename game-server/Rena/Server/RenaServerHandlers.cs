@@ -1,10 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-
 using Rena.GameEngine;
 using Rena.Generator;
 
@@ -45,12 +43,7 @@ internal partial class RenaServerHandlers<G, S, A>
             return Results.StatusCode(413);
         }
 
-        List<string> allowedContentTypes = [
-            "application/zip",
-            "application/x-zip",
-            "application/octet-stream",
-            "application/x-zip-compressed",
-        ];
+        List<string> allowedContentTypes = ["application/zip", "application/x-zip", "application/octet-stream", "application/x-zip-compressed"];
 
         if (!allowedContentTypes.Contains(file.ContentType) || !file.FileName.EndsWith(".zip"))
         {
