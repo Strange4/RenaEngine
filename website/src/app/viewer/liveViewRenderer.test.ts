@@ -22,10 +22,16 @@ class MockSprite {
   height = 0;
   angle = 0;
   zIndex = 0;
+  destroyed = false;
 
   constructor(texture: unknown) {
     this.texture = texture;
   }
+
+  destroy = jest.fn(() => {
+    this.parent?.removeChild(this);
+    this.destroyed = true;
+  });
 }
 
 class MockContainer {
@@ -40,6 +46,13 @@ class MockContainer {
       }
 
       this.children.push(item);
+    }
+  }
+
+  removeChild(item: MockContainer | MockSprite): void {
+    this.children = this.children.filter((child) => child !== item);
+    if (item instanceof MockSprite) {
+      item.parent = null;
     }
   }
 }
@@ -247,6 +260,119 @@ describe("LiveViewRenderer", () => {
 
     expect(second.position.x).toBe(80);
     expect(second.position.y).toBe(112);
+  });
+
+  it("throws for an unknown type without creating a sprite", () => {
+    const { renderer, assetLoader } = createRenderer();
+
+    expect(() =>
+      renderer.addGameRenderable(renderable({ type: "UNKNOWN" as RenderableType })),
+    ).toThrow("Unknown renderable type: UNKNOWN");
+
+    expect(assetLoader.getTexture).not.toHaveBeenCalled();
+    expect(renderer.getSprite(baseRenderable.id)).toBeUndefined();
+  });
+
+  it("loads the asset of a new renderable before creating its sprite", async () => {
+    const { renderer, assetLoader } = createRenderer();
+    const created = renderable({
+      id: "new-flag",
+      assetPath: "/sprites/flag.svg",
+      position: [1, 0],
+      size: [1, 2],
+      rotation: 180,
+      type: RenderableType.DECORATION,
+      layer: 4,
+    });
+
+    assetLoader.loadFor.mockImplementation(async () => {
+      expect(assetLoader.getTexture).not.toHaveBeenCalled();
+    });
+
+    const sprite = await renderer.createGameRenderable(created);
+
+    expect(assetLoader.loadFor).toHaveBeenCalledWith([created]);
+    expect(sprite).toBeDefined();
+    expect(renderer.getSprite("new-flag")).toBe(sprite);
+
+    // initialized from the renderable in the change
+    expect(sprite!.texture).toEqual({ path: "/sprites/flag.svg" });
+    expect(sprite!.position.x).toBe(48);
+    expect(sprite!.position.y).toBe(16);
+    expect(sprite!.anchor.x).toBe(0.5);
+    expect(sprite!.anchor.y).toBe(0.25);
+    expect(sprite!.width).toBe(32);
+    expect(sprite!.height).toBe(64);
+    expect(sprite!.angle).toBe(180);
+    expect(sprite!.zIndex).toBe(4);
+    expect(renderer.getContainer(RenderableType.DECORATION).children).toEqual([sprite]);
+  });
+
+  it("does not create the new sprite if aborted while its asset is loading", async () => {
+    const { renderer, assetLoader } = createRenderer();
+    const controller = new AbortController();
+
+    assetLoader.loadFor.mockImplementation(async () => {
+      controller.abort();
+    });
+
+    const sprite = await renderer.createGameRenderable(baseRenderable, controller.signal);
+
+    expect(sprite).toBeUndefined();
+    expect(assetLoader.getTexture).not.toHaveBeenCalled();
+    expect(renderer.getSprite(baseRenderable.id)).toBeUndefined();
+    expect(renderer.getContainer(RenderableType.OBJECT).children).toHaveLength(0);
+  });
+
+  it("returns the existing sprite when creating an ID that is already shown", async () => {
+    const { renderer } = createRenderer();
+    const existing = renderer.addGameRenderable(baseRenderable);
+
+    const created = await renderer.createGameRenderable(baseRenderable);
+
+    expect(created).toBe(existing);
+    expect(renderer.getContainer(RenderableType.OBJECT).children).toHaveLength(1);
+  });
+
+  it("removes and destroys the sprite of a removed renderable", () => {
+    const { renderer } = createRenderer();
+    const removed = renderer.addGameRenderable(renderable({ id: "removed" })) as unknown as MockSprite;
+    const kept = renderer.addGameRenderable(renderable({ id: "kept" }));
+
+    renderer.removeGameRenderable("removed");
+
+    expect(renderer.getSprite("removed")).toBeUndefined();
+    expect(removed.destroyed).toBe(true);
+    // called with no options, so the shared texture is not destroyed
+    expect(removed.destroy).toHaveBeenCalledWith();
+
+    // the other sprite should still be there
+    expect(renderer.getContainer(RenderableType.OBJECT).children).toEqual([kept]);
+  });
+
+  it("ignores IDs that don't have a sprite", () => {
+    const { renderer } = createRenderer();
+    const sprite = renderer.addGameRenderable(baseRenderable) as unknown as MockSprite;
+
+    renderer.removeGameRenderable("unknown");
+    expect(renderer.getContainer(RenderableType.OBJECT).children).toHaveLength(1);
+
+    // removing twice should only destroy the sprite once
+    renderer.removeGameRenderable(baseRenderable.id);
+    renderer.removeGameRenderable(baseRenderable.id);
+    expect(sprite.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it("can add a renderable again after it was removed", () => {
+    const { renderer } = createRenderer();
+    const first = renderer.addGameRenderable(baseRenderable);
+
+    renderer.removeGameRenderable(baseRenderable.id);
+    const second = renderer.addGameRenderable(baseRenderable);
+
+    // a new sprite gets created instead of returning the destroyed one
+    expect(second).not.toBe(first);
+    expect(renderer.getSprite(baseRenderable.id)).toBe(second);
   });
 
   it("adds all category containers to the stage in order", () => {

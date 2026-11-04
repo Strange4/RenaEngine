@@ -13,16 +13,25 @@ main {
 
 label,
 input,
+select,
 button {
   display: block;
   width: 100%;
   box-sizing: border-box;
 }
 
-input {
+input,
+select {
   margin: 0.5rem 0;
   padding: 0.6rem;
   font-size: 1rem;
+}
+
+select {
+  border: 1px solid #4b5563;
+  border-radius: 6px;
+  background: #111827;
+  color: #f9fafb;
 }
 
 button {
@@ -37,6 +46,59 @@ button {
 
 .hint {
   color: #34d399;
+}
+
+.sdk-download-card {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  background: #1f2937;
+}
+
+.sdk-download-card h2 {
+  margin-top: 0;
+}
+
+.sdk-download-intro,
+.sdk-language-description {
+  color: #d1d5db;
+  line-height: 1.5;
+}
+
+.sdk-language-description {
+  min-height: 3rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.sdk-download-card button {
+  border: 0;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+}
+
+.sdk-download-card button:disabled,
+.sdk-download-card select:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.sdk-download-feedback {
+  min-height: 2.5rem;
+}
+
+.sdk-download-feedback p {
+  margin-bottom: 0;
+}
+
+.sdk-download-unavailable {
+  margin: 2rem 0;
+  padding: 1rem;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  color: #d1d5db;
 }
 
 .access-denied-page {
@@ -177,4 +239,78 @@ button {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.token-page {
+  max-width: 960px;
+}
+
+.token-reveal {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: auto;
+  margin-bottom: 1rem;
+}
+
+.token-reveal input {
+  width: auto;
+  margin: 0;
+}
+
+.token-table-wrapper {
+  overflow-x: auto;
+}
+
+.token-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.token-table caption {
+  text-align: left;
+  margin-bottom: 0.5rem;
+  color: #d1d5db;
+}
+
+.token-table th,
+.token-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid #374151;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.token-status {
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+}
+
+.token-status-active {
+  background: #064e3b;
+  color: #a7f3d0;
+}
+
+.token-status-inactive {
+  background: #374151;
+  color: #d1d5db;
+}
+
+.token-cell-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.copy-token {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.copy-token button {
+  width: auto;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.875rem;
 }

@@ -12,6 +12,7 @@ services:
       RenaOptions__ServerPort: 3000
       RenaOptions__AdminToken: ${ADMIN_TOKEN:-ADMIN-change-me}
       RenaOptions__Features__test-feature: ${TEST_FEATURE_ENABLED:-false}
+      RenaOptions__Features__sdk-downloads: ${SDK_DOWNLOADS_ENABLED:-false}
     ports:
       - "${GAME_SERVER_CONTAINER_PORT:-5001}:3000"
     networks:
