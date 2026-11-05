@@ -59,8 +59,10 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
         create: async (renderable) => {
           await renderer.createGameRenderable(renderable, unmount.signal);
         },
-        // TODO #86: update the sprite of an existing renderable
-        update: async () => {},
+        // Applies the Renderable Update
+        update: async (renderable) => {
+          await renderer.updateGameRenderable(renderable, unmount.signal);
+        },
         remove: async (id) => renderer.removeGameRenderable(id),
       });
       // The server's first change has index 1, so the initial scene is index 0
