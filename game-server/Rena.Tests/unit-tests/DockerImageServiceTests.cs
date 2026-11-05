@@ -117,8 +117,7 @@ public class DockerImageServiceTests
             BuildArgs = buildArgs,
         };
         Stream? usedBuildContext = null;
-        this._fixture.Images
-            .Setup(operations =>
+        this._fixture.Images.Setup(operations =>
                 operations.BuildImageFromDockerfileAsync(
                     It.IsAny<ImageBuildParameters>(),
                     It.IsAny<Stream>(),

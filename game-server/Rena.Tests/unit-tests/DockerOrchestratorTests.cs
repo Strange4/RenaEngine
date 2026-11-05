@@ -46,12 +46,7 @@ public class DockerOrchestratorTests
 
         try
         {
-            var result = await this._service.CreateOrReplaceImageAsync(
-                "player-123",
-                zipPath,
-                dockerfilePath,
-                TypescriptSDKGenerator.LanguageName
-            );
+            var result = await this._service.CreateOrReplaceImageAsync("player-123", zipPath, dockerfilePath, TypescriptSDKGenerator.LanguageName);
 
             Assert.That(IsSuccess(result), Is.True);
             result.IfSucc(imageId => Assert.That(imageId, Is.EqualTo("player-123")));

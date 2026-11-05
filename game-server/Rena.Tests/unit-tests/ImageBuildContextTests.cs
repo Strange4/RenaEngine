@@ -25,10 +25,7 @@ public class ImageBuildContextTests
     [Test]
     public async Task CreateAsync_RejectsArchiveExceedingTotalUncompressedSizeLimit()
     {
-        string archivePath = await CreateArchiveAsync(
-            ("first.txt", new byte[6 * 1024 * 1024]),
-            ("second.txt", new byte[6 * 1024 * 1024])
-        );
+        string archivePath = await CreateArchiveAsync(("first.txt", new byte[6 * 1024 * 1024]), ("second.txt", new byte[6 * 1024 * 1024]));
         try
         {
             var strategy = new TypeScriptDockerBuildContextStrategy();

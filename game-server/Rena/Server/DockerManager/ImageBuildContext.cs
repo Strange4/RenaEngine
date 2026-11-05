@@ -69,9 +69,7 @@ public sealed class TypeScriptDockerBuildContextStrategy : IDockerBuildContextSt
 
         var fullContextDir = Path.GetFullPath(contextDir);
         var destinationPath = Path.GetFullPath(Path.Combine(fullContextDir, normalized.Replace('/', Path.DirectorySeparatorChar)));
-        var contextPrefix = Path.EndsInDirectorySeparator(fullContextDir)
-            ? fullContextDir
-            : fullContextDir + Path.DirectorySeparatorChar;
+        var contextPrefix = Path.EndsInDirectorySeparator(fullContextDir) ? fullContextDir : fullContextDir + Path.DirectorySeparatorChar;
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         if (!destinationPath.StartsWith(contextPrefix, comparison))
             throw new InvalidDataException($"Invalid Zip entry path: {entryName}");
@@ -111,9 +109,7 @@ public sealed class TypeScriptDockerBuildContextStrategy : IDockerBuildContextSt
                     throw new InvalidDataException($"Zip archive exceeds the {MaxEntryCount} entry limit.");
 
                 if (entry.Length > MaxTotalUncompressedSize - totalUncompressedSize)
-                    throw new InvalidDataException(
-                        $"Zip archive exceeds the {MaxTotalUncompressedSize}-byte uncompressed size limit."
-                    );
+                    throw new InvalidDataException($"Zip archive exceeds the {MaxTotalUncompressedSize}-byte uncompressed size limit.");
                 totalUncompressedSize += entry.Length;
 
                 var destinationPath = ValidateEntryPath(entry.FullName, contextDir);
