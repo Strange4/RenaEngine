@@ -15,7 +15,7 @@ sealed class SynchronousProgress<T>(Action<T> report) : IProgress<T>
 
 public interface IDockerImageService
 {
-    public Task<Result<Unit>> CreateImageAsync(DockerImageBuildRequest request, Stream buildContext);
+    public Task<Result<Unit>> CreateImageAsync(DockerImageBuildRequest request, string buildContextPath);
 
     public Task<Result<Unit>> DeleteImageAsync(string imageId, Option<ImageDeleteParameters> parameters = default);
 
@@ -62,7 +62,7 @@ public class DockerImageService(IDockerClient dockerClient, ILogger logger) : Ab
         }
     }
 
-    public async Task<Result<Unit>> CreateImageAsync(DockerImageBuildRequest request, Stream buildContext)
+    public async Task<Result<Unit>> CreateImageAsync(DockerImageBuildRequest request, string buildContextPath)
     {
         var buildParams = new ImageBuildParameters
         {
@@ -89,6 +89,14 @@ public class DockerImageService(IDockerClient dockerClient, ILogger logger) : Ab
             }
         });
 
+        await using var buildContext = new FileStream(
+            buildContextPath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            81920,
+            FileOptions.Asynchronous | FileOptions.SequentialScan
+        );
         await this._client.Images.BuildImageFromDockerfileAsync(
             buildParams,
             buildContext,

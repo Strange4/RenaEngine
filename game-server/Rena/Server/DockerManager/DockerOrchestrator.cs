@@ -9,13 +9,6 @@ namespace Rena.Server.DockerManager;
 
 public interface IDockerService
 {
-    public Task<Result<string>> CreateOrReplaceImageAsync(string playerId, string zipFilePath, string dockerFilePath);
-    public Task<Result<string>> CreateOrReplaceImageAsync(
-        string playerId,
-        string zipFilePath,
-        string dockerFilePath,
-        Option<IDictionary<string, string>> buildArgs
-    );
     public Task<Result<string>> CreateOrReplaceImageAsync(
         string playerId,
         string zipFilePath,
@@ -40,9 +33,9 @@ public abstract class AbstractDockerService(IDockerClient dockerClient, ILogger 
 
 public class DockerService : AbstractDockerService, IDockerService
 {
-    private readonly IDockerContainerService _containers;
-    private readonly IDockerImageService _images;
-    private readonly IReadOnlyDictionary<string, IDockerBuildContextStrategy> _buildContextStrategies;
+    private readonly DockerContainerService _containers;
+    private readonly DockerImageService _images;
+    private readonly Dictionary<string, IDockerBuildContextStrategy> _buildContextStrategies;
 
     public DockerService(IDockerClient dockerClient, ILogger logger)
         : this(dockerClient, logger, [new TypeScriptDockerBuildContextStrategy()]) { }
@@ -81,29 +74,6 @@ public class DockerService : AbstractDockerService, IDockerService
             },
             error => Task.FromResult(new Result<Unit>(error))
         );
-    }
-
-    public Task<Result<string>> CreateOrReplaceImageAsync(string playerId, string zipFilePath, string dockerFilePath)
-    {
-        return this.CreateOrReplaceImageAsync(playerId, zipFilePath, dockerFilePath, default);
-    }
-
-    public Task<Result<string>> CreateOrReplaceImageAsync(
-        string playerId,
-        string zipFilePath,
-        string dockerFilePath,
-        Option<IDictionary<string, string>> buildArgs
-    )
-    {
-        IReadOnlyList<string> availableLanguages = SDKBuilder.AvailableLanguageGenerators();
-        if (availableLanguages.Count != 1)
-        {
-            const string error = "Specify a language when zero or multiple SDK languages are available.";
-            this._logger.LogError(error);
-            return Task.FromResult(new Result<string>(Error.FromObject(error)));
-        }
-
-        return this.CreateOrReplaceImageAsync(playerId, zipFilePath, dockerFilePath, availableLanguages[0], buildArgs);
     }
 
     public async Task<Result<string>> CreateOrReplaceImageAsync(
@@ -153,18 +123,17 @@ public class DockerService : AbstractDockerService, IDockerService
             {
                 ImageName = playerId,
                 Dockerfile = await File.ReadAllTextAsync(dockerFilePath),
-                FilesArchive = File.OpenRead(zipFilePath),
+                FilesArchivePath = zipFilePath,
                 Language = language,
                 BuildArgs = buildArgs.IfNone(new Dictionary<string, string>()),
             };
-            await using var archive = request.FilesArchive;
             Result<IDockerBuildContext> contextResult = await buildContextStrategy.CreateAsync(request);
             return await contextResult.Match(
                 async context =>
                 {
                     await using (context)
                     {
-                        Result<Unit> imageResult = await this._images.CreateImageAsync(request, context.Content);
+                        Result<Unit> imageResult = await this._images.CreateImageAsync(request, context.ContentPath);
                         return imageResult.Match(_ => new Result<string>(playerId), error => new Result<string>(error));
                     }
                 },

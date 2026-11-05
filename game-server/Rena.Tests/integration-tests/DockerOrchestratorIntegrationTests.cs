@@ -3,6 +3,7 @@ using System.Text.Json;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Microsoft.Extensions.Logging.Abstractions;
+using Rena.Generator;
 using Rena.Server.DockerManager;
 
 namespace Rena.Tests.Integration;
@@ -64,7 +65,12 @@ public sealed class DockerOrchestratorIntegrationTests
                 "FROM busybox:1.36\nCOPY run.sh /run.sh\nCOPY payload.txt /payload.txt\nRUN chmod +x /run.sh\nCMD [\"/run.sh\"]\n"
             );
 
-            var imageResult = await this._orchestrator.CreateOrReplaceImageAsync(imageName, archivePath, dockerfilePath);
+            var imageResult = await this._orchestrator.CreateOrReplaceImageAsync(
+                imageName,
+                archivePath,
+                dockerfilePath,
+                TypescriptSDKGenerator.LanguageName
+            );
             string? builtImageName = null;
             imageResult.IfSucc(value => builtImageName = value);
             Assert.That(builtImageName, Is.EqualTo(imageName), "The player image should build successfully.");
@@ -163,7 +169,13 @@ public sealed class DockerOrchestratorIntegrationTests
 
             await File.WriteAllTextAsync(dockerfilePath, "FROM busybox:1.36\nCOPY run.sh /run.sh\nRUN chmod +x /run.sh\nCMD [\"/run.sh\"]\n");
 
-            var imageResult = await this._orchestrator.CreateOrReplaceImageAsync(imageName, archivePath, dockerfilePath, buildArgs: buildArgs);
+            var imageResult = await this._orchestrator.CreateOrReplaceImageAsync(
+                imageName,
+                archivePath,
+                dockerfilePath,
+                TypescriptSDKGenerator.LanguageName,
+                buildArgs
+            );
             string? builtImageName = null;
             imageResult.IfSucc(value => builtImageName = value);
             Assert.That(builtImageName, Is.EqualTo(imageName), "The player image should build successfully.");

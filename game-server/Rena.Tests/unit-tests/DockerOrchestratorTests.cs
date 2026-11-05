@@ -46,7 +46,12 @@ public class DockerOrchestratorTests
 
         try
         {
-            var result = await this._service.CreateOrReplaceImageAsync("player-123", zipPath, dockerfilePath);
+            var result = await this._service.CreateOrReplaceImageAsync(
+                "player-123",
+                zipPath,
+                dockerfilePath,
+                TypescriptSDKGenerator.LanguageName
+            );
 
             Assert.That(IsSuccess(result), Is.True);
             result.IfSucc(imageId => Assert.That(imageId, Is.EqualTo("player-123")));
@@ -84,7 +89,7 @@ public class DockerOrchestratorTests
         }
         await File.WriteAllTextAsync(dockerfilePath, "FROM scratch");
 
-        string languageName = SDKBuilder.AvailableLanguageGenerators().Single();
+        string languageName = TypescriptSDKGenerator.LanguageName;
         var strategy = new TestDockerBuildContextStrategy(languageName);
         var service = new DockerService(this._fixture.DockerClient.Object, this._fixture.Logger.Object, [strategy]);
         Dictionary<string, string> buildArgs = new() { ["BUILD_VERSION"] = "1.2.3" };
@@ -97,6 +102,7 @@ public class DockerOrchestratorTests
             Assert.That(strategy.Request?.Language, Is.EqualTo(languageName));
             Assert.That(strategy.LanguageName, Is.EqualTo(languageName));
             Assert.That(strategy.Request?.ImageName, Is.EqualTo("player-123"));
+            Assert.That(strategy.Request?.FilesArchivePath, Is.EqualTo(zipPath));
             Assert.That(strategy.Request?.BuildArgs, Is.SameAs(buildArgs));
             Assert.That(strategy.CallCount, Is.EqualTo(1));
             this._fixture.Images.Verify(
@@ -176,7 +182,7 @@ public class DockerOrchestratorTests
 
         try
         {
-            string availableLanguage = SDKBuilder.AvailableLanguageGenerators().Single();
+            string availableLanguage = TypescriptSDKGenerator.LanguageName;
             var result = await service.CreateOrReplaceImageAsync("player-123", zipPath, dockerfilePath, availableLanguage);
 
             Assert.That(IsFailure(result), Is.True);
@@ -202,7 +208,12 @@ public class DockerOrchestratorTests
     [Test]
     public async Task CreateOrReplaceImageAsync_ReturnsFailureWhenInputsAreMissing()
     {
-        var result = await this._service.CreateOrReplaceImageAsync("player-123", "missing.zip", "missing.Dockerfile");
+        var result = await this._service.CreateOrReplaceImageAsync(
+            "player-123",
+            "missing.zip",
+            "missing.Dockerfile",
+            TypescriptSDKGenerator.LanguageName
+        );
 
         Assert.That(IsFailure(result), Is.True);
         this._fixture.Images.Verify(
@@ -303,11 +314,23 @@ public class DockerOrchestratorTests
 
     private sealed class TestDockerBuildContext : IDockerBuildContext
     {
-        public Stream Content { get; } = new MemoryStream();
+        private readonly string _tempDir;
 
-        public async ValueTask DisposeAsync()
+        public string ContentPath { get; }
+
+        public TestDockerBuildContext()
         {
-            await this.Content.DisposeAsync();
+            this._tempDir = Path.Combine(Path.GetTempPath(), $"rena-test-context-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(this._tempDir);
+            this.ContentPath = Path.Combine(this._tempDir, "context.tar");
+            File.WriteAllBytes(this.ContentPath, []);
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            if (Directory.Exists(this._tempDir))
+                Directory.Delete(this._tempDir, recursive: true);
+            return ValueTask.CompletedTask;
         }
     }
 }

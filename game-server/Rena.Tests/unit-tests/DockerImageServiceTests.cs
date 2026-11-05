@@ -99,36 +99,67 @@ public class DockerImageServiceTests
     }
 
     [Test]
-    public async Task CreateImageAsync_BuildsDockerfileWithTagAndBuildArguments()
+    public async Task CreateImageAsync_BuildsDockerfileWithTagAndBuildArgumentsAndDisposesBuildContext()
     {
         Dictionary<string, string> buildArgs = new() { ["VERSION"] = "1.2.3" };
-        using var filesArchive = new MemoryStream();
+        string directory = Path.Combine(Path.GetTempPath(), $"docker-image-service-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        string archivePath = Path.Combine(directory, "player.zip");
+        string buildContextPath = Path.Combine(directory, "context.tar");
+        await File.WriteAllBytesAsync(archivePath, []);
+        await File.WriteAllBytesAsync(buildContextPath, []);
         var request = new DockerImageBuildRequest
         {
             ImageName = "test-image:latest",
             Dockerfile = "FROM scratch",
-            FilesArchive = filesArchive,
+            FilesArchivePath = archivePath,
             Language = "typescript",
             BuildArgs = buildArgs,
         };
-        using var buildContext = new MemoryStream();
-
-        var result = await this._service.CreateImageAsync(request, buildContext);
-
-        Assert.That(IsSuccess(result), Is.True);
-        this._fixture.Images.Verify(
-            operations =>
+        Stream? usedBuildContext = null;
+        this._fixture.Images
+            .Setup(operations =>
                 operations.BuildImageFromDockerfileAsync(
-                    It.Is<ImageBuildParameters>(parameters =>
-                        parameters.Dockerfile == "Dockerfile" && parameters.Tags.Contains("test-image:latest") && parameters.BuildArgs == buildArgs
-                    ),
-                    buildContext,
+                    It.IsAny<ImageBuildParameters>(),
+                    It.IsAny<Stream>(),
                     It.IsAny<IEnumerable<AuthConfig>>(),
                     It.IsAny<IDictionary<string, string>>(),
                     It.IsAny<IProgress<JSONMessage>>(),
                     It.IsAny<CancellationToken>()
-                ),
-            Times.Once
-        );
+                )
+            )
+            .Callback<ImageBuildParameters, Stream, IEnumerable<AuthConfig>, IDictionary<string, string>, IProgress<JSONMessage>, CancellationToken>(
+                (_, stream, _, _, _, _) => usedBuildContext = stream
+            )
+            .Returns(Task.CompletedTask);
+
+        try
+        {
+            var result = await this._service.CreateImageAsync(request, buildContextPath);
+
+            Assert.That(IsSuccess(result), Is.True);
+            Assert.That(usedBuildContext, Is.Not.Null);
+            Assert.That(usedBuildContext!.CanRead, Is.False);
+            this._fixture.Images.Verify(
+                operations =>
+                    operations.BuildImageFromDockerfileAsync(
+                        It.Is<ImageBuildParameters>(parameters =>
+                            parameters.Dockerfile == "Dockerfile"
+                            && parameters.Tags.Contains("test-image:latest")
+                            && parameters.BuildArgs == buildArgs
+                        ),
+                        It.IsAny<Stream>(),
+                        It.IsAny<IEnumerable<AuthConfig>>(),
+                        It.IsAny<IDictionary<string, string>>(),
+                        It.IsAny<IProgress<JSONMessage>>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Once
+            );
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
     }
 }

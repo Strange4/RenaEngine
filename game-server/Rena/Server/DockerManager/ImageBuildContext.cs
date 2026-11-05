@@ -10,14 +10,14 @@ public sealed class DockerImageBuildRequest
 {
     public required string ImageName { get; init; }
     public required string Dockerfile { get; init; }
-    public required Stream FilesArchive { get; init; }
+    public required string FilesArchivePath { get; init; }
     public required string Language { get; init; }
     public IDictionary<string, string> BuildArgs { get; init; } = new Dictionary<string, string>(); // Used during image construction
 }
 
 public interface IDockerBuildContext : IAsyncDisposable
 {
-    Stream Content { get; }
+    string ContentPath { get; }
 }
 
 public interface IDockerBuildContextStrategy
@@ -29,45 +29,54 @@ public interface IDockerBuildContextStrategy
 
 public sealed class TemporaryFileDockerBuildContext : IDockerBuildContext
 {
-    private readonly string _tarPath;
     private readonly string _tempDir;
 
-    public Stream Content { get; }
+    public string ContentPath { get; }
 
-    public TemporaryFileDockerBuildContext(Stream content, string tarPath, string tempDir)
+    public TemporaryFileDockerBuildContext(string contentPath, string tempDir)
     {
-        this.Content = content;
-        _tarPath = tarPath;
+        this.ContentPath = contentPath;
         _tempDir = tempDir;
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        await this.Content.DisposeAsync();
-        if (File.Exists(_tarPath))
-            File.Delete(_tarPath);
         if (Directory.Exists(_tempDir))
             Directory.Delete(_tempDir, recursive: true);
+        return ValueTask.CompletedTask;
     }
 }
 
 public sealed class TypeScriptDockerBuildContextStrategy : IDockerBuildContextStrategy
 {
+    private const long MaxTotalUncompressedSize = 10L * 1024 * 1024; // 10 MB
+    private const int MaxEntryCount = 10_000;
+
     public string LanguageName => TypescriptSDKGenerator.LanguageName;
 
-    private static string ValidateEntryPath(string entryName)
+    private static string ValidateEntryPath(string entryName, string contextDir)
     {
         var normalized = entryName.Replace('\\', '/');
         if (
             string.IsNullOrWhiteSpace(normalized)
             || normalized.StartsWith('/')
             || normalized.Contains(':')
-            || normalized.Split('/').Any(segment => segment.Contains(".."))
+            || normalized.Split('/').Any(segment => segment is "." or "..")
         )
         {
             throw new InvalidDataException($"Invalid Zip entry path: {entryName}");
         }
-        return normalized;
+
+        var fullContextDir = Path.GetFullPath(contextDir);
+        var destinationPath = Path.GetFullPath(Path.Combine(fullContextDir, normalized.Replace('/', Path.DirectorySeparatorChar)));
+        var contextPrefix = Path.EndsInDirectorySeparator(fullContextDir)
+            ? fullContextDir
+            : fullContextDir + Path.DirectorySeparatorChar;
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        if (!destinationPath.StartsWith(contextPrefix, comparison))
+            throw new InvalidDataException($"Invalid Zip entry path: {entryName}");
+
+        return destinationPath;
     }
 
     // Building temp dir so that TAR headers know the size of the file. The point is to offload work to ROM IO instead of RAM
@@ -83,24 +92,42 @@ public sealed class TypeScriptDockerBuildContextStrategy : IDockerBuildContextSt
         try
         {
             // Extract ZIP into context dir
-            using var zip = new ZipArchive(request.FilesArchive, ZipArchiveMode.Read, leaveOpen: true);
+            await using var archiveStream = new FileStream(
+                request.FilesArchivePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                81920,
+                FileOptions.Asynchronous | FileOptions.SequentialScan
+            );
+            using var zip = new ZipArchive(archiveStream, ZipArchiveMode.Read, leaveOpen: true);
             int bufferSize = 81920;
+            long totalUncompressedSize = 0;
+            int entryCount = 0;
             foreach (var entry in zip.Entries)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var relativePath = ValidateEntryPath(entry.FullName);
-                var dest = Path.Combine(contextDir, relativePath.Replace('/', Path.DirectorySeparatorChar));
-                if (entry.FullName.EndsWith('/'))
+                if (++entryCount > MaxEntryCount)
+                    throw new InvalidDataException($"Zip archive exceeds the {MaxEntryCount} entry limit.");
+
+                if (entry.Length > MaxTotalUncompressedSize - totalUncompressedSize)
+                    throw new InvalidDataException(
+                        $"Zip archive exceeds the {MaxTotalUncompressedSize}-byte uncompressed size limit."
+                    );
+                totalUncompressedSize += entry.Length;
+
+                var destinationPath = ValidateEntryPath(entry.FullName, contextDir);
+                if (entry.FullName.EndsWith('/') || entry.FullName.EndsWith('\\'))
                 {
-                    Directory.CreateDirectory(dest);
+                    Directory.CreateDirectory(destinationPath);
                     continue;
                 }
-                var parent = Path.GetDirectoryName(dest);
+                var parent = Path.GetDirectoryName(destinationPath);
                 if (parent != null)
                     Directory.CreateDirectory(parent);
                 await using var source = await entry.OpenAsync(cancellationToken);
                 await using var target = new FileStream(
-                    dest,
+                    destinationPath,
                     FileMode.CreateNew,
                     FileAccess.Write,
                     FileShare.None,
@@ -139,17 +166,7 @@ public sealed class TypeScriptDockerBuildContextStrategy : IDockerBuildContextSt
                 await tarStream.FlushAsync(cancellationToken);
             }
 
-            // Open TAR Stream (not sure we want to keep this, function caller should maybe decide)
-            var content = new FileStream(
-                tarPath,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.Read,
-                bufferSize,
-                FileOptions.Asynchronous | FileOptions.SequentialScan
-            );
-
-            return new TemporaryFileDockerBuildContext(content, tarPath, tempDir);
+            return new TemporaryFileDockerBuildContext(tarPath, tempDir);
         }
         catch
         {
