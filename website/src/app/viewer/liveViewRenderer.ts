@@ -101,6 +101,7 @@ export class LiveViewRenderer {
         sprite.height = renderable.size[1] * this.viewerSetup.tileSize;
         sprite.angle = renderable.rotation ?? 0;
 
+        this.applyUpdates(sprite, renderable);
         container.addChild(sprite);
         this.addSprite(renderable.id, sprite);
 
@@ -118,11 +119,31 @@ export class LiveViewRenderer {
         return this.addGameRenderable(renderable);
     }
 
-    //update an exisiting renderable (id is present in the viewer state) such that the renderable gets its properties modified
+    //Update an exisiting renderable (id is present in the viewer state) such that the renderable gets its properties modified
     //param renderable is the new version with the updated properties we want
-    //no need for id input param since renderables are mapped to IDs and those are fetchable
+    
+
+    //Helper function-> it applies the changes to each property of the sprite
+    private applyUpdates (sprite: Sprite, renderable: GameRenderable){
+        sprite.position.set( //x and y
+            renderable.position[0],
+            renderable.position[1],
+        );
+        sprite.zIndex = renderable.layer; //zIndex relates to the planes where we place the sprites: background, fore plan, partially hidden by another sprite, etc
+        sprite.width = renderable.size[0];
+        sprite.height = renderable.size[1];
+
+        if (renderable.rotation === null){
+            sprite.angle = renderable.rotation ?? 0;
+        }
+    }
+
     async updateGameRenderable(renderable: GameRenderable, signal?: AbortSignal): Promise<Sprite | undefined> {
         
+        //each sprite is kept in one of 3 containers depending on its type--- helps control layering
+        //type changes can also be updates
+        const container = this.getContainer(renderable.type);
+
         await this.assetLoader.loadFor([renderable]); //load asset. old sprite still showing at this point
 
         //reusing same logic as from Create here--> // The viewer may have been destroyed while the asset was loading
@@ -131,13 +152,21 @@ export class LiveViewRenderer {
         //Check for case below first!: "is there even an update to do" checker
         //the renderer maps an ID to a sprite, both old and new versions share the same id. We can fetch the old sprite using that id
         //if we can't find the old sprite, then it's not on the screen and nothing to update
-        if (!this.getSprite(renderable.id)){
-            return undefined; //no updates to do
+        const sprite = this.getSprite(renderable.id);
+        if (!sprite){
+            return undefined; //no updates to do, sprite isn't even showing up on screen
         }
-        //else, exisitng id--> there is something to update
-        //replace old with new sprite
-        this.removeGameRenderable(renderable.id); //remove old sprite
-        return this.addGameRenderable(renderable); //create new sprite
+
+        sprite.texture = this.assetLoader.getTexture(renderable.assetPath);
+
+        //if the sprite changed its type: deco, object, obstacle the layering might get into play, 
+        if (sprite.parent !== container){
+            container.addChild(sprite);
+        }
+        
+        //calling the helper function that applies all of the new changes property by property
+        this.applyUpdates(sprite, renderable);
+        return sprite; //show new updated sprite image on screen
     }
 
     // Remove the sprite when its renderable gets removed so it's not shown anymore
