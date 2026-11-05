@@ -101,7 +101,6 @@ export class LiveViewRenderer {
         sprite.height = renderable.size[1] * this.viewerSetup.tileSize;
         sprite.angle = renderable.rotation ?? 0;
 
-        this.applyUpdates(sprite, renderable);
         container.addChild(sprite);
         this.addSprite(renderable.id, sprite);
 
