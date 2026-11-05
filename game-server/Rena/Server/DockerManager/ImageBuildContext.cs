@@ -54,27 +54,17 @@ public sealed class TypeScriptDockerBuildContextStrategy : IDockerBuildContextSt
 
     public string LanguageName => TypescriptSDKGenerator.LanguageName;
 
-    private static string ValidateEntryPath(string entryName, string contextDir)
+    private static Fin<string> ValidateEntryPath(ZipArchiveEntry entry, string destinationDir)
     {
-        var normalized = entryName.Replace('\\', '/');
-        if (
-            string.IsNullOrWhiteSpace(normalized)
-            || normalized.StartsWith('/')
-            || normalized.Contains(':')
-            || normalized.Split('/').Any(segment => segment is "." or "..")
-        )
-        {
-            throw new InvalidDataException($"Invalid Zip entry path: {entryName}");
-        }
+        string fullDestDir = Path.GetFullPath(destinationDir);
+        if (!fullDestDir.EndsWith(Path.DirectorySeparatorChar))
+            fullDestDir += Path.DirectorySeparatorChar;
+        string destPath = Path.GetFullPath(Path.Join(fullDestDir, entry.FullName));
 
-        var fullContextDir = Path.GetFullPath(contextDir);
-        var destinationPath = Path.GetFullPath(Path.Combine(fullContextDir, normalized.Replace('/', Path.DirectorySeparatorChar)));
-        var contextPrefix = Path.EndsInDirectorySeparator(fullContextDir) ? fullContextDir : fullContextDir + Path.DirectorySeparatorChar;
-        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        if (!destinationPath.StartsWith(contextPrefix, comparison))
-            throw new InvalidDataException($"Invalid Zip entry path: {entryName}");
-
-        return destinationPath;
+        if (!destPath.StartsWith(fullDestDir, StringComparison.Ordinal))
+            return Error.FromObject($"Entry '{entry.FullName}' would extract outside the destination directory.");
+        else
+            return destPath;
     }
 
     // Building temp dir so that TAR headers know the size of the file. The point is to offload work to ROM IO instead of RAM
@@ -82,9 +72,9 @@ public sealed class TypeScriptDockerBuildContextStrategy : IDockerBuildContextSt
     {
         // Temp Dir Setup
         var id = Guid.NewGuid().ToString("N"); // 32 digits format
-        var tempDir = Path.Combine(Path.GetTempPath(), $"docker-build-{id}");
-        var contextDir = Path.Combine(tempDir, "context");
-        var tarPath = Path.Combine(tempDir, "code.tar");
+        var tempDir = Directory.CreateTempSubdirectory($"docker-build-{id}");
+        var contextDir = Path.Combine(tempDir.FullName, "context");
+        var tarPath = Path.Combine(tempDir.FullName, "code.tar");
         Directory.CreateDirectory(contextDir);
 
         try
@@ -106,14 +96,21 @@ public sealed class TypeScriptDockerBuildContextStrategy : IDockerBuildContextSt
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (++entryCount > MaxEntryCount)
-                    throw new InvalidDataException($"Zip archive exceeds the {MaxEntryCount} entry limit.");
+                {
+                    tempDir.Delete(recursive: true);
+                    return new(Error.FromObject($"Zip archive exceeds the {MaxEntryCount} entry limit."));
+                }
 
                 if (entry.Length > MaxTotalUncompressedSize - totalUncompressedSize)
-                    throw new InvalidDataException($"Zip archive exceeds the {MaxTotalUncompressedSize}-byte uncompressed size limit.");
+                {
+                    tempDir.Delete(recursive: true);
+                    return new(Error.FromObject($"Zip archive exceeds the {MaxTotalUncompressedSize}-byte uncompressed size limit."));
+                }
                 totalUncompressedSize += entry.Length;
 
-                var destinationPath = ValidateEntryPath(entry.FullName, contextDir);
-                if (entry.FullName.EndsWith('/') || entry.FullName.EndsWith('\\'))
+                string destinationPath = ValidateEntryPath(entry, contextDir).IfFail((e) => throw e);
+
+                if (entry.FullName.EndsWith(Path.DirectorySeparatorChar))
                 {
                     Directory.CreateDirectory(destinationPath);
                     continue;
@@ -162,13 +159,13 @@ public sealed class TypeScriptDockerBuildContextStrategy : IDockerBuildContextSt
                 await tarStream.FlushAsync(cancellationToken);
             }
 
-            return new TemporaryFileDockerBuildContext(tarPath, tempDir);
+            return new TemporaryFileDockerBuildContext(tarPath, tempDir.FullName);
         }
-        catch
+        catch (Exception ex)
         {
-            if (Directory.Exists(tempDir))
-                Directory.Delete(tempDir, recursive: true);
-            throw;
+            if (tempDir.Exists)
+                tempDir.Delete(recursive: true);
+            return new(Error.New(ex));
         }
     }
 }

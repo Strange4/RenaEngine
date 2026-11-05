@@ -161,4 +161,44 @@ public class DockerImageServiceTests
             Directory.Delete(directory, recursive: true);
         }
     }
+
+    [Test]
+    public async Task CreateImageAsync_ReturnsFailureWhenDockerReportsBuildErrors()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), $"docker-image-service-error-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        string buildContextPath = Path.Combine(directory, "context.tar");
+        await File.WriteAllBytesAsync(buildContextPath, []);
+        var request = new DockerImageBuildRequest
+        {
+            ImageName = "test-image:latest",
+            Dockerfile = "FROM scratch",
+            FilesArchivePath = Path.Combine(directory, "player.zip"),
+            Language = "typescript",
+        };
+        this._fixture.Images.Setup(operations =>
+                operations.BuildImageFromDockerfileAsync(
+                    It.IsAny<ImageBuildParameters>(),
+                    It.IsAny<Stream>(),
+                    It.IsAny<IEnumerable<AuthConfig>>(),
+                    It.IsAny<IDictionary<string, string>>(),
+                    It.IsAny<IProgress<JSONMessage>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Callback<ImageBuildParameters, Stream, IEnumerable<AuthConfig>, IDictionary<string, string>, IProgress<JSONMessage>, CancellationToken>(
+                (_, _, _, _, progress, _) => progress.Report(new JSONMessage { Error = new JSONError { Message = "Build failed" } })
+            )
+            .Returns(Task.CompletedTask);
+
+        try
+        {
+            var result = await this._service.CreateImageAsync(request, buildContextPath);
+            Assert.That(IsFailure(result), Is.True);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
 }

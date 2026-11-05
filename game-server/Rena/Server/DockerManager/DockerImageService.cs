@@ -58,7 +58,7 @@ public class DockerImageService(IDockerClient dockerClient, ILogger logger) : Ab
         catch (DockerApiException ex)
         {
             _logger.LogError(ex, "Failed to delete image {Id}", imageId);
-            return new Result<Unit>(Error.FromObject($"Failed to delete image {imageId}"));
+            return new(Error.FromObject($"Failed to delete image {imageId}"));
         }
     }
 
@@ -110,10 +110,10 @@ public class DockerImageService(IDockerClient dockerClient, ILogger logger) : Ab
         {
             var errors = string.Join(Environment.NewLine, buildErrors);
             _logger.LogError("Failed to build image {ImageName}: {Errors}", request.ImageName, errors);
-            return new Result<Unit>(Error.FromObject($"Failed to build image {request.ImageName}: {errors}"));
+            return new(Error.FromObject($"Failed to build image {request.ImageName}: {errors}"));
         }
         _logger.LogInformation("Image {ImageName} finished building", request.ImageName);
-        return new Result<Unit>(unit);
+        return new(unit);
     }
 
     public async Task<Result<ImagesListResponse>> FindImageByIdAsync(string id)
@@ -127,7 +127,7 @@ public class DockerImageService(IDockerClient dockerClient, ILogger logger) : Ab
                         Some: image => new Result<ImagesListResponse>(image),
                         None: () => new Result<ImagesListResponse>(Error.FromObject($"No image found for id {id}"))
                     ),
-            error => new Result<ImagesListResponse>(error)
+            error => new(error)
         );
     }
 }

@@ -103,23 +103,24 @@ public class DockerService : AbstractDockerService, IDockerService
             return new Result<string>(Error.FromObject($"Dockerfile {dockerFilePath} was not found"));
         }
 
+        if (!SDKBuilder.AvailableLanguageGenerators().Contains(language, StringComparer.Ordinal))
+        {
+            string error = $"Language {language} is not supported.";
+            this._logger.LogError("Language {Languuage} is not supported", language);
+            return new(Error.FromObject(error));
+        }
+
+        if (!this._buildContextStrategies.TryGetValue(language, out var buildContextStrategy))
+        {
+            string error = $"No Docker build context strategy is registered for supported language {language}.";
+            this._logger.LogError(error);
+            return new(Error.FromObject(error));
+        }
+
+        DockerImageBuildRequest request;
         try
         {
-            if (!SDKBuilder.AvailableLanguageGenerators().Contains(language, StringComparer.Ordinal))
-            {
-                string error = $"Language {language} is not supported.";
-                this._logger.LogError("Language {Languuage} is not supported", language);
-                return new Result<string>(Error.FromObject(error));
-            }
-
-            if (!this._buildContextStrategies.TryGetValue(language, out var buildContextStrategy))
-            {
-                string error = $"No Docker build context strategy is registered for supported language {language}.";
-                this._logger.LogError(error);
-                return new Result<string>(Error.FromObject(error));
-            }
-
-            var request = new DockerImageBuildRequest
+            request = new DockerImageBuildRequest
             {
                 ImageName = playerId,
                 Dockerfile = await File.ReadAllTextAsync(dockerFilePath),
@@ -127,24 +128,25 @@ public class DockerService : AbstractDockerService, IDockerService
                 Language = language,
                 BuildArgs = buildArgs.IfNone(new Dictionary<string, string>()),
             };
-            Result<IDockerBuildContext> contextResult = await buildContextStrategy.CreateAsync(request);
-            return await contextResult.Match(
-                async context =>
-                {
-                    await using (context)
-                    {
-                        Result<Unit> imageResult = await this._images.CreateImageAsync(request, context.ContentPath);
-                        return imageResult.Match(_ => new Result<string>(playerId), error => new Result<string>(error));
-                    }
-                },
-                error => Task.FromResult(new Result<string>(error))
-            );
         }
-        catch (Exception ex)
+        catch (OperationCanceledException ex)
         {
-            this._logger.LogError(ex, "Failed to create or replace image for player {PlayerId}", playerId);
-            return new Result<string>(Error.New(ex));
+            this._logger.LogError(ex, "Couldn't read Dockerfile {Path}", dockerFilePath);
+            return new(Error.New(ex));
         }
+
+        Result<IDockerBuildContext> contextResult = await buildContextStrategy.CreateAsync(request);
+        return await contextResult.Match(
+            async context =>
+            {
+                await using (context)
+                {
+                    Result<Unit> imageResult = await this._images.CreateImageAsync(request, context.ContentPath);
+                    return imageResult.Match(_ => new Result<string>(playerId), error => new Result<string>(error));
+                }
+            },
+            error => Task.FromResult(new Result<string>(error))
+        );
     }
 
     public Task<Result<Unit>> KillContainerWithIdAsync(string containerId)

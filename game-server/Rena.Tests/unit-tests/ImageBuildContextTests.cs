@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using LanguageExt.Common;
 using Rena.Server.DockerManager;
 
 namespace Rena.Tests.Unit;
@@ -8,13 +9,14 @@ namespace Rena.Tests.Unit;
 public class ImageBuildContextTests
 {
     [Test]
-    public async Task CreateAsync_RejectsEntryOutsideContextDirectory()
+    public async Task CreateAsync_ReturnsFailureForEntryOutsideContextDirectory()
     {
         string archivePath = await CreateArchiveAsync(("../outside.txt", []));
         try
         {
             var strategy = new TypeScriptDockerBuildContextStrategy();
-            Assert.ThrowsAsync<InvalidDataException>(async () => await strategy.CreateAsync(CreateRequest(archivePath)));
+            var result = await strategy.CreateAsync(CreateRequest(archivePath));
+            Assert.That(result.IsFaulted, Is.True);
         }
         finally
         {
@@ -23,13 +25,48 @@ public class ImageBuildContextTests
     }
 
     [Test]
-    public async Task CreateAsync_RejectsArchiveExceedingTotalUncompressedSizeLimit()
+    public async Task CreateAsync_ReturnsFailureForArchiveExceedingTotalUncompressedSizeLimit()
     {
         string archivePath = await CreateArchiveAsync(("first.txt", new byte[6 * 1024 * 1024]), ("second.txt", new byte[6 * 1024 * 1024]));
         try
         {
             var strategy = new TypeScriptDockerBuildContextStrategy();
-            Assert.ThrowsAsync<InvalidDataException>(async () => await strategy.CreateAsync(CreateRequest(archivePath)));
+            var result = await strategy.CreateAsync(CreateRequest(archivePath));
+            Assert.That(result.IsFaulted, Is.True);
+        }
+        finally
+        {
+            File.Delete(archivePath);
+        }
+    }
+
+    [Test]
+    public async Task CreateAsync_ReturnsFailureForArchiveExceedingEntryCountLimit()
+    {
+        string archivePath = await CreateArchiveAsync(
+            Enumerable.Range(0, 10_001).Select(index => ($"file-{index}.txt", Array.Empty<byte>())).ToArray()
+        );
+        try
+        {
+            var strategy = new TypeScriptDockerBuildContextStrategy();
+            var result = await strategy.CreateAsync(CreateRequest(archivePath));
+            Assert.That(result.IsFaulted, Is.True);
+        }
+        finally
+        {
+            File.Delete(archivePath);
+        }
+    }
+
+    [Test]
+    public async Task CreateAsync_ReturnsFailureWhenCancellationIsRequested()
+    {
+        string archivePath = await CreateArchiveAsync(("file.txt", []));
+        try
+        {
+            var strategy = new TypeScriptDockerBuildContextStrategy();
+            var result = await strategy.CreateAsync(CreateRequest(archivePath), new CancellationToken(canceled: true));
+            Assert.That(result.IsFaulted, Is.True);
         }
         finally
         {
