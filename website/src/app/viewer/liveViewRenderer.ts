@@ -118,6 +118,28 @@ export class LiveViewRenderer {
         return this.addGameRenderable(renderable);
     }
 
+    //update an exisiting renderable (id is present in the viewer state) such that the renderable gets its properties modified
+    //param renderable is the new version with the updated properties we want
+    //no need for id input param since renderables are mapped to IDs and those are fetchable
+    async updateGameRenderable(renderable: GameRenderable, signal?: AbortSignal): Promise<Sprite | undefined> {
+        
+        await this.assetLoader.loadFor([renderable]); //load asset. old sprite still showing at this point
+
+        //reusing same logic as from Create here--> // The viewer may have been destroyed while the asset was loading
+        if (signal?.aborted) return undefined;
+    
+        //Check for case below first!: "is there even an update to do" checker
+        //the renderer maps an ID to a sprite, both old and new versions share the same id. We can fetch the old sprite using that id
+        //if we can't find the old sprite, then it's not on the screen and nothing to update
+        if (!this.getSprite(renderable.id)){
+            return undefined; //no updates to do
+        }
+        //else, exisitng id--> there is something to update
+        //replace old with new sprite
+        this.removeGameRenderable(renderable.id); //remove old sprite
+        return this.addGameRenderable(renderable); //create new sprite
+    }
+
     // Remove the sprite when its renderable gets removed so it's not shown anymore
     removeGameRenderable(id: string): void {
         const sprite = this.getSprite(id);
@@ -131,6 +153,8 @@ export class LiveViewRenderer {
         sprite.destroy();
         this.sprites.delete(id);
     }
+
+
 
     async renderScene(renderables: GameRenderable[], signal?: AbortSignal): Promise<void> {
         // Load the assets before creating sprites
