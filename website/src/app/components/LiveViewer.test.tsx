@@ -508,4 +508,27 @@ describe("LiveViewer", () => {
       logSpy.mockRestore();
     }
   });
+
+  it("updates a renderable", async()=>{
+
+    render(<LiveViewer gameId="15" />);
+    await waitFor(() => {
+      expect(RenderableChangeProcessor).toHaveBeenCalledTimes(1);
+    });
+
+    const [oldShip, updatedShip] = getPixiMocks().__spriteInstances;
+
+    //Say the change is a movement/displacement
+    const displacement: GameRenderable = {...TEST_SCENE[0], position:[4,1]};
+    await act(async() => {
+      await getViewerProcessor().process({index:1, changes:[displacement]});
+    });
+
+    //old gets removed, updated/new gets created--same id
+    expect(oldShip.destroy).toHaveBeenCalledTimes(1);
+    expect(updatedShip.destroy).not.toHaveBeenCalled();
+    const{__spriteInstances} = getPixiMocks();
+    expect(__spriteInstances).toHaveLength(3);
+    expect(__spriteInstances[2].position.set).toHaveBeenCalledWith(144,48); //some coordinate position for update
+  });
 });
