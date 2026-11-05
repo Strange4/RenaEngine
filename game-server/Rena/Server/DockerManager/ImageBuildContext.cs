@@ -70,16 +70,9 @@ public sealed class TypeScriptDockerBuildContextStrategy : IDockerBuildContextSt
     // Building temp dir so that TAR headers know the size of the file. The point is to offload work to ROM IO instead of RAM
     public async Task<Result<IDockerBuildContext>> CreateAsync(DockerImageBuildRequest request, CancellationToken cancellationToken = default)
     {
-        // Temp Dir Setup
-        var id = Guid.NewGuid().ToString("N"); // 32 digits format
-        var tempDir = Directory.CreateTempSubdirectory($"docker-build-{id}");
-        var contextDir = Path.Combine(tempDir.FullName, "context");
-        var tarPath = Path.Combine(tempDir.FullName, "code.tar");
-        Directory.CreateDirectory(contextDir);
-
+        DirectoryInfo? tempDir = null;
         try
         {
-            // Extract ZIP into context dir
             await using var archiveStream = new FileStream(
                 request.FilesArchivePath,
                 FileMode.Open,
@@ -89,25 +82,31 @@ public sealed class TypeScriptDockerBuildContextStrategy : IDockerBuildContextSt
                 FileOptions.Asynchronous | FileOptions.SequentialScan
             );
             using var zip = new ZipArchive(archiveStream, ZipArchiveMode.Read, leaveOpen: true);
-            int bufferSize = 81920;
+
             long totalUncompressedSize = 0;
             int entryCount = 0;
-            foreach (var entry in zip.Entries)
+            foreach (var entryLength in zip.Entries.Select(entry => entry.Length))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (++entryCount > MaxEntryCount)
-                {
-                    tempDir.Delete(recursive: true);
                     return new(Error.FromObject($"Zip archive exceeds the {MaxEntryCount} entry limit."));
-                }
 
-                if (entry.Length > MaxTotalUncompressedSize - totalUncompressedSize)
-                {
-                    tempDir.Delete(recursive: true);
+                if (entryLength > MaxTotalUncompressedSize - totalUncompressedSize)
                     return new(Error.FromObject($"Zip archive exceeds the {MaxTotalUncompressedSize}-byte uncompressed size limit."));
-                }
-                totalUncompressedSize += entry.Length;
+                totalUncompressedSize += entryLength;
+            }
 
+            // Create the extraction directory only after the archive passes its metadata limits.
+            tempDir = Directory.CreateTempSubdirectory($"docker-build");
+            var contextDir = Path.Combine(tempDir.FullName, "context");
+            var tarPath = Path.Combine(tempDir.FullName, "code.tar");
+            Directory.CreateDirectory(contextDir);
+            int bufferSize = 81920;
+
+            // Extract ZIP into context dir
+            foreach (var entry in zip.Entries)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
                 string destinationPath = ValidateEntryPath(entry, contextDir).IfFail((e) => throw e);
 
                 if (entry.FullName.EndsWith(Path.DirectorySeparatorChar))
@@ -163,7 +162,7 @@ public sealed class TypeScriptDockerBuildContextStrategy : IDockerBuildContextSt
         }
         catch (Exception ex)
         {
-            if (tempDir.Exists)
+            if (tempDir?.Exists == true)
                 tempDir.Delete(recursive: true);
             return new(Error.New(ex));
         }
