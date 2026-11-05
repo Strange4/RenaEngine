@@ -424,7 +424,7 @@ describe("LiveViewRenderer", () => {
 
     //updated sprite's properties got updated
     expect(sprite!.texture).toEqual({path:"/sprites/rena.png"});
-    //0*32+16=16 in x position and in y we have 1*32+16=48   *if translating pixels with a tile size of 32
+    //0*32+16=16 in x position and in y we have 1*32+16=48   *if translating pixels with a tile size of 32 (check if logic stays depending if we consider tiles or pixels)
     expect(sprite!.position.x).toBe(16);
     expect(sprite!.position.y).toBe(48);
     expect(sprite!.angle).toBe(90);
