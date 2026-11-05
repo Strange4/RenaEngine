@@ -125,17 +125,34 @@ export class LiveViewRenderer {
 
     //Helper function-> it applies the changes to each property of the sprite
     private applyUpdates (sprite: Sprite, renderable: GameRenderable){
-        sprite.position.set( //x and y
-            renderable.position[0],
-            renderable.position[1],
+
+
+        //adding this part of the creational logic
+        // Pixi rotates around the sprite's anchor, which acts as its pivot point.
+        const tileCenter = this.viewerSetup.tileSize / 2;
+
+        // The position tile is the first tile of the renderable. Divide the
+        // half-tile offset (0.5) by the renderable size to place the pivot at the
+        // center of that tile, even for sprites spanning multiple tiles.
+        // Since Pixi's anchor is normalized (0-1), we divide by the
+        // renderable's size in tiles.
+        sprite.anchor.set(
+            0.5 / renderable.size[0],
+            0.5 / renderable.size[1],
         );
+        // Pixi's position is the anchor's world position, so offset it to
+        // the tile center. This keeps the sprite's visual top-left corner at
+        // the renderable's tile position while rotation stays on that tile.
+        sprite.position.set(
+            renderable.position[0] * this.viewerSetup.tileSize + tileCenter,
+            renderable.position[1] * this.viewerSetup.tileSize + tileCenter,
+        );
+       
         sprite.zIndex = renderable.layer; //zIndex relates to the planes where we place the sprites: background, fore plan, partially hidden by another sprite, etc
         sprite.width = renderable.size[0];
         sprite.height = renderable.size[1];
 
-        if (renderable.rotation === null){
-            sprite.angle = renderable.rotation ?? 0;
-        }
+       sprite.angle = renderable.rotation ?? 0; //if not specified, no rotation
     }
 
     async updateGameRenderable(renderable: GameRenderable, signal?: AbortSignal): Promise<Sprite | undefined> {
