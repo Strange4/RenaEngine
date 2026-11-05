@@ -524,11 +524,11 @@ describe("LiveViewer", () => {
       await getViewerProcessor().process({index:1, changes:[displacement]});
     });
 
-    //old gets removed, updated/new gets created--same id
-    expect(oldShip.destroy).toHaveBeenCalledTimes(1);
+  
+    expect(oldShip.destroy).not.toHaveBeenCalled();
     expect(updatedShip.destroy).not.toHaveBeenCalled();
     const{__spriteInstances} = getPixiMocks();
-    expect(__spriteInstances).toHaveLength(3);
-    expect(__spriteInstances[2].position.set).toHaveBeenCalledWith(144,48); //some coordinate position for update
+    expect(getPixiMocks().__spriteInstances).toHaveLength(2);
+    expect(oldShip.position.set).toHaveBeenCalledWith(144,48); //some coordinate position for update
   });
 });
