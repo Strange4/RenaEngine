@@ -149,8 +149,8 @@ export class LiveViewRenderer {
         );
        
         sprite.zIndex = renderable.layer; //zIndex relates to the planes where we place the sprites: background, fore plan, partially hidden by another sprite, etc
-        sprite.width = renderable.size[0];
-        sprite.height = renderable.size[1];
+        sprite.width = renderable.size[0]* this.viewerSetup.tileSize;//multiplying by the factor for pixels
+        sprite.height = renderable.size[1]* this.viewerSetup.tileSize;
 
        sprite.angle = renderable.rotation ?? 0; //if not specified, no rotation
     }
