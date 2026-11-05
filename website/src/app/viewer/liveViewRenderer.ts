@@ -73,7 +73,8 @@ export class LiveViewRenderer {
 
         const sprite = new Sprite(texture);
 
-        // Pixi rotates around the sprite's anchor, which acts as its pivot point.
+        //COMMENTING THIS PART OUT BC IT IS SHARED WITH THE UPDATE LOGIC AS WELL- as a fix there's a HELPER method with this logic in it
+        /* // Pixi rotates around the sprite's anchor, which acts as its pivot point.
         const tileCenter = this.viewerSetup.tileSize / 2;
 
         // The position tile is the first tile of the renderable. Divide the
@@ -99,7 +100,10 @@ export class LiveViewRenderer {
         // Convert tile-based size to pixel size
         sprite.width = renderable.size[0] * this.viewerSetup.tileSize;
         sprite.height = renderable.size[1] * this.viewerSetup.tileSize;
-        sprite.angle = renderable.rotation ?? 0;
+        sprite.angle = renderable.rotation ?? 0; */
+
+        //Calling the helper for the part above^
+        this.setProperties(sprite, renderable); //sets the position, size, rotation, etc
 
         container.addChild(sprite);
         this.addSprite(renderable.id, sprite);
@@ -123,7 +127,7 @@ export class LiveViewRenderer {
     
 
     //Helper function-> it applies the changes to each property of the sprite
-    private applyUpdates (sprite: Sprite, renderable: GameRenderable){
+    private setProperties (sprite: Sprite, renderable: GameRenderable){
 
 
         //adding this part of the creational logic
@@ -181,7 +185,7 @@ export class LiveViewRenderer {
         }
         
         //calling the helper function that applies all of the new changes property by property
-        this.applyUpdates(sprite, renderable);
+        this.setProperties(sprite, renderable);
         return sprite; //show new updated sprite image on screen
     }
 
