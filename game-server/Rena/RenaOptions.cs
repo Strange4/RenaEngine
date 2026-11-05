@@ -15,10 +15,15 @@ public record class RenaOptions
 
     public string GenerationDirectory { get; set; } = "./sdks";
 
+    public string UploadsDirectory { get; set; } = "./uploads";
+
+    public uint MaxZipFileSizeBytes { get; set; } = 1 << 23; // 8 MiB
+
     [Required]
     public string AdminToken { get; set; } = "ADMIN-change-me";
 
-    public Dictionary<string, bool> Features { get; set; } = new(StringComparer.OrdinalIgnoreCase) { ["test-feature"] = false };
+    public Dictionary<string, bool> Features { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase) { ["test-feature"] = false, ["sdk-downloads"] = false };
 
     [Required]
     public int RoomSize { get; set; } = 2;

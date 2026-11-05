@@ -13,6 +13,9 @@ coverage-report/
 **/bin/
 **/obj/
 
+# Uploads
+uploads/
+
 # User-specific files
 *.rsuser
 *.suo

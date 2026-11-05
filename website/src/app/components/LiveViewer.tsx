@@ -56,8 +56,9 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
 
       // Applies the RenderableChanges that come after the initial scene
       processor = new RenderableChangeProcessor({
-        // TODO #85: create the sprite of a new renderable
-        create: async () => {},
+        create: async (renderable) => {
+          await renderer.createGameRenderable(renderable, unmount.signal);
+        },
         // TODO #86: update the sprite of an existing renderable
         update: async () => {},
         remove: async (id) => renderer.removeGameRenderable(id),

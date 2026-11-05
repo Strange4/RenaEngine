@@ -30,9 +30,11 @@ export default async function AdminPage() {
             feature={feature}
             initialEnabled={setting?.enabled ?? null}
           />
-          <p>
-            <Link href={feature.path}>Open {feature.label.toLowerCase()}</Link>
-          </p>
+          {feature.path && (
+            <p>
+              <Link href={feature.path}>Open {feature.label.toLowerCase()}</Link>
+            </p>
+          )}
         </div>
       ))}
       <LogoutButton />

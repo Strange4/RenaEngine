@@ -62,8 +62,11 @@ export class LiveViewRenderer {
         const existingSprite = this.getSprite(renderable.id);
         // If the sprite already exists, return it instead of creating a new one
         if (existingSprite) {
-            return existingSprite; 
+            return existingSprite;
         }
+
+        // Get the container first so an unknown type throws before any sprite is created
+        const container = this.getContainer(renderable.type);
 
         // Load the texture for the renderable's asset path
         const texture = this.assetLoader.getTexture(renderable.assetPath);
@@ -98,10 +101,21 @@ export class LiveViewRenderer {
         sprite.height = renderable.size[1] * this.viewerSetup.tileSize;
         sprite.angle = renderable.rotation ?? 0;
 
-        this.getContainer(renderable.type).addChild(sprite);
+        container.addChild(sprite);
         this.addSprite(renderable.id, sprite);
 
         return sprite;
+    }
+
+    // Create the sprite of a renderable that a change introduced (its ID isn't shown yet).
+    // Unlike the initial scene, its asset may not be loaded, so load it first.
+    async createGameRenderable(renderable: GameRenderable, signal?: AbortSignal): Promise<Sprite | undefined> {
+        await this.assetLoader.loadFor([renderable]);
+
+        // The viewer may have been destroyed while the asset was loading
+        if (signal?.aborted) return undefined;
+
+        return this.addGameRenderable(renderable);
     }
 
     // Remove the sprite when its renderable gets removed so it's not shown anymore

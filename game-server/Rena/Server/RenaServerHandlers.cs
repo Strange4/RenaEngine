@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Rena.GameEngine;
@@ -7,7 +8,7 @@ using Rena.Generator;
 
 namespace Rena.Server;
 
-internal class RenaServerHandlers<G, S, A>
+internal partial class RenaServerHandlers<G, S, A>
     where G : IGame<S, A>, new()
     where S : class
     where A : class
@@ -29,6 +30,36 @@ internal class RenaServerHandlers<G, S, A>
         return !Path.Exists(zipName)
             ? Results.InternalServerError("Couldn't find the necessary zip file. Make sure that your game developper generated it")
             : Results.File(zipName, contentType: "application/zip");
+    }
+
+    public static async Task<IResult> HandleUpload(string playerId, IFormFile file, IOptions<RenaOptions> options)
+    {
+        if (!PlayerIdRegex().IsMatch(playerId))
+        {
+            return Results.BadRequest("The player id is in a bad format");
+        }
+        if (file.Length > options.Value.MaxZipFileSizeBytes)
+        {
+            return Results.StatusCode(413);
+        }
+
+        List<string> allowedContentTypes = ["application/zip", "application/x-zip", "application/octet-stream", "application/x-zip-compressed"];
+
+        if (!allowedContentTypes.Contains(file.ContentType) || !file.FileName.EndsWith(".zip"))
+        {
+            return Results.StatusCode(415);
+        }
+
+        // Creates if not exist
+        Directory.CreateDirectory(options.Value.UploadsDirectory);
+        string fileName = Path.Combine(options.Value.UploadsDirectory, playerId + ".zip");
+        using (FileStream fileStream = new(fileName, FileMode.Create, FileAccess.ReadWrite))
+        {
+            await file.CopyToAsync(fileStream);
+        }
+        // TODO (147) : build a docker image in the background
+
+        return Results.Accepted();
     }
 
     public static IResult GetFeatureSetting(string featureKey, CompetitionSettingsState settings)
@@ -76,4 +107,7 @@ internal class RenaServerHandlers<G, S, A>
         byte[] expectedBytes = Encoding.UTF8.GetBytes(expectedToken);
         return suppliedBytes.Length == expectedBytes.Length && CryptographicOperations.FixedTimeEquals(suppliedBytes, expectedBytes);
     }
+
+    [GeneratedRegex(@"PLAYER-\d+")]
+    private static partial Regex PlayerIdRegex();
 }

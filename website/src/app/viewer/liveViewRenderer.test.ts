@@ -262,6 +262,78 @@ describe("LiveViewRenderer", () => {
     expect(second.position.y).toBe(112);
   });
 
+  it("throws for an unknown type without creating a sprite", () => {
+    const { renderer, assetLoader } = createRenderer();
+
+    expect(() =>
+      renderer.addGameRenderable(renderable({ type: "UNKNOWN" as RenderableType })),
+    ).toThrow("Unknown renderable type: UNKNOWN");
+
+    expect(assetLoader.getTexture).not.toHaveBeenCalled();
+    expect(renderer.getSprite(baseRenderable.id)).toBeUndefined();
+  });
+
+  it("loads the asset of a new renderable before creating its sprite", async () => {
+    const { renderer, assetLoader } = createRenderer();
+    const created = renderable({
+      id: "new-flag",
+      assetPath: "/sprites/flag.svg",
+      position: [1, 0],
+      size: [1, 2],
+      rotation: 180,
+      type: RenderableType.DECORATION,
+      layer: 4,
+    });
+
+    assetLoader.loadFor.mockImplementation(async () => {
+      expect(assetLoader.getTexture).not.toHaveBeenCalled();
+    });
+
+    const sprite = await renderer.createGameRenderable(created);
+
+    expect(assetLoader.loadFor).toHaveBeenCalledWith([created]);
+    expect(sprite).toBeDefined();
+    expect(renderer.getSprite("new-flag")).toBe(sprite);
+
+    // initialized from the renderable in the change
+    expect(sprite!.texture).toEqual({ path: "/sprites/flag.svg" });
+    expect(sprite!.position.x).toBe(48);
+    expect(sprite!.position.y).toBe(16);
+    expect(sprite!.anchor.x).toBe(0.5);
+    expect(sprite!.anchor.y).toBe(0.25);
+    expect(sprite!.width).toBe(32);
+    expect(sprite!.height).toBe(64);
+    expect(sprite!.angle).toBe(180);
+    expect(sprite!.zIndex).toBe(4);
+    expect(renderer.getContainer(RenderableType.DECORATION).children).toEqual([sprite]);
+  });
+
+  it("does not create the new sprite if aborted while its asset is loading", async () => {
+    const { renderer, assetLoader } = createRenderer();
+    const controller = new AbortController();
+
+    assetLoader.loadFor.mockImplementation(async () => {
+      controller.abort();
+    });
+
+    const sprite = await renderer.createGameRenderable(baseRenderable, controller.signal);
+
+    expect(sprite).toBeUndefined();
+    expect(assetLoader.getTexture).not.toHaveBeenCalled();
+    expect(renderer.getSprite(baseRenderable.id)).toBeUndefined();
+    expect(renderer.getContainer(RenderableType.OBJECT).children).toHaveLength(0);
+  });
+
+  it("returns the existing sprite when creating an ID that is already shown", async () => {
+    const { renderer } = createRenderer();
+    const existing = renderer.addGameRenderable(baseRenderable);
+
+    const created = await renderer.createGameRenderable(baseRenderable);
+
+    expect(created).toBe(existing);
+    expect(renderer.getContainer(RenderableType.OBJECT).children).toHaveLength(1);
+  });
+
   it("removes and destroys the sprite of a removed renderable", () => {
     const { renderer } = createRenderer();
     const removed = renderer.addGameRenderable(renderable({ id: "removed" })) as unknown as MockSprite;
