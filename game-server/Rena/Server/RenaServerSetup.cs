@@ -77,5 +77,23 @@ internal static class RenaServerSetup
                 }
             }
         );
+        app.MapGet(
+            "/test",
+            async (RenderableBroadcaster broadcaster) =>
+                broadcaster.BroadcastChange([
+                    new GameRenderable()
+                    {
+                        Id = "1234",
+                        AssetPath = "/sprites/grass.png",
+                        Position = [broadcaster.GetIndex(), 1],
+
+                        Type = RenderableType.OBJECT,
+
+                        Layer = 2,
+
+                        Size = [1, 1],
+                    },
+                ])
+        );
     }
 }
