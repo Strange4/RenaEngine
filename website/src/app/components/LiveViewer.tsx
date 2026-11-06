@@ -7,6 +7,7 @@ import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
 import { RenderableChangeProcessor } from "@/app/viewer/renderableChangeProcessor";
 import { getSceneSource } from "@/app/viewer/sceneSource";
 import { SSERenderableChangeSource } from "../viewer/renderableChangeSource";
+import { ViewerSetup } from "@/shared/renderable";
 
 interface LiveViewerProps {
   gameId: string;
@@ -29,8 +30,13 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
     const unmount = new AbortController();
 
     (async () => {
-      const { setup, renderables } =
-        await getSceneSource(gameId).getInitialScene();
+      // const { setup, renderables } =
+      //   await getSceneSource(gameId).getInitialScene();
+
+      const setup: ViewerSetup = {
+        tileSize: 0,
+        resolution: [100, 100]
+      }
       if (unmount.signal.aborted) return;
 
       setResolution(setup.resolution);
@@ -53,11 +59,10 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
       //draw every renderable on the screen (there's a sprite for each ID)
       container.appendChild(app.canvas);
       renderer.addContainerToStage(app.stage);
-      await renderer.renderScene(renderables, unmount.signal);
       if (unmount.signal.aborted) return;
 
       // connect to SSE
-      const changeSource = new SSERenderableChangeSource("/viewer/sse");
+      const changeSource = new SSERenderableChangeSource(`/api/viewer/sse/${gameId}`);
 
       // Applies the RenderableChanges that come after the initial scene
       processor = new RenderableChangeProcessor({
@@ -72,7 +77,6 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
         remove: async (id) => renderer.removeGameRenderable(id),
       }, changeSource);
       // The server's first change has index 1, so the initial scene is index 0
-      processor.initialize(renderables, 0);
     })().catch((e) => {
       console.log(e);
       // TODO put actual error handling here

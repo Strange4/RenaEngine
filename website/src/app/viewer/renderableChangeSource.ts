@@ -104,7 +104,9 @@ export class SSERenderableChangeSource implements RenderableChangeSource {
     Url: string,
     private callback?: RenderableChangeCallback,
   ) {
-    this.sse = new EventSource(Url);
+    this.sse = new EventSource(Url, {
+      withCredentials: true
+    });
     this.sse.addEventListener("change", (e) => this.onChange(e));
   }
 
@@ -121,6 +123,7 @@ export class SSERenderableChangeSource implements RenderableChangeSource {
   }
 
   private onChange(e: MessageEvent<string>) {
+    console.log("receiving an event");
     const change: RenderableChange = JSON.parse(e.data);
     this.changes.push(change);
     this.callback?.call(undefined, change);

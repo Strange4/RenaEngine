@@ -5,6 +5,9 @@ import { RenderableChangeSource } from "./renderableChangeSource";
 export interface RenderableChangeProcessorOptions {}
 
 export class RenderableChangeProcessor {
+  initialize(renderables: any, arg1: number) {
+    throw new Error("Method not implemented.");
+  }
   private currentRenderables = new Map<string, GameRenderable>();
   private processing = Promise.resolve();
   private disposed = false; //boolean flag that keeps track if a process shuts down. False by default bc no shut down recorded
