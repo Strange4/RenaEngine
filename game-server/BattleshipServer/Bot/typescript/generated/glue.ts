@@ -1,25 +1,23 @@
 import Play from "../main.ts";
 
-(async () => {
 
-  let url = process.env.URL || "http://localhost:3000/game/connect/test/1236";
 
-  let ws = new WebSocket(url);
+let url = process.env.URL || "http://localhost:3000/game/connect/test/1236";
 
-  ws.onopen = () => {
-    console.log('Connected to server');
-  };
+let ws = new WebSocket(url);
 
-  ws.onmessage = (event) => {
-    console.log('Received:', event.data);
-  };
+ws.onopen = () => {
+  console.log('Connected to server');
+};
 
-  ws.onerror = (error) => {
-    console.error('WebSocket error:', error);
-  };
+ws.onmessage = (event) => {
+  console.log('Received:', event.data);
+};
 
-  ws.onclose = (event) => {
-    console.log(`Disconnected (Code: ${event.code}, Reason: ${event.reason})`);
-  };
+ws.onerror = (error) => {
+  console.error('WebSocket error:', error);
+};
 
-})();
+ws.onclose = (event) => {
+  console.log(`Disconnected (Code: ${event.code}, Reason: ${event.reason})`);
+};
