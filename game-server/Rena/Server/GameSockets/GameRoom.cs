@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Channels;
@@ -6,24 +7,52 @@ using Rena.Utility;
 
 namespace Rena.Server.GameSockets;
 
-public class GameRoom<G, S, A>(Dictionary<string, Tuple<WebSocket, ChannelWriter<Result<bool>>>> connections)
+public class GameRoom<G, S, A>
     where G : IGame<S, A>, new()
     where S : class
     where A : class
 {
+    private readonly ConcurrentDictionary<string, Tuple<WebSocket, ChannelWriter<Result<bool>>>> _connections;
+    private readonly int _roomSize;
+
+    public bool IsStarted { get; private set; } = false;
+
+    public bool IsFull => _connections.Count >= _roomSize;
+
+    public ConcurrentDictionary<string, Tuple<WebSocket, ChannelWriter<Result<bool>>>> Players => _connections;
+
+    public GameRoom(int roomSize)
+    {
+        _connections = [];
+        _roomSize = roomSize;
+    }
+
+    public GameRoom(Dictionary<string, Tuple<WebSocket, ChannelWriter<Result<bool>>>> connections)
+    {
+        _connections = new(connections);
+        _roomSize = _connections.Count;
+    }
+
+    public Result<bool> AddPlayer(string playerId, Tuple<WebSocket, ChannelWriter<Result<bool>>> connectionInfo)
+    {
+        bool success = _connections.TryAdd(playerId, connectionInfo);
+        return new(success);
+    }
+
     public async Task RunRoom()
     {
+        this.IsStarted = true;
         // Need to snapshot in case a connection closes while sending
-        foreach (var id in connections.Keys.ToList())
+        foreach (var id in _connections.Keys.ToList())
         {
             var responseBytes = Encoding.UTF8.GetBytes($"You, player {id}, have connected to the game\n");
             try
             {
-                await connections[id].Item1.SendAsync(responseBytes, WebSocketMessageType.Text, true, CancellationToken.None);
+                await _connections[id].Item1.SendAsync(responseBytes, WebSocketMessageType.Text, true, CancellationToken.None);
             }
             catch (OperationCanceledException e)
             {
-                await connections[id].Item2.WriteAsync(new(e));
+                await _connections[id].Item2.WriteAsync(new(e));
             }
         }
 
@@ -31,9 +60,9 @@ public class GameRoom<G, S, A>(Dictionary<string, Tuple<WebSocket, ChannelWriter
         // since it might do more than implement the game idk)
         Thread.Sleep(1000);
 
-        foreach (var id in connections.Keys.ToList())
+        foreach (var id in _connections.Keys.ToList())
         {
-            await connections[id].Item2.WriteAsync(new(true));
+            await _connections[id].Item2.WriteAsync(new(true));
         }
     }
 
