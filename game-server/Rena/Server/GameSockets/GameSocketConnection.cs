@@ -23,8 +23,13 @@ public class GameSocketConnection<G, S, A>(WebSocket webSocket, string playerId,
 
         var result = await channel.ReadAsync();
 
-        logger.LogInformation("Unregistering {playerId} from game manager", playerId);
-        await gameRoomManager.UnRegister(playerId);
+        // Fix for small bug where duplicate connection unregisters the actual connection
+        // Might want to change the flow later
+        if (result.IsSuccess || result.Exception is not ArgumentException)
+        {
+            logger.LogInformation("Unregistering {playerId} from game manager", playerId);
+            await gameRoomManager.UnRegister(playerId);
+        }
 
         if (result.IsSuccess)
         {
