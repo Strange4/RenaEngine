@@ -103,6 +103,7 @@ export class RenderableChangeProcessor {
           this.currentRenderables.delete(renderable.id);
         }
       } else if (existing) {
+        //id is known
         // FOR UPDATES
         // This is the check for whether the renderable has changed. If it hasn't, we skip the update.
         if (areRenderablesEqual(existing, renderable)) {

@@ -42,6 +42,7 @@ class MockContainer {
   addChild(...items: (MockContainer | MockSprite)[]): void {
     for (const item of items) {
       if (item instanceof MockSprite) {
+        item.parent?.removeChild(item);
         item.parent = this;
       }
 
@@ -390,5 +391,43 @@ describe("LiveViewRenderer", () => {
         return child.label;
       }),
     ).toEqual(["map", "objects", "decorations"]);
+  });
+
+  it("doesn't update a renderable that doesn't show", async() => {
+    const{renderer} = createRenderer();
+    const sprite = await renderer.updateGameRenderable(renderable({id:"somethingId"}));
+    //no update
+    expect(sprite).toBeUndefined();
+    expect(renderer.getSprite("somethingId")).toBeUndefined();
+    expect(renderer.getContainer(RenderableType.OBJECT).children).toHaveLength(0);
+  });
+
+  it("updates a renderable", async() => {
+    const{renderer, assetLoader} = createRenderer();
+    //show old/original sprite (gives an illusion of an update when it gets replaced by the new updated one)
+    const oldSprite = renderer.addGameRenderable(baseRenderable) as unknown as MockSprite;
+
+    const updated = renderable({
+      position: [0,1], //pixels? To be checked
+      assetPath: "/sprites/rena.png",
+      rotation: 90,
+      type: RenderableType.OBJECT,
+    });
+
+    const sprite = await renderer.updateGameRenderable(updated);
+
+    //new loaded before building sprite
+    expect(assetLoader.loadFor).toHaveBeenCalledWith([updated]);
+    expect(oldSprite.destroyed).toBe(false); //same sprite was used for the renderables- new changes applied to it
+    expect(sprite).toBe(oldSprite);
+    expect(renderer.getSprite(baseRenderable.id)).toBe(sprite);
+
+
+    //updated sprite's properties got updated
+    expect(sprite!.texture).toEqual({path:"/sprites/rena.png"});
+    //0*32+16=16 in x position and in y we have 1*32+16=48   *if translating pixels with a tile size of 32 (check if logic stays depending if we consider tiles or)
+    expect(sprite!.position.x).toBe(16);
+    expect(sprite!.position.y).toBe(48);
+    expect(sprite!.angle).toBe(90);
   });
 });

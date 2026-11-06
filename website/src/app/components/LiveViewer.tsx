@@ -48,7 +48,7 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
         app.destroy(true, { children: true });
         return;
       }
-
+      //draw every renderable on the screen (there's a sprite for each ID)
       container.appendChild(app.canvas);
       renderer.addContainerToStage(app.stage);
       await renderer.renderScene(renderables, unmount.signal);
@@ -56,11 +56,14 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
 
       // Applies the RenderableChanges that come after the initial scene
       processor = new RenderableChangeProcessor({
+        //if new, create
         create: async (renderable) => {
           await renderer.createGameRenderable(renderable, unmount.signal);
         },
-        // TODO #86: update the sprite of an existing renderable
-        update: async () => {},
+        // Applies the Renderable Update
+        update: async (renderable) => {
+          await renderer.updateGameRenderable(renderable, unmount.signal);
+        },
         remove: async (id) => renderer.removeGameRenderable(id),
       });
       // The server's first change has index 1, so the initial scene is index 0
