@@ -36,7 +36,7 @@ public class GameSocketConnectionTests
         _mockLogger = Substitute.For<ILogger>();
         _mockManager = Substitute.For<IGameRoomManager>();
         _mockChannel = Substitute.For<ChannelReader<Result<bool>>>();
-        _mockManager.Register(Arg.Any<string>(), Arg.Is(_mockWebSocket)).Returns(_mockChannel);
+        _mockManager.RegisterForTest(Arg.Any<string>(), Arg.Is(_mockWebSocket)).Returns(_mockChannel);
     }
 
     [TearDown]
@@ -62,7 +62,7 @@ public class GameSocketConnectionTests
 
         await _mockChannel.Received(1).ReadAsync();
 
-        await _mockManager.Received(1).Register(Arg.Is(playerId), Arg.Is(_mockWebSocket));
+        await _mockManager.Received(1).RegisterForTest(Arg.Is(playerId), Arg.Is(_mockWebSocket));
         await _mockManager.Received(1).UnRegister(Arg.Is(playerId));
 
         await _mockWebSocket
@@ -88,8 +88,8 @@ public class GameSocketConnectionTests
 
         await _mockChannel.Received(1).ReadAsync();
 
-        await _mockManager.Received(1).Register(Arg.Is(playerId), Arg.Is(_mockWebSocket));
-        await _mockManager.Received(1).UnRegister(Arg.Is(playerId));
+        await _mockManager.Received(1).RegisterForTest(Arg.Is(playerId), Arg.Is(_mockWebSocket));
+        await _mockManager.DidNotReceive().UnRegister(Arg.Is(playerId));
 
         await _mockWebSocket
             .Received(1)
@@ -114,7 +114,7 @@ public class GameSocketConnectionTests
 
         await _mockChannel.Received(1).ReadAsync();
 
-        await _mockManager.Received(1).Register(Arg.Is(playerId), Arg.Is(_mockWebSocket));
+        await _mockManager.Received(1).RegisterForTest(Arg.Is(playerId), Arg.Is(_mockWebSocket));
         await _mockManager.Received(1).UnRegister(Arg.Is(playerId));
 
         await _mockWebSocket
