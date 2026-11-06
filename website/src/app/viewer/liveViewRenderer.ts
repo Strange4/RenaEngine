@@ -73,7 +73,8 @@ export class LiveViewRenderer {
 
         const sprite = new Sprite(texture);
 
-        // Pixi rotates around the sprite's anchor, which acts as its pivot point.
+        //COMMENTING THIS PART OUT BC IT IS SHARED WITH THE UPDATE LOGIC AS WELL- as a fix there's a HELPER method with this logic in it
+        /* // Pixi rotates around the sprite's anchor, which acts as its pivot point.
         const tileCenter = this.viewerSetup.tileSize / 2;
 
         // The position tile is the first tile of the renderable. Divide the
@@ -99,7 +100,10 @@ export class LiveViewRenderer {
         // Convert tile-based size to pixel size
         sprite.width = renderable.size[0] * this.viewerSetup.tileSize;
         sprite.height = renderable.size[1] * this.viewerSetup.tileSize;
-        sprite.angle = renderable.rotation ?? 0;
+        sprite.angle = renderable.rotation ?? 0; */
+
+        //Calling the helper for the part above^
+        this.setProperties(sprite, renderable); //sets the position, size, rotation, etc
 
         container.addChild(sprite);
         this.addSprite(renderable.id, sprite);
@@ -118,6 +122,73 @@ export class LiveViewRenderer {
         return this.addGameRenderable(renderable);
     }
 
+    //Update an exisiting renderable (id is present in the viewer state) such that the renderable gets its properties modified
+    //param renderable is the new version with the updated properties we want
+    
+
+    //Helper function-> it applies the changes to each property of the sprite
+    private setProperties (sprite: Sprite, renderable: GameRenderable){
+
+
+        //adding this part of the creational logic
+        // Pixi rotates around the sprite's anchor, which acts as its pivot point.
+        const tileCenter = this.viewerSetup.tileSize / 2;
+
+        // The position tile is the first tile of the renderable. Divide the
+        // half-tile offset (0.5) by the renderable size to place the pivot at the
+        // center of that tile, even for sprites spanning multiple tiles.
+        // Since Pixi's anchor is normalized (0-1), we divide by the
+        // renderable's size in tiles.
+        sprite.anchor.set(
+            0.5 / renderable.size[0],
+            0.5 / renderable.size[1],
+        );
+        // Pixi's position is the anchor's world position, so offset it to
+        // the tile center. This keeps the sprite's visual top-left corner at
+        // the renderable's tile position while rotation stays on that tile.
+        sprite.position.set(
+            renderable.position[0] * this.viewerSetup.tileSize + tileCenter,
+            renderable.position[1] * this.viewerSetup.tileSize + tileCenter,
+        );
+       
+        sprite.zIndex = renderable.layer; //zIndex relates to the planes where we place the sprites: background, fore plan, partially hidden by another sprite, etc
+        sprite.width = renderable.size[0]* this.viewerSetup.tileSize;//multiplying by the factor for pixels
+        sprite.height = renderable.size[1]* this.viewerSetup.tileSize;
+
+       sprite.angle = renderable.rotation ?? 0; //if not specified, no rotation
+    }
+
+    async updateGameRenderable(renderable: GameRenderable, signal?: AbortSignal): Promise<Sprite | undefined> {
+        
+        //each sprite is kept in one of 3 containers depending on its type--- helps control layering
+        //type changes can also be updates
+        const container = this.getContainer(renderable.type);
+
+        await this.assetLoader.loadFor([renderable]); //load asset. old sprite still showing at this point
+
+        //reusing same logic as from Create here--> // The viewer may have been destroyed while the asset was loading
+        if (signal?.aborted) return undefined;
+    
+        //Check for case below first!: "is there even an update to do" checker
+        //the renderer maps an ID to a sprite, both old and new versions share the same id. We can fetch the old sprite using that id
+        //if we can't find the old sprite, then it's not on the screen and nothing to update
+        const sprite = this.getSprite(renderable.id);
+        if (!sprite){
+            return undefined; //no updates to do, sprite isn't even showing up on screen
+        }
+
+        sprite.texture = this.assetLoader.getTexture(renderable.assetPath);
+
+        //if the sprite changed its type: deco, object, obstacle the layering might get into play, 
+        if (sprite.parent !== container){
+            container.addChild(sprite);
+        }
+        
+        //calling the helper function that applies all of the new changes property by property
+        this.setProperties(sprite, renderable);
+        return sprite; //show new updated sprite image on screen
+    }
+
     // Remove the sprite when its renderable gets removed so it's not shown anymore
     removeGameRenderable(id: string): void {
         const sprite = this.getSprite(id);
@@ -131,6 +202,8 @@ export class LiveViewRenderer {
         sprite.destroy();
         this.sprites.delete(id);
     }
+
+
 
     async renderScene(renderables: GameRenderable[], signal?: AbortSignal): Promise<void> {
         // Load the assets before creating sprites

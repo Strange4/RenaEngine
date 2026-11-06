@@ -50,7 +50,7 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
         app.destroy(true, { children: true });
         return;
       }
-
+      //draw every renderable on the screen (there's a sprite for each ID)
       container.appendChild(app.canvas);
       renderer.addContainerToStage(app.stage);
       await renderer.renderScene(renderables, unmount.signal);
@@ -60,17 +60,17 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
       const changeSource = new SSERenderableChangeSource("/viewer/sse");
 
       // Applies the RenderableChanges that come after the initial scene
-      processor = new RenderableChangeProcessor(
-        {
-          create: async (renderable) => {
-            await renderer.createGameRenderable(renderable, unmount.signal);
-          },
-          // TODO #86: update the sprite of an existing renderable
-          update: async () => {},
-          remove: async (id) => renderer.removeGameRenderable(id),
+      processor = new RenderableChangeProcessor({
+        //if new, create
+        create: async (renderable) => {
+          await renderer.createGameRenderable(renderable, unmount.signal);
         },
-        changeSource,
-      );
+        // Applies the Renderable Update
+        update: async (renderable) => {
+          await renderer.updateGameRenderable(renderable, unmount.signal);
+        },
+        remove: async (id) => renderer.removeGameRenderable(id),
+      }, changeSource);
       // The server's first change has index 1, so the initial scene is index 0
       processor.initialize(renderables, 0);
     })().catch((e) => {
