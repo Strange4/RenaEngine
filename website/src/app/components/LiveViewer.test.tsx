@@ -1,9 +1,13 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
-import { Application, Sprite, Container } from "pixi.js";
+import { Sprite, Container } from "pixi.js";
 import { AssetLoader } from "@/app/viewer/assetLoader";
 import { RenderableChangeProcessor } from "@/app/viewer/renderableChangeProcessor";
 import { getSceneSource } from "@/app/viewer/sceneSource";
-import { RenderableType, type GameRenderable, type ViewerSetup } from "@/shared/renderable";
+import {
+  RenderableType,
+  type GameRenderable,
+  type ViewerSetup,
+} from "@/shared/renderable";
 import LiveViewer from "./LiveViewer";
 
 const TEST_VIEWER_SETUP: ViewerSetup = {
@@ -106,13 +110,14 @@ jest.mock("@/app/viewer/renderableChangeProcessor", () => {
   const actual = jest.requireActual("@/app/viewer/renderableChangeProcessor");
   return {
     RenderableChangeProcessor: jest.fn(
-      (...args: unknown[]) => new actual.RenderableChangeProcessor(...args)
-    )
+      (...args: unknown[]) => new actual.RenderableChangeProcessor(...args),
+    ),
   };
 });
 
 const getViewerProcessor = () =>
-  (RenderableChangeProcessor as unknown as jest.Mock).mock.results[0].value as RenderableChangeProcessor;
+  (RenderableChangeProcessor as unknown as jest.Mock).mock.results[0]
+    .value as RenderableChangeProcessor;
 
 const getPixiMocks = () =>
   jest.requireMock("pixi.js") as {
@@ -143,7 +148,7 @@ const getPixiMocks = () =>
 describe("LiveViewer", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     const mocks = getPixiMocks();
     mocks.__appInstances.length = 0;
     mocks.__containerInstances.length = 0;
@@ -214,12 +219,13 @@ describe("LiveViewer", () => {
       expect(viewer.querySelector("canvas")).not.toBeNull();
     });
 
-    const { __appInstances, __spriteInstances, __containerInstances } = getPixiMocks();
+    const { __appInstances, __spriteInstances, __containerInstances } =
+      getPixiMocks();
     const app = __appInstances[0];
     const stage = app.stage;
 
     const [mapContainer, objectContainer, decorationContainer] =
-    __containerInstances.slice(1);
+      __containerInstances.slice(1);
 
     expect(app.init).toHaveBeenCalledWith({
       width: 800,
@@ -331,9 +337,10 @@ describe("LiveViewer", () => {
 
     (AssetLoader as jest.Mock).mockImplementationOnce(() => ({
       loadFor: jest.fn(
-        () => new Promise<void>((resolve) => {
-          resolveAssets = resolve;
-        }),
+        () =>
+          new Promise<void>((resolve) => {
+            resolveAssets = resolve;
+          }),
       ),
       getTexture: jest.fn().mockReturnValue("mock-texture"),
     }));
@@ -396,7 +403,10 @@ describe("LiveViewer", () => {
     };
 
     await act(async () => {
-      await getViewerProcessor().process({ index: 1, changes: [newRenderable] });
+      await getViewerProcessor().process({
+        index: 1,
+        changes: [newRenderable],
+      });
     });
 
     const assets = (AssetLoader as jest.Mock).mock.results[0].value as {
@@ -418,11 +428,11 @@ describe("LiveViewer", () => {
     expect(decorationContainer.addChild).toHaveBeenCalledWith(created);
 
     // the processor now tracks it alongside the initial scene
-    expect(getViewerProcessor().getCurrentState().map(({ id }) => id)).toEqual([
-      "test-sprite",
-      "test-sprite-two",
-      "new-flag",
-    ]);
+    expect(
+      getViewerProcessor()
+        .getCurrentState()
+        .map(({ id }) => id),
+    ).toEqual(["test-sprite", "test-sprite-two", "new-flag"]);
   });
 
   it("does not create the sprite if unmounted while its asset is loading", async () => {
@@ -477,7 +487,7 @@ describe("LiveViewer", () => {
     await act(async () => {
       await processor.process({
         index: 1,
-        changes: [{ ...TEST_SCENE[0], removed: true }]
+        changes: [{ ...TEST_SCENE[0], removed: true }],
       });
     });
 

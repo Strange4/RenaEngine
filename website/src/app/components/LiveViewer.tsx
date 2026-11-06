@@ -6,6 +6,7 @@ import { AssetLoader } from "@/app/viewer/assetLoader";
 import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
 import { RenderableChangeProcessor } from "@/app/viewer/renderableChangeProcessor";
 import { getSceneSource } from "@/app/viewer/sceneSource";
+import { SSERenderableChangeSource } from "../viewer/renderableChangeSource";
 
 interface LiveViewerProps {
   gameId: string;
@@ -28,7 +29,8 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
     const unmount = new AbortController();
 
     (async () => {
-      const { setup, renderables } = await getSceneSource(gameId).getInitialScene();
+      const { setup, renderables } =
+        await getSceneSource(gameId).getInitialScene();
       if (unmount.signal.aborted) return;
 
       setResolution(setup.resolution);
@@ -54,18 +56,24 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
       await renderer.renderScene(renderables, unmount.signal);
       if (unmount.signal.aborted) return;
 
+      // connect to SSE
+      const changeSource = new SSERenderableChangeSource("/viewer/sse");
+
       // Applies the RenderableChanges that come after the initial scene
-      processor = new RenderableChangeProcessor({
-        create: async (renderable) => {
-          await renderer.createGameRenderable(renderable, unmount.signal);
+      processor = new RenderableChangeProcessor(
+        {
+          create: async (renderable) => {
+            await renderer.createGameRenderable(renderable, unmount.signal);
+          },
+          // TODO #86: update the sprite of an existing renderable
+          update: async () => {},
+          remove: async (id) => renderer.removeGameRenderable(id),
         },
-        // TODO #86: update the sprite of an existing renderable
-        update: async () => {},
-        remove: async (id) => renderer.removeGameRenderable(id),
-      });
+        changeSource,
+      );
       // The server's first change has index 1, so the initial scene is index 0
       processor.initialize(renderables, 0);
-    })().catch(e => {
+    })().catch((e) => {
       console.log(e);
       // TODO put actual error handling here
       // If you change the console.log, make sure to update the relevant test
@@ -82,10 +90,14 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
     <div
       ref={containerRef}
       className="live-viewer-canvas"
-      style={resolution ? {
-        width: `${resolution[0]}px`,
-        height: `${resolution[1]}px`,
-      } : undefined}
+      style={
+        resolution
+          ? {
+              width: `${resolution[0]}px`,
+              height: `${resolution[1]}px`,
+            }
+          : undefined
+      }
       data-testid="live-viewer"
     />
   );
