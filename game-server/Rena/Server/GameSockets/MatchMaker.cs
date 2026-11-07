@@ -53,7 +53,7 @@ public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger logger) :
         // TODO #164 add a check to make sure that the player getting a test room is not part of a current room teardown
         // That way a bot that was created, who's room was shut down cannot create a room of bots
         logger.LogInformation("Creating test room for player {playerId}", playerId);
-        room = new(numPlayers);
+        room = new(numPlayers, logger);
         _playerRooms[playerId] = room;
 
         // TODO #164 add _availableTestContainers check so that we aren't always making new ones
@@ -68,7 +68,7 @@ public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger logger) :
             // TODO set the container paramaters (somehow) to map host.docker.internal to the proper gateway
             // Alternatively setup the parameters to connect to the docker network made by the compose
             // (but then you lose local testing) so it would need to be configured based on where it is running
-            Dictionary<string, string> envVars = new() { ["URL"] = $"http://host.docker.internal:3000/game/connect/test/{botId}" };
+            Dictionary<string, string> envVars = new() { ["URL"] = $"http://host.docker.internal:5000/game/connect/test/{botId}" };
             logger.LogInformation("Starting up host bot {botId}", botId);
             Result<Unit> result = await dockerService.CreateAndStartContainerWithIdAsync(botId, _hostBotImageId!, envVars);
             // TODO #164 add graceful retry or let caller know it failed

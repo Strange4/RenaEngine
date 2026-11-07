@@ -1,7 +1,11 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using System.Text;
 using System.Threading.Channels;
+
+using Microsoft.Extensions.Logging;
+
+using ProtoBuf;
+
 using Rena.GameEngine;
 using Rena.Utility;
 
@@ -14,6 +18,7 @@ public class GameRoom<G, S, A>
 {
     private readonly ConcurrentDictionary<string, Tuple<WebSocket, ChannelWriter<Result<bool>>>> _connections;
     private readonly int _roomSize;
+    private readonly ILogger _logger;
 
     public bool IsStarted { get; private set; } = false;
 
@@ -21,10 +26,11 @@ public class GameRoom<G, S, A>
 
     public ConcurrentDictionary<string, Tuple<WebSocket, ChannelWriter<Result<bool>>>> Players => _connections;
 
-    public GameRoom(int roomSize)
+    public GameRoom(int roomSize, ILogger logger)
     {
         _connections = [];
         _roomSize = roomSize;
+        _logger = logger;
     }
 
     public GameRoom(Dictionary<string, Tuple<WebSocket, ChannelWriter<Result<bool>>>> connections)
@@ -41,29 +47,66 @@ public class GameRoom<G, S, A>
 
     public async Task RunRoom()
     {
+        this._logger.LogDebug("Starting the room");
         this.IsStarted = true;
-        // Need to snapshot in case a connection closes while sending
-        foreach (var id in _connections.Keys.ToList())
+
+        IGame<S, A> game = new G();
+        Dictionary<string, S> statesToSend = game.GetInitial([.. _connections.Keys]);
+        while (this.IsStarted)
         {
-            var responseBytes = Encoding.UTF8.GetBytes($"You, player {id}, have connected to the game\n");
-            try
+            this._logger.LogDebug("playing a turn in the room");
+            Dictionary<string, A> actions = await this.SendAndWaitForResult(statesToSend);
+            statesToSend = game.DoAction(actions);
+            // TODO: broadcast renderer changes here
+            if (game.IsGameOver())
             {
-                await _connections[id].Item1.SendAsync(responseBytes, WebSocketMessageType.Text, true, CancellationToken.None);
-            }
-            catch (OperationCanceledException e)
-            {
-                await _connections[id].Item2.WriteAsync(new(e));
+                this.IsStarted = false;
+                break;
             }
         }
 
-        // TODO implement the actual game (the very next PR) (I don't want to make it an issue
-        // since it might do more than implement the game idk)
-        Thread.Sleep(1000);
-
+        this._logger.LogDebug("ended the game");
+        // The game has ended. Please return to your posts
         foreach (var id in _connections.Keys.ToList())
         {
             await _connections[id].Item2.WriteAsync(new(true));
         }
+    }
+
+    private async Task<Dictionary<string, A>> SendAndWaitForResult(Dictionary<string, S> playerToState)
+    {
+        foreach ((string id, S state) in playerToState)
+        {
+            this._logger.LogDebug("sedning state to player {id}", id);
+            (WebSocket connection, ChannelWriter<Result<bool>> endGameListener) = _connections[id];
+            using MemoryStream stream = new();
+            Serializer.Serialize(stream, state);
+            // TODO: put a cancelation token for timeout based on settings
+            // TODO: break down the message in to smaller ones instead of sending it all at once
+            await connection.SendAsync(new ArraySegment<byte>(stream.ToArray()), WebSocketMessageType.Binary, true, CancellationToken.None);
+        }
+
+        Dictionary<string, A> results = [];
+
+        foreach ((string id, var _) in playerToState)
+        {
+            (WebSocket connection, ChannelWriter<Result<bool>> endGameListener) = _connections[id];
+
+            bool done = false;
+            byte[] buffer = new byte[1024];
+            using MemoryStream stream = new();
+
+            while(!done){
+                WebSocketReceiveResult result = await connection.ReceiveAsync(buffer, CancellationToken.None);
+                stream.Write(buffer, 0, result.Count);
+                done = result.EndOfMessage;
+            }
+
+            A action = Serializer.Deserialize<A>(stream);
+            results.Add(id, action);
+        }
+
+        return results;
     }
 
     // Parts of this may be useful once I connect this to the actual game

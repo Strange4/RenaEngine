@@ -29,10 +29,7 @@ internal static class RenaServerSetup
         builder.WebHost.UseUrls($"http://*:{renaOptions.ServerPort}");
         builder.Services.AddSingleton<RenaServerHandlers<G, S, A>>();
         builder.Services.AddSingleton<CompetitionSettingsState>();
-        builder.Services.AddSingleton(sp =>
-        {
-            return new DockerClientConfiguration().CreateClient();
-        });
+        builder.Services.AddSingleton(sp => new DockerClientConfiguration().CreateClient());
         builder.Services.AddSingleton<IDockerService>(sp =>
         {
             // TODO #164 Make a factory for the BuildContextStrategies based on available languages

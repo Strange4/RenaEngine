@@ -119,4 +119,9 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
         }
         return changes;
     }
+
+    public bool IsGameOver()
+    {
+        return this.Logic.IsGameOver;
+    }
 }
