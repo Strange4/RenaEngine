@@ -30,9 +30,4 @@ public class RenderableBroadcaster
         _subscribers.TryRemove(channel, out _);
         channel.Writer.TryComplete();
     }
-
-    public int GetIndex()
-    {
-        return _index;
-    }
 }
