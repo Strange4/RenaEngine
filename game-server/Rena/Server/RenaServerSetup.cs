@@ -38,12 +38,14 @@ internal static class RenaServerSetup
             var client = sp.GetRequiredService<DockerClient>();
             return new DockerService(client, logger);
         });
+        builder.Services.AddSingleton<RenderableBroadcaster>();
         builder.Services.AddSingleton<IMatchMaker<G, S, A>>(sp =>
         {
             var logger = sp.GetRequiredService<ILogger<IMatchMaker<G, S, A>>>();
             var dockerService = sp.GetRequiredService<IDockerService>();
+            var broadcaster = sp.GetRequiredService<RenderableBroadcaster>();
 
-            return new MatchMaker<G, S, A>(dockerService, logger);
+            return new MatchMaker<G, S, A>(dockerService, broadcaster, logger);
         });
 
         builder.Services.AddTransient<GameSocketHandler<G, S, A>>();
@@ -53,7 +55,6 @@ internal static class RenaServerSetup
             var matchmaker = sp.GetRequiredService<IMatchMaker<G, S, A>>();
             return new GameRoomManager<G, S, A>(matchmaker, renaOptions.RoomSize, logger);
         });
-        builder.Services.AddSingleton<RenderableBroadcaster>();
 
         builder.Services.AddOptions<RenaOptions>().BindConfiguration(RenaOptions.SectionName).ValidateOnStart();
         return renaOptions;

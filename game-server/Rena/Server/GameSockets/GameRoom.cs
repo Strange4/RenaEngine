@@ -2,11 +2,12 @@ using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Threading.Channels;
 
+using LanguageExt;
+
 using Microsoft.Extensions.Logging;
-
 using ProtoBuf;
-
 using Rena.GameEngine;
+using Rena.Server.Rendering;
 using Rena.Utility;
 
 namespace Rena.Server.GameSockets;
@@ -19,6 +20,7 @@ public class GameRoom<G, S, A>
     private readonly ConcurrentDictionary<string, Tuple<WebSocket, ChannelWriter<Result<bool>>>> _connections;
     private readonly int _roomSize;
     private readonly ILogger _logger;
+    public RenderableBroadcaster? _broadcaster;
 
     public bool IsStarted { get; private set; } = false;
 
@@ -33,10 +35,16 @@ public class GameRoom<G, S, A>
         _logger = logger;
     }
 
-    public GameRoom(Dictionary<string, Tuple<WebSocket, ChannelWriter<Result<bool>>>> connections)
+    public GameRoom(
+        Dictionary<string, Tuple<WebSocket, ChannelWriter<Result<bool>>>> connections,
+        RenderableBroadcaster renderableBroadcaster,
+        ILogger logger
+    )
     {
+        _broadcaster = renderableBroadcaster;
         _connections = new(connections);
         _roomSize = _connections.Count;
+        _logger = logger;
     }
 
     public Result<bool> AddPlayer(string playerId, Tuple<WebSocket, ChannelWriter<Result<bool>>> connectionInfo)
@@ -51,13 +59,20 @@ public class GameRoom<G, S, A>
         this.IsStarted = true;
 
         IGame<S, A> game = new G();
+        if (_broadcaster == null)
+        {
+            this._logger.LogCritical("No broadcaster for room");
+        }
+        else
+        {
+            game.SetBroadcaster(_broadcaster);
+        }
         Dictionary<string, S> statesToSend = game.GetInitial([.. _connections.Keys]);
         while (this.IsStarted)
         {
             this._logger.LogDebug("playing a turn in the room");
             Dictionary<string, A> actions = await this.SendAndWaitForResult(statesToSend);
             statesToSend = game.DoAction(actions);
-            // TODO: broadcast renderer changes here
             if (game.IsGameOver())
             {
                 this.IsStarted = false;

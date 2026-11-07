@@ -8,7 +8,7 @@ namespace BattleshipServer.Game;
 public class BattleshipGame : IGame<PlayerState, PlayerAction>
 {
     public GameLogic Logic { get; } = new();
-    public RenderableBroadcaster? Broadcaster { get; set; }
+    private RenderableBroadcaster? _broadcaster;
 
     private string _player1Id = null!; // normally getInitial is called before doAction so that it is not null
     private string _player2Id = null!;
@@ -18,12 +18,17 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
         return "Battleship";
     }
 
+    public void SetBroadcaster(RenderableBroadcaster renderableBroadcaster)
+    {
+        this._broadcaster = renderableBroadcaster;
+    }
+
     public Dictionary<string, PlayerState> GetInitial(HashSet<string> playerIDs)
     {
         _player1Id = playerIDs.First();
         _player2Id = playerIDs.Last();
 
-        this.Broadcaster?.BroadcastChange([
+        this._broadcaster?.BroadcastChange([
             new GameRenderable
             {
                 Id = "map",
@@ -50,7 +55,7 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
         {
             // TODO #137: Move renderable diffing into RenaEngine
             List<GameRenderable> changes = this.CollectRenderables(playerNumber, action);
-            this.Broadcaster?.BroadcastChange(changes);
+            this._broadcaster?.BroadcastChange(changes);
         }
 
         string nextPlayerId;

@@ -1,4 +1,6 @@
-﻿namespace Rena.GameEngine;
+﻿using Rena.Server.Rendering;
+
+namespace Rena.GameEngine;
 
 public interface IGame<S, A>
     where S : class
@@ -8,4 +10,6 @@ public interface IGame<S, A>
     public Dictionary<string, S> GetInitial(HashSet<string> playerIDs);
     public Dictionary<string, S> DoAction(Dictionary<string, A> playerToAction);
     public bool IsGameOver();
+
+    public void SetBroadcaster(RenderableBroadcaster renderableBroadcaster);
 }

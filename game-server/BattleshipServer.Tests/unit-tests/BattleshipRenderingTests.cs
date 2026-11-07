@@ -16,7 +16,8 @@ public class BattleshipRenderingTests
     public void Setup()
     {
         _broadcaster = new RenderableBroadcaster();
-        _game = new BattleshipGame { Broadcaster = _broadcaster };
+        _game = new BattleshipGame();
+        _game.SetBroadcaster(_broadcaster);
         // csharpier-ignore
         _validFleet =
         [
@@ -115,7 +116,7 @@ public class BattleshipRenderingTests
         // csharpier-ignore
         _game.DoAction(new Dictionary<string, PlayerAction> { { "p2", new PlaceShipsAction { Ships = _validFleet } } });
 
-        while (channel.Reader.TryRead(out _)) { } // clears the queue from placement messages.
+        while (channel.Reader.TryRead(out _)) ; // clears the queue from placement messages.
 
         // csharpier-ignore
         ShootAction shootAction1 = new ShootAction { ShootAt = new Coordinate { X = 0, Y = 0 } };
@@ -144,7 +145,7 @@ public class BattleshipRenderingTests
     [Test]
     public void TestDoAction_WhenBroadcasterIsNull_DoesNotThrow()
     {
-        BattleshipGame gameWithoutBroadcaster = new BattleshipGame { Broadcaster = null };
+        BattleshipGame gameWithoutBroadcaster = new();
         gameWithoutBroadcaster.GetInitial(["p1", "p2"]);
 
         PlaceShipsAction action = new PlaceShipsAction { Ships = _validFleet };

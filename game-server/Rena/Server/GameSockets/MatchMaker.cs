@@ -3,6 +3,7 @@ using LanguageExt;
 using Microsoft.Extensions.Logging;
 using Rena.GameEngine;
 using Rena.Server.DockerManager;
+using Rena.Server.Rendering;
 using Rena.Utility;
 
 namespace Rena.Server.GameSockets;
@@ -32,7 +33,7 @@ public interface IMatchMaker<G, S, A>
     public Task BuildHostBotImage(string imageId, string codeZipPath, string dockerFilePath, string language);
 }
 
-public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger logger) : IMatchMaker<G, S, A>
+public class MatchMaker<G, S, A>(IDockerService dockerService, RenderableBroadcaster broadcaster, ILogger logger) : IMatchMaker<G, S, A>
     where G : IGame<S, A>, new()
     where S : class
     where A : class
@@ -54,6 +55,7 @@ public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger logger) :
         // That way a bot that was created, who's room was shut down cannot create a room of bots
         logger.LogInformation("Creating test room for player {playerId}", playerId);
         room = new(numPlayers, logger);
+        room._broadcaster = broadcaster;
         _playerRooms[playerId] = room;
 
         // TODO #164 add _availableTestContainers check so that we aren't always making new ones
