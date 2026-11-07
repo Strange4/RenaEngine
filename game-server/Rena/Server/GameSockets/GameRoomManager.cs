@@ -10,11 +10,11 @@ namespace Rena.Server.GameSockets;
 
 public interface IGameRoomManager
 {
-    Task<ChannelReader<Result<bool>>> Register(string playerId, WebSocket socket);
+    Task<ChannelReader<Result<bool>>> RegisterForTest(string playerId, WebSocket socket);
     Task UnRegister(string playerId);
 }
 
-public class GameRoomManager<G, S, A>(int roomSize, ILogger logger) : IGameRoomManager
+public class GameRoomManager<G, S, A>(IMatchMaker<G, S, A> matchMaker, int roomSize, ILogger logger) : IGameRoomManager
     where G : IGame<S, A>, new()
     where S : class
     where A : class
@@ -24,10 +24,11 @@ public class GameRoomManager<G, S, A>(int roomSize, ILogger logger) : IGameRoomM
     private readonly ConcurrentDictionary<string, GameRoom<G, S, A>> _rooms = [];
     public bool IsCompetitionMode { get; set; } = false;
 
-    private readonly Lock _roomCreationLock = new();
+    private readonly Lock _roomStartLock = new();
 
-    public async Task<ChannelReader<Result<bool>>> Register(string playerId, WebSocket socket)
+    public async Task<ChannelReader<Result<bool>>> RegisterForTest(string playerId, WebSocket socket)
     {
+        logger.LogInformation("Registering {playerId} for test", playerId);
         var channel = Channel.CreateBounded<Result<bool>>(EXPECTED_NUM_MESSAGES);
         if (_connections.ContainsKey(playerId))
         {
@@ -37,35 +38,29 @@ public class GameRoomManager<G, S, A>(int roomSize, ILogger logger) : IGameRoomM
 
         _connections[playerId] = new(socket, channel.Writer);
 
-        lock (_roomCreationLock)
+        var room = await matchMaker.GetTestRoom(playerId, roomSize);
+        var result = room.AddPlayer(playerId, new(socket, channel.Writer));
+
+        // player failed to join room
+        if (result.IsSuccess && !result.Value)
         {
-            if (this.IsCompetitionMode)
+            await channel.Writer.WriteAsync(new(new Exception("Player could not join the room.")));
+            return await Task.FromResult(channel.Reader);
+        }
+        else if (!result.IsSuccess)
+        {
+            await channel.Writer.WriteAsync(new(result.Exception!));
+            return await Task.FromResult(channel.Reader);
+        }
+
+        _rooms[playerId] = room;
+
+        lock (_roomStartLock)
+        {
+            if (room.IsFull && !room.IsStarted)
             {
-                // TODO #133 Implement the matchmaker to keep track of who needs to play who
-            }
-            else
-            {
-                // TODO #134 Connect the docker orchestrator to spin up host agents to fill the room
-
-                // TEMPORARY CODE
-                // Fill room with the first x number of connections that are free
-                var freeConnections = _connections.Where(connectionRecord =>
-                    !_rooms.ContainsKey(connectionRecord.Key) && connectionRecord.Key != playerId
-                );
-                if (freeConnections.Count() >= roomSize - 1) // current newest connection will be in the room
-                {
-                    var roomConnections = freeConnections.Take(roomSize - 1).ToDictionary();
-                    roomConnections[playerId] = _connections[playerId];
-
-                    var room = new GameRoom<G, S, A>(roomConnections);
-
-                    foreach (string id in roomConnections.Keys)
-                    {
-                        _rooms[id] = room;
-                    }
-
-                    Task.Run(room.RunRoom).SafeFireAndForget(async exception => await this.HandleRoomExceptions(exception, roomConnections));
-                }
+                logger.LogInformation("Player {playerId} is starting the room", playerId);
+                Task.Run(room.RunRoom).SafeFireAndForget(async exception => await this.HandleRoomExceptions(exception, new(room.Players)));
             }
         }
 

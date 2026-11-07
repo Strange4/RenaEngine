@@ -1,0 +1,16 @@
+{
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/generated/glue.js",
+    "dev": "tsx generated/glue.ts"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

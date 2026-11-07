@@ -2,7 +2,6 @@ using Docker.DotNet;
 using Docker.DotNet.Models;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Rena.Server.DockerManager;
 
 namespace Rena.Tests.Unit;
 
@@ -32,8 +31,7 @@ internal sealed class DockerServicesFixture : IDisposable
             .Returns(Task.CompletedTask);
         this.Images.Setup(operations => operations.ListImagesAsync(It.IsAny<ImagesListParameters>(), default))
             .Returns(() => Task.FromResult(this.ImageResponses));
-        this.Images.Setup(operations => operations.DeleteImageAsync(It.IsAny<string>(), It.IsAny<ImageDeleteParameters>(), default))
-            .ReturnsAsync(new List<IDictionary<string, string>>());
+        this.Images.Setup(operations => operations.DeleteImageAsync(It.IsAny<string>(), It.IsAny<ImageDeleteParameters>(), default)).ReturnsAsync([]);
         this.Images.Setup(operations =>
                 operations.BuildImageFromDockerfileAsync(
                     It.IsAny<ImageBuildParameters>(),

@@ -77,8 +77,8 @@ public class GameSocketTests
         var playerId1 = "player-123";
         var playerId2 = "player-1234";
         var socketClient = _app.GetTestServer().CreateWebSocketClient();
-        var wsUri1 = new Uri($"ws://localhost/game/connect/{playerId1}");
-        var wsUri2 = new Uri($"ws://localhost/game/connect/{playerId2}");
+        var wsUri1 = new Uri($"ws://localhost/game/connect/test/{playerId1}");
+        var wsUri2 = new Uri($"ws://localhost/game/connect/test/{playerId2}");
 
         var webSocket1 = await socketClient.ConnectAsync(wsUri1, CancellationToken.None);
         var webSocket2 = await socketClient.ConnectAsync(wsUri2, CancellationToken.None);

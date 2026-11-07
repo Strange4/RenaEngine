@@ -19,12 +19,17 @@ public class GameSocketConnection<G, S, A>(WebSocket webSocket, string playerId,
     public virtual async Task HandleConnection()
     {
         logger.LogInformation("Registering {playerId} into game manager", playerId);
-        var channel = await gameRoomManager.Register(playerId, webSocket);
+        var channel = await gameRoomManager.RegisterForTest(playerId, webSocket);
 
         var result = await channel.ReadAsync();
 
-        logger.LogInformation("Unregistering {playerId} from game manager", playerId);
-        await gameRoomManager.UnRegister(playerId);
+        // Fix for small bug where duplicate connection unregisters the actual connection
+        // Might want to change the flow later
+        if (result.IsSuccess || result.Exception is not ArgumentException)
+        {
+            logger.LogInformation("Unregistering {playerId} from game manager", playerId);
+            await gameRoomManager.UnRegister(playerId);
+        }
 
         if (result.IsSuccess)
         {

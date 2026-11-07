@@ -109,7 +109,7 @@ public sealed class TypeScriptDockerBuildContextStrategy : IDockerBuildContextSt
                 cancellationToken.ThrowIfCancellationRequested();
                 string destinationPath = ValidateEntryPath(entry, contextDir).IfFail((e) => throw e);
 
-                if (entry.FullName.EndsWith(Path.DirectorySeparatorChar))
+                if (entry.FullName.EndsWith('/'))
                 {
                     Directory.CreateDirectory(destinationPath);
                     continue;
