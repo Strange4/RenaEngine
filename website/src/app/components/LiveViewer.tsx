@@ -34,8 +34,8 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
       //   await getSceneSource(gameId).getInitialScene();
 
       const setup: ViewerSetup = {
-        tileSize: 50,
-        resolution: [800, 800]
+        tileSize: 40,
+        resolution: [920, 480]
       }
       if (unmount.signal.aborted) return;
 
