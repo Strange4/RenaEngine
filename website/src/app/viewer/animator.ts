@@ -76,8 +76,8 @@ export class Animator{
     private duration:number; //how long the animation lasts
 
     //animation duration (for each individual animation) is set to our default constant
-    constructor(){
-        this.duration = ANIMATION_DURATION;
+    constructor(duration: number = ANIMATION_DURATION){
+        this.duration = duration;
     }
 
     //from is the initial animated state, to is the final animated state in the animation of said sprite
