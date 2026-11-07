@@ -1,5 +1,5 @@
 import {Sprite} from 'pixi.js';
-
+//this task is full LLL
 export interface AnimatedState{
     //all of the following are in pixels
     x: number; //xcoord of anchor point
