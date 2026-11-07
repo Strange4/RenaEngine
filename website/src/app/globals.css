@@ -1,6 +1,22 @@
+:root {
+  --pink: #ff2e93;
+  --magenta: #c2007a;
+  --deep: #7a0050;
+  --plum: #3a0a2a;
+  --offwhite: #fff9fb;
+  --blush: #ffe4ee;
+  --blush-2: #ffd0e3;
+  --ink: #4a1230;
+  --grad: linear-gradient(135deg, var(--pink) 0%, var(--magenta) 55%, var(--deep) 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  font-family: system-ui, sans-serif;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   background: #111827;
   color: #f9fafb;
 }
@@ -17,7 +33,6 @@ select,
 button {
   display: block;
   width: 100%;
-  box-sizing: border-box;
 }
 
 input,
