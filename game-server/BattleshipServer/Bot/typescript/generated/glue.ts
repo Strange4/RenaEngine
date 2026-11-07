@@ -1,17 +1,23 @@
 import Play from "../main.ts";
+import { State, Action } from "./gameTypes.ts";
 
 
+const url = process.env.URL || "http://localhost:5000/game/connect/test/1236";
 
-let url = process.env.URL || "http://localhost:3000/game/connect/test/1236";
-
-let ws = new WebSocket(url);
+const ws = new WebSocket(url);
+ws.binaryType = "arraybuffer";
 
 ws.onopen = () => {
   console.log('Connected to server');
 };
 
-ws.onmessage = (event) => {
-  console.log('Received:', event.data);
+ws.onmessage = async (event: MessageEvent<ArrayBuffer>) => {
+  const state = State.decode(new Uint8Array(event.data));
+  console.log('Received: event', state);
+  const action = await Play(state);
+  console.log("Sending", action);
+  const bytes = Action.encode(action).finish();
+  ws.send(bytes);
 };
 
 ws.onerror = (error) => {

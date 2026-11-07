@@ -95,12 +95,16 @@ public class GameRoom<G, S, A>
             bool done = false;
             byte[] buffer = new byte[1024];
             using MemoryStream stream = new();
-
-            while(!done){
+            this._logger.LogDebug("receiving state from player {id}", id);
+            while (!done)
+            {
                 WebSocketReceiveResult result = await connection.ReceiveAsync(buffer, CancellationToken.None);
                 stream.Write(buffer, 0, result.Count);
                 done = result.EndOfMessage;
             }
+
+            // reset the position so that the deserializer can read it
+            stream.Position = 0;
 
             A action = Serializer.Deserialize<A>(stream);
             results.Add(id, action);

@@ -1,3 +1,5 @@
-import { PlayerAction, PlayerState } from "./game.ts"
-export type Action = PlayerAction;
-export type State = PlayerState;
+import { PlayerAction, PlayerState } from "./game.ts";
+export const Action = PlayerAction;
+export const State = PlayerState;
+export interface State extends PlayerState {}
+export interface Action extends PlayerAction {}
