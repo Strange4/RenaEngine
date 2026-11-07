@@ -2,6 +2,7 @@ import { Container, Sprite } from 'pixi.js';
 import { RenderableType } from '@/shared/renderable';
 import type { GameRenderable, ViewerSetup } from '@/shared/renderable';
 import { AssetLoader } from './assetLoader';
+import {Animator, getState, setState, type AnimatedState} from './animator';
 
 export class LiveViewRenderer {
     // Containers for different types of renderables
@@ -14,7 +15,8 @@ export class LiveViewRenderer {
 
     private assetLoader: AssetLoader;
 
-    constructor(assetLoader: AssetLoader, private viewerSetup: ViewerSetup) {
+    //constructor can also take in an optional animator (if there is a need for an animation)
+    constructor(assetLoader: AssetLoader, private viewerSetup: ViewerSetup, private animator?: Animator) {
         this.mapContainer.label = 'map';
         this.objectContainer.label = 'objects';
         this.decorationContainer.label = 'decorations';
@@ -56,6 +58,27 @@ export class LiveViewRenderer {
     addSprite(id: string, sprite: Sprite): void {
         this.sprites.set(id, sprite);
     }
+
+
+
+    //Determine where the sprite should end up for this renderable (position, size, rotation...)
+    //renderable is in tiles, sprite is in pixels--> convert all to pixels by multiplying by #pixels/tile
+    private getFinalState(renderable:GameRenderable): AnimatedState{
+        const tileSize = this.viewerSetup.tileSize;
+        const tileCenter = tileSize/2; //pivot point for rotation
+
+        //return the end/final animated state for that renderable for that sprite
+        return{
+            x: renderable.position[0]*tileSize+tileCenter, //xcoord of anchor point
+            y: renderable.position[1]*tileSize+tileCenter, //ycoord of anchor point
+            width: renderable.size[0]*tileSize,
+            height: renderable.size[1]*tileSize,
+            angle: renderable.rotation ?? 0, //in degrees
+
+
+        }
+    }
+
 
     addGameRenderable(renderable: GameRenderable): Sprite {
 
@@ -127,12 +150,15 @@ export class LiveViewRenderer {
     
 
     //Helper function-> it applies the changes to each property of the sprite
-    private setProperties (sprite: Sprite, renderable: GameRenderable){
+    //it copies the renderable's properties ont the sprite. Used by create and by update
+    //it sets the animations optionaly if there is a need to: if the initial animated state (i.e. FROM) is provided, we know that will be an animator,
+    //and we will update the values with linear interpolation. If not, no animation.
+    private setProperties (sprite: Sprite, renderable: GameRenderable, from?: AnimatedState): void {
 
 
         //adding this part of the creational logic
         // Pixi rotates around the sprite's anchor, which acts as its pivot point.
-        const tileCenter = this.viewerSetup.tileSize / 2;
+        //const tileCenter = this.viewerSetup.tileSize / 2;
 
         // The position tile is the first tile of the renderable. Divide the
         // half-tile offset (0.5) by the renderable size to place the pivot at the
@@ -146,16 +172,28 @@ export class LiveViewRenderer {
         // Pixi's position is the anchor's world position, so offset it to
         // the tile center. This keeps the sprite's visual top-left corner at
         // the renderable's tile position while rotation stays on that tile.
-        sprite.position.set(
+        /* sprite.position.set(
             renderable.position[0] * this.viewerSetup.tileSize + tileCenter,
             renderable.position[1] * this.viewerSetup.tileSize + tileCenter,
-        );
+        ); */
        
         sprite.zIndex = renderable.layer; //zIndex relates to the planes where we place the sprites: background, fore plan, partially hidden by another sprite, etc
-        sprite.width = renderable.size[0]* this.viewerSetup.tileSize;//multiplying by the factor for pixels
-        sprite.height = renderable.size[1]* this.viewerSetup.tileSize;
+        //sprite.width = renderable.size[0]* this.viewerSetup.tileSize;//multiplying by the factor for pixels
+        //sprite.height = renderable.size[1]* this.viewerSetup.tileSize;
 
-       sprite.angle = renderable.rotation ?? 0; //if not specified, no rotation
+       //sprite.angle = renderable.rotation ?? 0; //if not specified, no rotation
+
+       //setting the target final animated state
+       const target = this.getFinalState(renderable);
+       //if there is a need for an animation and we have an animator, animate
+       if (from && this.animator){
+        this.animator.animate(sprite,from,target);
+        //ex: this will apply a gradual animation with the interpolation and progress in mind.
+        //two iterations that lead us to the final angle: 15--> 25--> final 35 degrees : this is the full animation with all animatedStates
+       }
+       else{ //no animation or no previous state (dealing with a new sprite)
+        setState(sprite,target); //display with no animation
+       }
     }
 
     async updateGameRenderable(renderable: GameRenderable, signal?: AbortSignal): Promise<Sprite | undefined> {
@@ -177,6 +215,16 @@ export class LiveViewRenderer {
             return undefined; //no updates to do, sprite isn't even showing up on screen
         }
 
+        //where the sprite is right now is the start of the animation
+        const from = getState(sprite); //gets current AnimatedState
+        /* This returns us the current state
+        x: sprite.position.x,
+        y: sprite.position.y,
+        width: sprite.width,
+        height: sprite.height,
+        angle: sprite.angle,
+        Consider this as the FROM i.e. start of animation before you add updates to get to your FINAL state*/
+
         sprite.texture = this.assetLoader.getTexture(renderable.assetPath);
 
         //if the sprite changed its type: deco, object, obstacle the layering might get into play, 
@@ -185,7 +233,7 @@ export class LiveViewRenderer {
         }
         
         //calling the helper function that applies all of the new changes property by property
-        this.setProperties(sprite, renderable);
+        this.setProperties(sprite, renderable,from);//Including the Starting state to apply the updates to get to the Final animated state
         return sprite; //show new updated sprite image on screen
     }
 
@@ -196,6 +244,9 @@ export class LiveViewRenderer {
         if (!sprite) {
             return;
         }
+
+        //stop any running animation (if there is any) before destroying sprite
+        this.animator?.cancel(sprite); //removes the animation from the list of animations to execute
 
         // destroy() also takes the sprite out of its container.
         // We don't destroy the texture since other sprites can be using the same asset
