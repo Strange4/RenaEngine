@@ -1,5 +1,4 @@
 ﻿using Rena.Generator;
-using Rena.Tests.SharedMocks;
 
 namespace Rena.Tests.Unit;
 

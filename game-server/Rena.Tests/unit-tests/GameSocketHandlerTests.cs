@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Rena.Server.GameSockets;
-using Rena.Tests.SharedMocks;
 using Rena.Utility;
 
 namespace Rena.Tests.Unit;

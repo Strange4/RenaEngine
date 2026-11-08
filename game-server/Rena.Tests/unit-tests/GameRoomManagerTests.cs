@@ -1,9 +1,9 @@
 using System.Net.WebSockets;
+
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Rena.Server.GameSockets;
-using Rena.Tests.SharedMocks;
 
 namespace Rena.Tests.Unit;
 
@@ -13,6 +13,8 @@ public class GameRoomManagerTests
     private GameRoomManager<MockGame, GameState, GameAction> _manager;
     private IMatchMaker<MockGame, GameState, GameAction> _mockMatchmaker;
 
+    private GameRoom<MockGame, GameState, GameAction> _mockRoom;
+
     [SetUp]
     public void SetUp()
     {
@@ -20,6 +22,10 @@ public class GameRoomManagerTests
         _mockMatchmaker = Substitute.For<IMatchMaker<MockGame, GameState, GameAction>>();
 
         _manager = new GameRoomManager<MockGame, GameState, GameAction>(_mockMatchmaker, 2, logger);
+
+        _mockRoom = Substitute.For<GameRoom<MockGame, GameState, GameAction>>(2, logger);
+
+        _mockMatchmaker.GetTestRoom(Arg.Any<string>(), Arg.Any<int>()).Returns(_mockRoom);
     }
 
     [Test]
@@ -54,6 +60,8 @@ public class GameRoomManagerTests
     {
         var socket = Substitute.For<WebSocket>();
 
+        MockGame.Mock.IsGameOver().Returns(true);
+
         var reader1 = await _manager.RegisterForTest("player-1", socket);
 
         var reader2 = await _manager.RegisterForTest("player-2", socket);
@@ -77,6 +85,8 @@ public class GameRoomManagerTests
         socket
             .SendAsync(Arg.Any<ArraySegment<byte>>(), Arg.Any<WebSocketMessageType>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Throws(new ArgumentOutOfRangeException(errorMessage, new Exception("inner exception")));
+
+        MockGame.Mock.IsGameOver().Throws(new ArgumentOutOfRangeException(errorMessage, new Exception("inner exception")));
 
         var reader1 = await _manager.RegisterForTest("player-1", socket);
 
