@@ -15,7 +15,7 @@ export class RenderableChangeProcessor {
     for (const renderable of initialRenderables) {
       this.currentRenderables.set(renderable.id, renderable);
     }
-    this.changeSource.setChangelisteneter((change) => this.process(change));
+    this.changeSource.setChangeListener((change) => this.process(change));
   }
 
   async process(change: RenderableChange): Promise<void> {

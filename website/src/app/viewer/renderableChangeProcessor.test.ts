@@ -39,7 +39,7 @@ function sourceStub(): RenderableChangeSource & {
   let listener: ((change: RenderableChange) => void) | undefined;
 
   return {
-    setChangelisteneter: jest.fn((callback) => {
+    setChangeListener: jest.fn((callback) => {
       listener = callback;
     }),
     getAllChanges: jest.fn(() => []),
@@ -95,7 +95,7 @@ describe("RenderableChangeProcessor", () => {
     source.emit(change(added));
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(source.setChangelisteneter).toHaveBeenCalledTimes(1);
+    expect(source.setChangeListener).toHaveBeenCalledTimes(1);
     expect(testHandlers.calls).toEqual(["create:from-source"]);
     expect(processor.getCurrentState()).toEqual([added]);
   });

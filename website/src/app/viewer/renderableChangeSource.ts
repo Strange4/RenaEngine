@@ -1,13 +1,9 @@
-// This file is temporary and will imitates the game server's renderable change source.
-// It provides a mock implementation of the RenderableChangeSource interface,
-// returning a predefined set of renderable changes for testing purposes.
-
-import { RenderableType, type RenderableChange } from "@/shared/renderable";
+import { type RenderableChange } from "@/shared/renderable";
 
 type RenderableChangeCallback = (changes: RenderableChange) => void;
 
 export interface RenderableChangeSource {
-  setChangelisteneter(callback: RenderableChangeCallback): void;
+  setChangeListener(callback: RenderableChangeCallback): void;
   getAllChanges(): RenderableChange[];
   close(): void;
 }
@@ -26,7 +22,7 @@ export class SSERenderableChangeSource implements RenderableChangeSource {
     this.sse.addEventListener("change", (e) => this.onChange(e));
   }
 
-  setChangelisteneter(callback: RenderableChangeCallback): void {
+  setChangeListener(callback: RenderableChangeCallback): void {
     this.callback = callback;
   }
 
