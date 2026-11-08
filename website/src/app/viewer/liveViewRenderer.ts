@@ -151,10 +151,10 @@ export class LiveViewRenderer {
 
     //Helper function-> it applies the changes to each property of the sprite
     //it copies the renderable's properties ont the sprite. Used by create and by update
-    //it sets the animations optionaly if there is a need to: if the initial animated state (i.e. FROM) is provided, we know that will be an animator,
+    //it sets the animations optionaly if there is a need to: if the initial animated state is provided, we know that will be an animator,
     //and we will update the values with linear interpolation. If not, no animation.
-    private setProperties (sprite: Sprite, renderable: GameRenderable, from?: AnimatedState): void {
-
+    private setProperties (sprite: Sprite, renderable: GameRenderable, animate = false): void {
+        //if no animate value passed, assume default false as a safety not to animate something that doesn't need to get animated
 
         //adding this part of the creational logic
         // Pixi rotates around the sprite's anchor, which acts as its pivot point.
@@ -186,8 +186,8 @@ export class LiveViewRenderer {
        //setting the target final animated state
        const target = this.getFinalState(renderable);
        //if there is a need for an animation and we have an animator, animate
-       if (from && this.animator){
-        this.animator.animate(sprite,from,target);
+       if (animate && this.animator){
+        this.animator.animate(sprite,target);
         //ex: this will apply a gradual animation with the interpolation and progress in mind.
         //two iterations that lead us to the final angle: 15--> 25--> final 35 degrees : this is the full animation with all animatedStates
        }
@@ -215,16 +215,6 @@ export class LiveViewRenderer {
             return undefined; //no updates to do, sprite isn't even showing up on screen
         }
 
-        //where the sprite is right now is the start of the animation
-        const from = getState(sprite); //gets current AnimatedState
-        /* This returns us the current state
-        x: sprite.position.x,
-        y: sprite.position.y,
-        width: sprite.width,
-        height: sprite.height,
-        angle: sprite.angle,
-        Consider this as the FROM i.e. start of animation before you add updates to get to your FINAL state*/
-
         sprite.texture = this.assetLoader.getTexture(renderable.assetPath);
 
         //if the sprite changed its type: deco, object, obstacle the layering might get into play, 
@@ -233,7 +223,8 @@ export class LiveViewRenderer {
         }
         
         //calling the helper function that applies all of the new changes property by property
-        this.setProperties(sprite, renderable,from);//Including the Starting state to apply the updates to get to the Final animated state
+        this.setProperties(sprite, renderable,true);//Including the Starting state to apply the updates to get to the Final animated state
+        //animate = TRUE to allow an animation
         return sprite; //show new updated sprite image on screen
     }
 

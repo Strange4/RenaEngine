@@ -42,20 +42,10 @@ const final_state: AnimatedState={
 
 describe("Animator", () =>{
 
-    it("puts the sprite at the starting state as soon as an animation starts", () =>{
-        const animator = new Animator(200);
-        const sprite = fakeSprite(final_state); //our sprite is the final animated state
-
-        animator.animate(sprite,start_state,final_state);
-        //no frame has passed yet so what we have right now is our start
-        expect(getState(sprite)).toEqual(start_state);
-    
-    });
-
     it("interpolates throughout the duration of the animation", ()=>{
         const animator = new Animator(200);
         const sprite = fakeSprite(start_state); //starts at initial
-        animator.animate(sprite,start_state,final_state);
+        animator.animate(sprite,final_state);
         animator.tick(100);
 
         //in this case, every property is halfway between start and end progress 50%
@@ -65,7 +55,7 @@ describe("Animator", () =>{
     it("finishes once the final animated state is reached and stops the animation",()=>{
         const animator= new Animator(200);
         const sprite = fakeSprite(start_state); //starts at initial state
-        animator.animate(sprite,start_state, final_state);
+        animator.animate(sprite, final_state);
 
         //giving more time than the duration here to be certain that the animation is fully complete (at 200ms , say 199.9999ms it might still be at a different state other than final)
         animator.tick(250);
@@ -77,7 +67,7 @@ describe("Animator", () =>{
         const animator = new Animator(200);
         const sprite = fakeSprite({...start_state, angle:270});
         //the only animation here is rotation
-        animator.animate(sprite,{...start_state,angle:270},{...start_state,angle:0});
+        animator.animate(sprite,{...start_state,angle:0});
 
         animator.tick(100);
         expect(sprite.angle).toBe(315); //assuming 50% progress, 270 to 0 has a 90degree difference-- in between it would be 270+90/2=315
@@ -90,7 +80,7 @@ describe("Animator", () =>{
         const animator = new Animator(200);
         const sprite = fakeSprite(start_state);
 
-        animator.animate(sprite, start_state, final_state);
+        animator.animate(sprite, final_state);
         animator.tick(100);
         animator.cancel(sprite); //we cancel the animation for some reason-- must expect the post conditions to be fulfilled
 
@@ -106,11 +96,11 @@ describe("Animator", () =>{
         const sprite2 = fakeSprite(start_state);
 
         //animate first sprite
-        animator.animate(sprite1,start_state,final_state);
+        animator.animate(sprite1,final_state);
         animator.tick(100);
 
         //animate second sprite 100ms after the first one starts-- so we get a delay between the two
-        animator.animate(sprite2, start_state,final_state);
+        animator.animate(sprite2, final_state);
         animator.tick(100);
         
         //say we check the states once sprite1 finishes. Sprie1 would reach its final state, but sprite2, since it started 1/2 later it will be halfway in its frames
@@ -123,7 +113,7 @@ describe("Animator", () =>{
         const animator = new Animator(0); //duration 0ms
         const sprite = fakeSprite(start_state);
 
-        animator.animate(sprite, start_state,final_state);
+        animator.animate(sprite, final_state);
         animator.tick(15);
 
         expect(getState(sprite)).toEqual(final_state);

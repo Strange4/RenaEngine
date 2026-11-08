@@ -81,9 +81,9 @@ export class Animator{
     }
 
     //from is the initial animated state, to is the final animated state in the animation of said sprite
-    animate(sprite: Sprite, from: AnimatedState, to: AnimatedState): void{
-        setState(sprite, from); //set to original and then apply changes of animation with linear interpolation in mind
-        this.animations.set(sprite, {from,to,elapsed:0});//include the animation in the set of animations we have: (sprite, animatedstate with a beginning and end state+duration)
+    //from will be received from the getter, getState
+    animate(sprite: Sprite, to: AnimatedState): void{
+        this.animations.set(sprite, {from: getState(sprite),to,elapsed:0});//include the animation in the set of animations we have: (sprite, animatedstate with a beginning and end state+duration)
     }
 
     //stop animating a specific sprite
