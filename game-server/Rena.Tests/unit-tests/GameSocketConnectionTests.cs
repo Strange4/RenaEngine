@@ -2,23 +2,11 @@ using System.Net.WebSockets;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Rena.GameEngine;
 using Rena.Server.GameSockets;
+using Rena.Tests.SharedMocks;
 using Rena.Utility;
 
 namespace Rena.Tests.Unit;
-
-public class MockGame : IGame<MockState, MockAction>
-{
-    public string GetName()
-    {
-        return "MockGame";
-    }
-}
-
-public class MockState { }
-
-public class MockAction { }
 
 [TestFixture]
 public class GameSocketConnectionTests
@@ -52,7 +40,7 @@ public class GameSocketConnectionTests
 
         _mockWebSocket.State.Returns(WebSocketState.Open);
 
-        var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(_mockWebSocket, playerId, _mockManager, _mockLogger);
+        var socketConnection = new GameSocketConnection<MockGame, GameState, GameAction>(_mockWebSocket, playerId, _mockManager, _mockLogger);
 
         Assert.That(socketConnection.PlayerId, Is.EqualTo(playerId));
 
@@ -77,7 +65,7 @@ public class GameSocketConnectionTests
 
         _mockWebSocket.State.Returns(WebSocketState.Open);
 
-        var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(_mockWebSocket, playerId, _mockManager, _mockLogger);
+        var socketConnection = new GameSocketConnection<MockGame, GameState, GameAction>(_mockWebSocket, playerId, _mockManager, _mockLogger);
 
         Assert.That(socketConnection.PlayerId, Is.EqualTo(playerId));
 
@@ -103,7 +91,7 @@ public class GameSocketConnectionTests
 
         _mockWebSocket.State.Returns(WebSocketState.Open);
 
-        var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(_mockWebSocket, playerId, _mockManager, _mockLogger);
+        var socketConnection = new GameSocketConnection<MockGame, GameState, GameAction>(_mockWebSocket, playerId, _mockManager, _mockLogger);
 
         Assert.That(socketConnection.PlayerId, Is.EqualTo(playerId));
 

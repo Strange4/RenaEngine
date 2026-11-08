@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Rena.Server;
+using Rena.Tests.SharedMocks;
 
 namespace Rena.Tests.Integration;
 
@@ -20,11 +21,11 @@ public class GameSocketTests
 
         builder.WebHost.UseTestServer();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?> { { "RenaOptions:TSProtoPath", "TESTING" } });
-        builder.SetRenaServices<TestGame, GameState, GameAction>();
+        builder.SetRenaServices<MockGame, GameState, GameAction>();
 
         _app = builder.Build();
 
-        _app.UseRenaEndpoints<TestGame, GameState, GameAction>();
+        _app.UseRenaEndpoints<MockGame, GameState, GameAction>();
 
         await _app.StartAsync();
         _client = _app.GetTestClient();

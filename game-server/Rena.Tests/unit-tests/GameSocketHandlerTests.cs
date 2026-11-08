@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Rena.Server.GameSockets;
+using Rena.Tests.SharedMocks;
 using Rena.Utility;
 
 namespace Rena.Tests.Unit;
@@ -15,7 +16,7 @@ public class GameSocketHandlerTests
     private HttpContext _mockHttpContext;
     private WebSocketManager _mockWebSocketManager;
     private WebSocket _mockWebSocket;
-    private GameSocketHandler<MockGame, MockState, MockAction> _gameSocketHandler;
+    private GameSocketHandler<MockGame, GameState, GameAction> _gameSocketHandler;
     private ChannelReader<Result<bool>> _mockChannel;
 
     [SetUp]
@@ -24,8 +25,8 @@ public class GameSocketHandlerTests
         _mockHttpContext = Substitute.For<HttpContext>();
         _mockWebSocketManager = Substitute.For<WebSocketManager>();
         _mockWebSocket = Substitute.For<WebSocket>();
-        ILogger<GameSocketHandler<MockGame, MockState, MockAction>> logger = Substitute.For<
-            ILogger<GameSocketHandler<MockGame, MockState, MockAction>>
+        ILogger<GameSocketHandler<MockGame, GameState, GameAction>> logger = Substitute.For<
+            ILogger<GameSocketHandler<MockGame, GameState, GameAction>>
         >();
         _mockChannel = Substitute.For<ChannelReader<Result<bool>>>();
         IGameRoomManager mockManager = Substitute.For<IGameRoomManager>();

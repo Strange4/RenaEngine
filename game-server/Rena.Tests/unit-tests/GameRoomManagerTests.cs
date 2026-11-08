@@ -3,22 +3,23 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Rena.Server.GameSockets;
+using Rena.Tests.SharedMocks;
 
 namespace Rena.Tests.Unit;
 
 [TestFixture]
 public class GameRoomManagerTests
 {
-    private GameRoomManager<MockGame, MockState, MockAction> _manager;
-    private IMatchMaker<MockGame, MockState, MockAction> _mockMatchmaker;
+    private GameRoomManager<MockGame, GameState, GameAction> _manager;
+    private IMatchMaker<MockGame, GameState, GameAction> _mockMatchmaker;
 
     [SetUp]
     public void SetUp()
     {
         var logger = Substitute.For<ILogger>();
-        _mockMatchmaker = Substitute.For<IMatchMaker<MockGame, MockState, MockAction>>();
+        _mockMatchmaker = Substitute.For<IMatchMaker<MockGame, GameState, GameAction>>();
 
-        _manager = new GameRoomManager<MockGame, MockState, MockAction>(_mockMatchmaker, 2, logger);
+        _manager = new GameRoomManager<MockGame, GameState, GameAction>(_mockMatchmaker, 2, logger);
     }
 
     [Test]

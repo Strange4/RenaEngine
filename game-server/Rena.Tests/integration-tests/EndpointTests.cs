@@ -2,13 +2,12 @@ using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Runtime.Serialization;
 using System.Text;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
-using Rena.GameEngine;
 using Rena.Server;
+using Rena.Tests.SharedMocks;
 
 namespace Rena.Tests.Integration;
 
@@ -32,11 +31,11 @@ public class EndpointTests
                 { "RenaOptions:Features:test-feature", "false" },
             }
         );
-        builder.SetRenaServices<TestGame, GameState, GameAction>();
+        builder.SetRenaServices<MockGame, GameState, GameAction>();
 
         _app = builder.Build();
 
-        _app.UseRenaEndpoints<TestGame, GameState, GameAction>();
+        _app.UseRenaEndpoints<MockGame, GameState, GameAction>();
 
         await _app.StartAsync();
         _client = _app.GetTestClient();
@@ -150,11 +149,11 @@ public class UploadEndpointTests
         builder.Configuration.AddInMemoryCollection(
             new Dictionary<string, string?> { { "RenaOptions:TSProtoPath", "TESTING" }, { "RenaOptions:UploadsDirectory", "./uploads" } }
         );
-        builder.SetRenaServices<TestGame, GameState, GameAction>();
+        builder.SetRenaServices<MockGame, GameState, GameAction>();
 
         _app = builder.Build();
 
-        _app.UseRenaEndpoints<TestGame, GameState, GameAction>();
+        _app.UseRenaEndpoints<MockGame, GameState, GameAction>();
 
         await _app.StartAsync();
         _client = _app.GetTestClient();
@@ -246,25 +245,3 @@ public class UploadEndpointTests
 }
 
 public record TestFeatureSettingDto(bool Enabled);
-
-[DataContract]
-public class GameState
-{
-    [DataMember(Order = 1)]
-    public int X;
-}
-
-[DataContract]
-public class GameAction
-{
-    [DataMember(Order = 1)]
-    public int Y;
-}
-
-public class TestGame : IGame<GameState, GameAction>
-{
-    public string GetName()
-    {
-        return "Example game";
-    }
-}
