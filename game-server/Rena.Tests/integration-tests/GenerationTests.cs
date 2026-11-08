@@ -1,6 +1,5 @@
 using System.IO.Compression;
 using Rena.Generator;
-using Rena.Tests.SharedMocks;
 
 namespace Rena.Tests.Integration;
 

@@ -6,7 +6,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Rena.Server;
 using Rena.Server.Rendering;
-using Rena.Tests.SharedMocks;
 
 namespace Rena.Tests.Integration;
 
@@ -30,11 +29,11 @@ public class RenderStreamTests
                 { "RenaOptions:Features:test-feature", "false" },
             }
         );
-        builder.SetRenaServices<MockGame, GameState, GameAction>();
+        builder.SetRenaServices<TestGame, GameState, GameAction>();
 
         _app = builder.Build();
 
-        _app.UseRenaEndpoints<MockGame, GameState, GameAction>();
+        _app.UseRenaEndpoints<TestGame, GameState, GameAction>();
 
         await _app.StartAsync();
         _client = _app.GetTestClient();

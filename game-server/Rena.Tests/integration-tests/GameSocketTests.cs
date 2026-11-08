@@ -3,8 +3,10 @@ using System.Text;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+
+using ProtoBuf;
+
 using Rena.Server;
-using Rena.Tests.SharedMocks;
 
 namespace Rena.Tests.Integration;
 
@@ -21,11 +23,11 @@ public class GameSocketTests
 
         builder.WebHost.UseTestServer();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?> { { "RenaOptions:TSProtoPath", "TESTING" } });
-        builder.SetRenaServices<MockGame, GameState, GameAction>();
+        builder.SetRenaServices<TestGame, GameState, GameAction>();
 
         _app = builder.Build();
 
-        _app.UseRenaEndpoints<MockGame, GameState, GameAction>();
+        _app.UseRenaEndpoints<TestGame, GameState, GameAction>();
 
         await _app.StartAsync();
         _client = _app.GetTestClient();
@@ -41,7 +43,7 @@ public class GameSocketTests
         }
     }
 
-    private static async Task<string> ReceiveStringFromSocket(WebSocket webSocket)
+    private static async Task<byte[]> ReceiveBytesFromSocket(WebSocket socket)
     {
         var receiveBuffer = new byte[1024];
         using var ms = new MemoryStream();
@@ -49,7 +51,7 @@ public class GameSocketTests
 
         do
         {
-            receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(receiveBuffer), CancellationToken.None);
+            receiveResult = await socket.ReceiveAsync(new ArraySegment<byte>(receiveBuffer), CancellationToken.None);
 
             if (receiveResult.MessageType == WebSocketMessageType.Close)
                 break;
@@ -57,7 +59,17 @@ public class GameSocketTests
             ms.Write(receiveBuffer, 0, receiveResult.Count);
         } while (!receiveResult.EndOfMessage);
 
-        return Encoding.UTF8.GetString(ms.ToArray());
+        return ms.ToArray();
+    }
+
+    private static async Task<GameState> ReceiveStateFromSocket(WebSocket socket)
+    {
+        return Serializer.Deserialize<GameState>(await ReceiveBytesFromSocket(socket));
+    }
+
+    private static async Task<string> ReceiveStringFromSocket(WebSocket socket)
+    {
+        return Encoding.UTF8.GetString(await ReceiveBytesFromSocket(socket));
     }
 
     private static async Task<WebSocketReceiveResult> WaitForClose(WebSocket webSocket)
@@ -87,11 +99,18 @@ public class GameSocketTests
         Assert.That(webSocket1.State, Is.EqualTo(WebSocketState.Open));
         Assert.That(webSocket2.State, Is.EqualTo(WebSocketState.Open));
 
-        string serverResponse1 = await ReceiveStringFromSocket(webSocket1);
-        string serverResponse2 = await ReceiveStringFromSocket(webSocket2);
+        GameState serverResponse1 = await ReceiveStateFromSocket(webSocket1);
+        GameState serverResponse2 = await ReceiveStateFromSocket(webSocket2);
 
-        Assert.That(serverResponse1, Is.EqualTo($"You, player {playerId1}, have connected to the game\n"));
-        Assert.That(serverResponse2, Is.EqualTo($"You, player {playerId2}, have connected to the game\n"));
+        Assert.That(serverResponse1.X, Is.EqualTo(0));
+        Assert.That(serverResponse2.X, Is.EqualTo(0));
+
+        GameAction winAction = new(){Y = 7};
+        using var ms = new MemoryStream();
+        Serializer.Serialize(ms, winAction);
+
+        await webSocket1.SendAsync(ms.ToArray(), WebSocketMessageType.Binary, true, CancellationToken.None);
+        await webSocket2.SendAsync(ms.ToArray(), WebSocketMessageType.Binary, true, CancellationToken.None);
 
         WebSocketReceiveResult result1 = await WaitForClose(webSocket1);
         WebSocketReceiveResult result2 = await WaitForClose(webSocket2);
