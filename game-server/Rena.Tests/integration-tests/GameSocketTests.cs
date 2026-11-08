@@ -3,9 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
-
 using ProtoBuf;
-
 using Rena.Server;
 
 namespace Rena.Tests.Integration;
@@ -105,7 +103,7 @@ public class GameSocketTests
         Assert.That(serverResponse1.X, Is.EqualTo(0));
         Assert.That(serverResponse2.X, Is.EqualTo(0));
 
-        GameAction winAction = new(){Y = 7};
+        GameAction winAction = new() { Y = 7 };
         using var ms = new MemoryStream();
         Serializer.Serialize(ms, winAction);
 

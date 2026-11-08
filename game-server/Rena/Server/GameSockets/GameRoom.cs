@@ -54,7 +54,7 @@ public class GameRoom<G, S, A>
     {
         // Might add more here tbd
         var result = _connections.TryRemove(playerId, out _);
-        return new (result);
+        return new(result);
     }
 
     public async Task RunRoom()

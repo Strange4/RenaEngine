@@ -1,5 +1,4 @@
 using System.Net.WebSockets;
-
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;

@@ -20,7 +20,7 @@ public class GameAction
 
 public class TestGame : IGame<GameState, GameAction>
 {
-    public readonly GameState State = new (){ X = 0 };
+    public readonly GameState State = new() { X = 0 };
     public bool IsOver = false;
 
     public string GetName() => "Example game";
@@ -34,7 +34,7 @@ public class TestGame : IGame<GameState, GameAction>
 
     public Dictionary<string, GameState> DoAction(Dictionary<string, GameAction> actions)
     {
-        Dictionary<string, GameState> playerStates =[];
+        Dictionary<string, GameState> playerStates = [];
         foreach (var (player, action) in actions)
         {
             // if they input the number 7 the game is over and they "win"
@@ -43,7 +43,8 @@ public class TestGame : IGame<GameState, GameAction>
                 IsOver = true;
                 GameState winState = new() { X = 1 };
                 playerStates.Add(player, winState);
-            } else
+            }
+            else
             {
                 playerStates.Add(player, State);
             }

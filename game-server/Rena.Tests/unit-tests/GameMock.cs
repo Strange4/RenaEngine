@@ -22,7 +22,8 @@ public class GameAction
 public class MockGame : IGame<GameState, GameAction>
 {
     private static readonly AsyncLocal<IGame<GameState, GameAction>> Current = new();
-    public static IGame<GameState, GameAction> Mock {
+    public static IGame<GameState, GameAction> Mock
+    {
         get => Current.Value ??= Substitute.For<IGame<GameState, GameAction>>();
     }
 
