@@ -226,7 +226,7 @@ internal sealed class DockerApiStub : IAsyncDisposable
 
     private static Dictionary<string, string> ReadBuildContext(byte[] body)
     {
-        Dictionary<string, string> entries = [with(StringComparer.Ordinal)];
+        Dictionary<string, string> entries = new(StringComparer.Ordinal);
         using MemoryStream archiveStream = new(body);
         using TarReader reader = new(archiveStream);
         TarEntry? entry;

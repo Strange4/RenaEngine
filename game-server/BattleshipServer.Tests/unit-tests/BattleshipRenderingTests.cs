@@ -116,7 +116,8 @@ public class BattleshipRenderingTests
         // csharpier-ignore
         _game.DoAction(new Dictionary<string, PlayerAction> { { "p2", new PlaceShipsAction { Ships = _validFleet } } });
 
-        while (channel.Reader.TryRead(out _)) ; // clears the queue from placement messages.
+        while (channel.Reader.TryRead(out _))
+            ; // clears the queue from placement messages.
 
         // csharpier-ignore
         ShootAction shootAction1 = new ShootAction { ShootAt = new Coordinate { X = 0, Y = 0 } };

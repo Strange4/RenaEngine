@@ -7,7 +7,7 @@ namespace BattleshipServer.Game.Models;
 [ProtoContract]
 [ProtoInclude(1, typeof(PlaceShipsAction))]
 [ProtoInclude(2, typeof(ShootAction))]
-public abstract class PlayerAction {}
+public abstract class PlayerAction { }
 
 [DataContract]
 [ProtoContract]
