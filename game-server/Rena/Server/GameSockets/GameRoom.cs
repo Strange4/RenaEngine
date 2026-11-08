@@ -20,7 +20,7 @@ public class GameRoom<G, S, A>
     private readonly ConcurrentDictionary<string, Connection> _connections;
     private readonly int _roomSize;
     private readonly ILogger _logger;
-    public RenderableBroadcaster? _broadcaster;
+    public RenderableBroadcaster? Broadcaster;
 
     public bool IsStarted { get; private set; } = false;
 
@@ -37,7 +37,7 @@ public class GameRoom<G, S, A>
 
     public GameRoom(Dictionary<string, Connection> connections, RenderableBroadcaster renderableBroadcaster, ILogger logger)
     {
-        _broadcaster = renderableBroadcaster;
+        Broadcaster = renderableBroadcaster;
         _connections = new(connections);
         _roomSize = _connections.Count;
         _logger = logger;
@@ -45,8 +45,16 @@ public class GameRoom<G, S, A>
 
     public Result<bool> AddPlayer(string playerId, Connection connectionInfo)
     {
+        // Might add more here tbd
         bool success = _connections.TryAdd(playerId, connectionInfo);
         return new(success);
+    }
+
+    public Result<bool> RemovePlayer(string playerId)
+    {
+        // Might add more here tbd
+        var result = _connections.TryRemove(playerId, out _);
+        return new (result);
     }
 
     public async Task RunRoom()
@@ -55,25 +63,20 @@ public class GameRoom<G, S, A>
         this.IsStarted = true;
 
         IGame<S, A> game = new G();
-        if (_broadcaster == null)
+        if (Broadcaster == null)
         {
             this._logger.LogCritical("No broadcaster for room");
         }
         else
         {
-            game.SetBroadcaster(_broadcaster);
+            game.SetBroadcaster(Broadcaster);
         }
         Dictionary<string, S> statesToSend = game.GetInitial([.. _connections.Keys]);
-        while (this.IsStarted)
+        while (!game.IsGameOver())
         {
             this._logger.LogDebug("playing a turn in the room");
             Dictionary<string, A> actions = await this.SendAndWaitForResult(statesToSend);
             statesToSend = game.DoAction(actions);
-            if (game.IsGameOver())
-            {
-                this.IsStarted = false;
-                break;
-            }
         }
 
         this._logger.LogDebug("ended the game");
