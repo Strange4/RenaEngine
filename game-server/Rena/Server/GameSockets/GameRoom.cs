@@ -10,12 +10,14 @@ using Rena.Utility;
 
 namespace Rena.Server.GameSockets;
 
+using Connection = Tuple<WebSocket, ChannelWriter<Result<bool>>>;
+
 public class GameRoom<G, S, A>
     where G : IGame<S, A>, new()
     where S : class
     where A : class
 {
-    private readonly ConcurrentDictionary<string, Tuple<WebSocket, ChannelWriter<Result<bool>>>> _connections;
+    private readonly ConcurrentDictionary<string, Connection> _connections;
     private readonly int _roomSize;
     private readonly ILogger _logger;
     public RenderableBroadcaster? _broadcaster;
@@ -24,7 +26,7 @@ public class GameRoom<G, S, A>
 
     public bool IsFull => _connections.Count >= _roomSize;
 
-    public ConcurrentDictionary<string, Tuple<WebSocket, ChannelWriter<Result<bool>>>> Players => _connections;
+    public ConcurrentDictionary<string, Connection> Players => _connections;
 
     public GameRoom(int roomSize, ILogger logger)
     {
@@ -33,11 +35,7 @@ public class GameRoom<G, S, A>
         _logger = logger;
     }
 
-    public GameRoom(
-        Dictionary<string, Tuple<WebSocket, ChannelWriter<Result<bool>>>> connections,
-        RenderableBroadcaster renderableBroadcaster,
-        ILogger logger
-    )
+    public GameRoom(Dictionary<string, Connection> connections, RenderableBroadcaster renderableBroadcaster, ILogger logger)
     {
         _broadcaster = renderableBroadcaster;
         _connections = new(connections);
@@ -45,7 +43,7 @@ public class GameRoom<G, S, A>
         _logger = logger;
     }
 
-    public Result<bool> AddPlayer(string playerId, Tuple<WebSocket, ChannelWriter<Result<bool>>> connectionInfo)
+    public Result<bool> AddPlayer(string playerId, Connection connectionInfo)
     {
         bool success = _connections.TryAdd(playerId, connectionInfo);
         return new(success);
