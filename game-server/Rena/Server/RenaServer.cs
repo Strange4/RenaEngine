@@ -8,7 +8,7 @@ public class RenaServer<G, S, A>
     where S : class
     where A : class
 {
-    public readonly WebApplication _app;
+    private readonly WebApplication _app;
 
     private RenaServer(WebApplication app)
     {
