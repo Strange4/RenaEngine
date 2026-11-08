@@ -57,7 +57,7 @@ dotnet_diagnostic.IDE0290.severity = none
 dotnet_diagnostic.CA1873.severity = none
 
 # Enforce 
-dotnet_diagnostic.CA1859.severity = true:error
+dotnet_diagnostic.CA1859.severity = warning
 
 # Enforce 'this.' for property access
 dotnet_style_qualification_for_property = true:error
