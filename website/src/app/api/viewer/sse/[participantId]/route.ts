@@ -6,6 +6,5 @@ export async function GET(
   { params }: { params: Promise<{ participantId: string }> },
 ) {
   const { participantId } = await params;
-  console.log("Connecting to SSE with id", participantId)
   return connectSSE(request, participantId);
 }

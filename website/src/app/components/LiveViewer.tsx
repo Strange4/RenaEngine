@@ -5,7 +5,6 @@ import { Application } from "pixi.js";
 import { AssetLoader } from "@/app/viewer/assetLoader";
 import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
 import { RenderableChangeProcessor } from "@/app/viewer/renderableChangeProcessor";
-import { getSceneSource } from "@/app/viewer/sceneSource";
 import { SSERenderableChangeSource } from "../viewer/renderableChangeSource";
 import { ViewerSetup } from "@/shared/renderable";
 
@@ -30,9 +29,7 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
     const unmount = new AbortController();
 
     (async () => {
-      // const { setup, renderables } =
-      //   await getSceneSource(gameId).getInitialScene();
-
+      // TODO (176): get the resolution and tile size from the browser
       const setup: ViewerSetup = {
         tileSize: 40,
         resolution: [920, 480]

@@ -14,7 +14,6 @@ export async function createReadableStream(
     signal: signal,
   });
   if (!response.ok) {
-    console.log(response.statusText);
     return null;
   }
   return response.body;
