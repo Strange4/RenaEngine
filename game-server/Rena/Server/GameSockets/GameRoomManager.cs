@@ -71,6 +71,7 @@ public class GameRoomManager<G, S, A>(IMatchMaker<G, S, A> matchMaker, int roomS
     {
         // The actual management of websockets and their disconnect/error handling is
         // handled by GameSocketConnection and GameSocketHandler
+        _rooms[playerId].RemovePlayer(playerId);
         _connections.TryRemove(playerId, out _);
         _rooms.TryRemove(playerId, out _);
     }

@@ -55,7 +55,7 @@ public class MatchMaker<G, S, A>(IDockerService dockerService, RenderableBroadca
         // That way a bot that was created, who's room was shut down cannot create a room of bots
         logger.LogInformation("Creating test room for player {playerId}", playerId);
         room = new(numPlayers, logger);
-        room._broadcaster = broadcaster;
+        room.Broadcaster = broadcaster;
         _playerRooms[playerId] = room;
 
         // TODO #164 add _availableTestContainers check so that we aren't always making new ones
