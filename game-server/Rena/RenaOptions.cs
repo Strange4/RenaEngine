@@ -29,8 +29,8 @@ public record class RenaOptions
     public int RoomSize { get; set; } = 2;
 
     [Required]
-    public string HostBotZipPath { get; set; } = "./Bot/typescript_bot.zip";
+    public string HostBotZipPath { get; set; } = "./HouseBot/typescript_bot.zip";
 
     [Required]
-    public string HostBotDockerfile { get; set; } = "./Bot/typescript.Dockerfile";
+    public string HostBotDockerfile { get; set; } = "./HouseBot/typescript.Dockerfile";
 }
