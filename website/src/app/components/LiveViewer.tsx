@@ -5,6 +5,7 @@ import { Application } from "pixi.js";
 import { AssetLoader } from "@/app/viewer/assetLoader";
 import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
 import { RenderableChangeProcessor } from "@/app/viewer/renderableChangeProcessor";
+import { getSceneSource } from "@/app/viewer/sceneSource";
 import { SSERenderableChangeSource } from "../viewer/renderableChangeSource";
 import { ViewerSetup } from "@/shared/renderable";
 
@@ -29,6 +30,9 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
     const unmount = new AbortController();
 
     (async () => {
+      const scene = await getSceneSource(gameId).getInitialScene();
+      if (unmount.signal.aborted) return;
+
       // TODO (176): get the resolution and tile size from the browser
       const setup: ViewerSetup = {
         tileSize: 40,
@@ -56,6 +60,7 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
       //draw every renderable on the screen (there's a sprite for each ID)
       container.appendChild(app.canvas);
       renderer.addContainerToStage(app.stage);
+      await renderer.renderScene(scene.renderables, unmount.signal);
       if (unmount.signal.aborted) return;
 
       // connect to SSE
@@ -72,8 +77,7 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
           await renderer.updateGameRenderable(renderable, unmount.signal);
         },
         remove: async (id) => renderer.removeGameRenderable(id),
-      }, changeSource);
-      // The server's first change has index 1, so the initial scene is index 0
+      }, changeSource, scene.renderables);
     })().catch((e) => {
       console.log(e);
       // TODO put actual error handling here

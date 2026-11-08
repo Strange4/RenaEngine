@@ -10,7 +10,11 @@ export class RenderableChangeProcessor {
   constructor(
     private handlers: RenderableHandlers,
     private changeSource: RenderableChangeSource,
+    initialRenderables: GameRenderable[] = [],
   ) {
+    for (const renderable of initialRenderables) {
+      this.currentRenderables.set(renderable.id, renderable);
+    }
     this.changeSource.setChangelisteneter((change) => this.process(change));
   }
 

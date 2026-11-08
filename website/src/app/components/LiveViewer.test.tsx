@@ -105,6 +105,14 @@ jest.mock("@/app/viewer/sceneSource", () => ({
   getSceneSource: jest.fn(() => ({ getInitialScene: mockGetInitialScene })),
 }));
 
+jest.mock("@/app/viewer/renderableChangeSource", () => ({
+  SSERenderableChangeSource: jest.fn().mockImplementation(() => ({
+    setChangelisteneter: jest.fn(),
+    getAllChanges: jest.fn().mockReturnValue([]),
+    close: jest.fn(),
+  })),
+}));
+
 // Uses the real processor, wrapped so tests can get the one the viewer created
 jest.mock("@/app/viewer/renderableChangeProcessor", () => {
   const actual = jest.requireActual("@/app/viewer/renderableChangeProcessor");
@@ -161,7 +169,7 @@ describe("LiveViewer", () => {
     });
   });
 
-  it("renders the viewer container sized to the scene", async () => {
+  it("renders the viewer container at the configured size", async () => {
     render(<LiveViewer gameId="1" />);
 
     const viewer = screen.getByTestId("live-viewer");
@@ -171,8 +179,8 @@ describe("LiveViewer", () => {
 
     await waitFor(() => {
       expect(viewer).toHaveStyle({
-        width: "800px",
-        height: "600px",
+        width: "920px",
+        height: "480px",
       });
     });
   });
@@ -228,8 +236,8 @@ describe("LiveViewer", () => {
       __containerInstances.slice(1);
 
     expect(app.init).toHaveBeenCalledWith({
-      width: 800,
-      height: 600,
+      width: 920,
+      height: 480,
       background: "#1f2937",
       antialias: true,
     });
@@ -260,18 +268,18 @@ describe("LiveViewer", () => {
     const [spriteOne, spriteTwo] = __spriteInstances;
 
     expect(spriteOne.texture).toBe("mock-texture");
-    expect(spriteOne.position.set).toHaveBeenCalledWith(80, 80);
+    expect(spriteOne.position.set).toHaveBeenCalledWith(100, 100);
     expect(spriteOne.anchor.set).toHaveBeenCalledWith(1 / 6, 1 / 6);
     expect(spriteOne.zIndex).toBe(1);
-    expect(spriteOne.width).toBe(96);
-    expect(spriteOne.height).toBe(96);
+    expect(spriteOne.width).toBe(120);
+    expect(spriteOne.height).toBe(120);
 
     expect(spriteTwo.texture).toBe("mock-texture");
-    expect(spriteTwo.position.set).toHaveBeenCalledWith(16, 16);
+    expect(spriteTwo.position.set).toHaveBeenCalledWith(20, 20);
     expect(spriteTwo.anchor.set).toHaveBeenCalledWith(1 / 6, 1 / 6);
     expect(spriteTwo.zIndex).toBe(2);
-    expect(spriteTwo.width).toBe(96);
-    expect(spriteTwo.height).toBe(96);
+    expect(spriteTwo.width).toBe(120);
+    expect(spriteTwo.height).toBe(120);
 
     expect(objectContainer.addChild).toHaveBeenCalledTimes(2);
     expect(objectContainer.addChild).toHaveBeenNthCalledWith(1, spriteOne);
@@ -419,10 +427,10 @@ describe("LiveViewer", () => {
 
     const created = __spriteInstances[2];
     expect(created.texture).toBe("mock-texture");
-    expect(created.position.set).toHaveBeenCalledWith(144, 48);
+    expect(created.position.set).toHaveBeenCalledWith(180, 60);
     expect(created.zIndex).toBe(5);
-    expect(created.width).toBe(32);
-    expect(created.height).toBe(32);
+    expect(created.width).toBe(40);
+    expect(created.height).toBe(40);
 
     const decorationContainer = __containerInstances[3];
     expect(decorationContainer.addChild).toHaveBeenCalledWith(created);
@@ -539,6 +547,6 @@ describe("LiveViewer", () => {
     expect(updatedShip.destroy).not.toHaveBeenCalled();
     const{__spriteInstances} = getPixiMocks();
     expect(getPixiMocks().__spriteInstances).toHaveLength(2);
-    expect(oldShip.position.set).toHaveBeenCalledWith(144,48); //some coordinate position for update
+    expect(oldShip.position.set).toHaveBeenCalledWith(180, 60);
   });
 });
