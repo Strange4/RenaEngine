@@ -107,7 +107,7 @@ jest.mock("@/app/viewer/sceneSource", () => ({
 
 jest.mock("@/app/viewer/renderableChangeSource", () => ({
   SSERenderableChangeSource: jest.fn().mockImplementation(() => ({
-    setChangelisteneter: jest.fn(),
+    setChangeListener: jest.fn(),
     getAllChanges: jest.fn().mockReturnValue([]),
     close: jest.fn(),
   })),
