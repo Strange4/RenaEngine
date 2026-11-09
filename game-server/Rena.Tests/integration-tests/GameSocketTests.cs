@@ -20,7 +20,9 @@ public class GameSocketTests
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Testing", Args = [] });
 
         builder.WebHost.UseTestServer();
-        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?> { { "RenaOptions:TSProtoPath", "TESTING" } });
+        builder.Configuration.AddInMemoryCollection(
+            new Dictionary<string, string?> { { "RenaOptions:TSProtoPath", "TESTING" }, { "RenaOptions:RoomSize", "1" } }
+        );
         builder.SetRenaServices<TestGame, GameState, GameAction>();
 
         _app = builder.Build();
