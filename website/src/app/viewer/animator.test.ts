@@ -119,4 +119,30 @@ describe("Animator", () =>{
         expect(getState(sprite)).toEqual(final_state);
 
     });
+
+    it("scales active animations without changing their progress", () => {
+        const animator = new Animator(200);
+        const sprite = fakeSprite(start_state);
+
+        animator.animate(sprite, final_state);
+        animator.tick(100);
+        animator.resize(2);
+
+        expect(getState(sprite)).toEqual({
+            x: 100,
+            y: 40,
+            width: 96,
+            height: 128,
+            angle: 45,
+        });
+
+        animator.tick(100);
+        expect(getState(sprite)).toEqual({
+            x: 200,
+            y: 80,
+            width: 128,
+            height: 192,
+            angle: 90,
+        });
+    });
 });
