@@ -51,6 +51,8 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
         throw new Error("The initial map must have a positive tile resolution");
       }
 
+      // Because the viewer is dynamically sized, calculate based on width + tile resolution to get height.
+      // Map will always fill the width and height will be calculated based on the map's aspect ratio.
       const getSetup = (pixelWidth: number): ViewerSetup => {
         const tileSize = pixelWidth / tileResolution[0];
         return {
@@ -87,6 +89,7 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
       await renderer.renderScene(scene.renderables, unmount.signal);
       if (unmount.signal.aborted) return;
 
+      // Resize the viewer when the container width changes
       const resize = (pixelWidth: number) => {
         if (pixelWidth <= 0 || unmount.signal.aborted) return;
 

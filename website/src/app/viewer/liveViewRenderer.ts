@@ -50,6 +50,9 @@ export class LiveViewRenderer {
         stage.addChild(this.decorationContainer);
     }
 
+    // Update the viewer setup and adjust all existing sprites accordingly
+    // This is useful when the viewer's resolution or tile size changes
+    // It ensures that all sprites are resized and repositioned based on the new setup
     updateViewerSetup(viewerSetup: ViewerSetup): void {
         this.viewerSetup = viewerSetup;
         for (const [id, renderable] of this.renderables) {
