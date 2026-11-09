@@ -40,3 +40,19 @@ export class SSERenderableChangeSource implements RenderableChangeSource {
     this.callback?.call(undefined, change);
   }
 }
+
+export class RecordedRenderableChangeSource implements RenderableChangeSource {
+  private changes: RenderableChange[];
+
+  constructor(changes: RenderableChange[]) {
+    this.changes = [...changes].sort((first, second) => first.index - second.index);
+  }
+
+  setChangeListener(_callback: RenderableChangeCallback): void { }
+
+  getAllChanges(): RenderableChange[] {
+    return this.changes;
+  }
+
+  close(): void { }
+}
