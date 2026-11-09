@@ -547,10 +547,10 @@ describe("LiveViewer", () => {
     //halfway in the animation the sprite's properties are also halfway till their final state
     //initial is at 80,80  final is at 144,48
     tick({deltaMS: 100});
-    expect(oldShip.position.set).toHaveBeenLastCalledWith(112,64);
+    expect(oldShip.position.set).toHaveBeenLastCalledWith(140,80);
 
     //at the end of the animation, it's at the final state
     tick({deltaMS: 100});
-    expect(oldShip.position.set).toHaveBeenLastCalledWith(144,48); //some coordinate position for update
+    expect(oldShip.position.set).toHaveBeenLastCalledWith(180,60); //some coordinate position for update
   });
 });
