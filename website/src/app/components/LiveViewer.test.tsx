@@ -17,6 +17,14 @@ const TEST_VIEWER_SETUP: ViewerSetup = {
 
 const TEST_SCENE: GameRenderable[] = [
   {
+    id: "map",
+    position: [0, 0],
+    assetPath: "/sprites/map.png",
+    size: [20, 15],
+    type: RenderableType.MAP,
+    layer: 0,
+  },
+  {
     id: "test-sprite",
     position: [2, 2],
     assetPath: "/sprites/rena.png",
@@ -169,7 +177,7 @@ describe("LiveViewer", () => {
     });
   });
 
-  it("renders the viewer container at the configured size", async () => {
+  it("renders the viewer container using the map aspect ratio", async () => {
     render(<LiveViewer gameId="1" />);
 
     const viewer = screen.getByTestId("live-viewer");
@@ -179,8 +187,7 @@ describe("LiveViewer", () => {
 
     await waitFor(() => {
       expect(viewer).toHaveStyle({
-        width: "920px",
-        height: "480px",
+        height: "600px",
       });
     });
   });
@@ -236,8 +243,8 @@ describe("LiveViewer", () => {
       __containerInstances.slice(1);
 
     expect(app.init).toHaveBeenCalledWith({
-      width: 920,
-      height: 480,
+      width: 800,
+      height: 600,
       background: "#1f2937",
       antialias: true,
     });
@@ -261,11 +268,11 @@ describe("LiveViewer", () => {
     expect(stage.addChild).toHaveBeenNthCalledWith(2, objectContainer);
     expect(stage.addChild).toHaveBeenNthCalledWith(3, decorationContainer);
 
-    expect(Sprite).toHaveBeenCalledTimes(2);
+    expect(Sprite).toHaveBeenCalledTimes(3);
 
-    expect(__spriteInstances).toHaveLength(2);
+    expect(__spriteInstances).toHaveLength(3);
 
-    const [spriteOne, spriteTwo] = __spriteInstances;
+    const [, spriteOne, spriteTwo] = __spriteInstances;
 
     expect(spriteOne.texture).toBe("mock-texture");
     expect(spriteOne.position.set).toHaveBeenCalledWith(100, 100);
@@ -285,7 +292,7 @@ describe("LiveViewer", () => {
     expect(objectContainer.addChild).toHaveBeenNthCalledWith(1, spriteOne);
     expect(objectContainer.addChild).toHaveBeenNthCalledWith(2, spriteTwo);
 
-    expect(mapContainer.addChild).not.toHaveBeenCalled();
+    expect(mapContainer.addChild).toHaveBeenCalledWith(__spriteInstances[0]);
     expect(decorationContainer.addChild).not.toHaveBeenCalled();
   });
 
@@ -381,12 +388,12 @@ describe("LiveViewer", () => {
       expect(RenderableChangeProcessor).toHaveBeenCalledTimes(1);
     });
 
-    const [removedSprite, keptSprite] = getPixiMocks().__spriteInstances;
+    const [, removedSprite, keptSprite] = getPixiMocks().__spriteInstances;
 
     await act(async () => {
       await getViewerProcessor().process({
         index: 1,
-        changes: [{ ...TEST_SCENE[0], removed: true }],
+        changes: [{ ...TEST_SCENE[1], removed: true }],
       });
     });
 
@@ -423,9 +430,9 @@ describe("LiveViewer", () => {
     expect(assets.loadFor).toHaveBeenLastCalledWith([newRenderable]);
 
     const { __spriteInstances, __containerInstances } = getPixiMocks();
-    expect(__spriteInstances).toHaveLength(3);
+    expect(__spriteInstances).toHaveLength(4);
 
-    const created = __spriteInstances[2];
+    const created = __spriteInstances[3];
     expect(created.texture).toBe("mock-texture");
     expect(created.position.set).toHaveBeenCalledWith(180, 60);
     expect(created.zIndex).toBe(5);
@@ -440,7 +447,7 @@ describe("LiveViewer", () => {
       getViewerProcessor()
         .getCurrentState()
         .map(({ id }) => id),
-    ).toEqual(["test-sprite", "test-sprite-two", "new-flag"]);
+    ).toEqual(["map", "test-sprite", "test-sprite-two", "new-flag"]);
   });
 
   it("does not create the sprite if unmounted while its asset is loading", async () => {
@@ -462,7 +469,7 @@ describe("LiveViewer", () => {
 
     const pending = getViewerProcessor().process({
       index: 1,
-      changes: [{ ...TEST_SCENE[0], id: "late-sprite" }],
+      changes: [{ ...TEST_SCENE[1], id: "late-sprite" }],
     });
 
     // wait for the create handler to start loading the asset (first call was the initial scene)
@@ -478,7 +485,7 @@ describe("LiveViewer", () => {
     });
 
     // only the two sprites from the initial scene
-    expect(Sprite).toHaveBeenCalledTimes(2);
+    expect(Sprite).toHaveBeenCalledTimes(3);
   });
 
   it("stops applying changes once the viewer is unmounted", async () => {
@@ -495,11 +502,11 @@ describe("LiveViewer", () => {
     await act(async () => {
       await processor.process({
         index: 1,
-        changes: [{ ...TEST_SCENE[0], removed: true }],
+        changes: [{ ...TEST_SCENE[1], removed: true }],
       });
     });
 
-    expect(getPixiMocks().__spriteInstances[0].destroy).not.toHaveBeenCalled();
+    expect(getPixiMocks().__spriteInstances[1].destroy).not.toHaveBeenCalled();
   });
 
   it("logs an error when PixiJS initialization fails", async () => {
@@ -534,10 +541,10 @@ describe("LiveViewer", () => {
       expect(RenderableChangeProcessor).toHaveBeenCalledTimes(1);
     });
 
-    const [oldShip, updatedShip] = getPixiMocks().__spriteInstances;
+    const [, oldShip, updatedShip] = getPixiMocks().__spriteInstances;
 
     //Say the change is a movement/displacement
-    const displacement: GameRenderable = {...TEST_SCENE[0], position:[4,1]};
+    const displacement: GameRenderable = {...TEST_SCENE[1], position:[4,1]};
     await act(async() => {
       await getViewerProcessor().process({index:1, changes:[displacement]});
     });
@@ -546,7 +553,7 @@ describe("LiveViewer", () => {
     expect(oldShip.destroy).not.toHaveBeenCalled();
     expect(updatedShip.destroy).not.toHaveBeenCalled();
     const{__spriteInstances} = getPixiMocks();
-    expect(getPixiMocks().__spriteInstances).toHaveLength(2);
+    expect(getPixiMocks().__spriteInstances).toHaveLength(3);
     expect(oldShip.position.set).toHaveBeenCalledWith(180, 60);
   });
 });
