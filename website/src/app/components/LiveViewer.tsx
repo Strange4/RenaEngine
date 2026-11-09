@@ -6,6 +6,7 @@ import { AssetLoader } from "@/app/viewer/assetLoader";
 import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
 import { RenderableChangeProcessor } from "@/app/viewer/renderableChangeProcessor";
 import { getSceneSource } from "@/app/viewer/sceneSource";
+import {Animator} from "@/app/viewer/animator";
 import { SSERenderableChangeSource } from "../viewer/renderableChangeSource";
 import { RenderableType, type ViewerSetup } from "@/shared/renderable";
 
@@ -69,7 +70,8 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
         || 1;
       const setup = getSetup(initialWidth);
       setResolution(setup.resolution);
-      const renderer = new LiveViewRenderer(assets, setup);
+      const animator = new Animator();
+      const renderer = new LiveViewRenderer(assets, setup, animator);
 
       await app.init({
         width: setup.resolution[0],
@@ -87,6 +89,7 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
       }
       //draw every renderable on the screen (there's a sprite for each ID)
       container.appendChild(app.canvas);
+      app.ticker.add((ticker)=> animator.tick(ticker.deltaMS)); //deltaMS is from pixi JS, it's the difference in milliseconds between two frames
       renderer.addContainerToStage(app.stage);
       await renderer.renderScene(scene.renderables, unmount.signal);
       if (unmount.signal.aborted) return;

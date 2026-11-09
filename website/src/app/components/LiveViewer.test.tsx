@@ -70,6 +70,7 @@ jest.mock("pixi.js", () => {
       destroy: jest.fn(),
       renderer: { resize: jest.fn() },
       stage: new MockContainer(),
+      ticker: {add: jest.fn()},
     };
 
     appInstances.push(app);
@@ -77,13 +78,23 @@ jest.mock("pixi.js", () => {
   });
 
   const MockSprite = jest.fn().mockImplementation((texture) => {
+
+    const position ={
+      x: 0,
+      y: 0,
+      set: jest.fn((x: number, y:number) =>{
+        position.x = x;
+        position.y = y;
+      }),
+    };
     const sprite = {
       texture,
-      position: { set: jest.fn() },
+      position,
       anchor: { set: jest.fn() },
       zIndex: 0,
       width: 0,
       height: 0,
+      angle:0,
       destroy: jest.fn(),
     };
 
@@ -145,6 +156,7 @@ const getPixiMocks = () =>
       destroy: jest.Mock;
       renderer: { on: jest.Mock; resize: jest.Mock };
       stage: { addChild: jest.Mock };
+      ticker: {add: jest.Mock};
     }>;
     __containerInstances: Array<{
       label: string;
@@ -641,6 +653,17 @@ describe("LiveViewer", () => {
     expect(updatedShip.destroy).not.toHaveBeenCalled();
     const{__spriteInstances} = getPixiMocks();
     expect(getPixiMocks().__spriteInstances).toHaveLength(3);
+
+    //Viewere registered ticker function simulates passing frames
+    const tick = getPixiMocks().__appInstances[0].ticker.add.mock.calls[0][0];
+    //halfway in the animation the sprite's properties are also halfway till their final state
+    //initial is at 80,80  final is at 144,48
+    tick({deltaMS: 100});
+    expect(oldShip.position.set).toHaveBeenLastCalledWith(140,80);
+
+    //at the end of the animation, it's at the final state
+    tick({deltaMS: 100});
+    expect(oldShip.position.set).toHaveBeenLastCalledWith(180,60); //some coordinate position for update
     expect(oldShip.position.set).toHaveBeenCalledWith(180, 60);
   });
 });
