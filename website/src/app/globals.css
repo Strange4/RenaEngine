@@ -241,6 +241,68 @@ button {
   height: 100%;
 }
 
+.replay-viewer {
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+  max-width: 100%;
+}
+
+.replay-viewer .live-viewer-canvas {
+  border-bottom: none;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.replay-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1.25rem;
+  border: 1px solid #374151;
+  border-radius: 0 0 6px 6px;
+  background: #18181b;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.4);
+}
+
+.replay-controls button {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #f9fafb;
+}
+
+.replay-controls button svg {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+.replay-controls button:hover {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.replay-controls .replay-play {
+  width: 3.25rem;
+  height: 3.25rem;
+  background: #f9fafb;
+  color: #18181b;
+}
+
+.replay-controls .replay-play:hover {
+  background: #e5e7eb;
+}
+
+.replay-controls .replay-play svg {
+  width: 2rem;
+  height: 2rem;
+}
+
 .token-page {
   max-width: 960px;
 }
