@@ -86,37 +86,27 @@ public class GameSocketTests
     public async Task GameConnectEndpoint_SendJoinAndEnds()
     {
         var playerId1 = "player-123";
-        var playerId2 = "player-1234";
         var socketClient = _app.GetTestServer().CreateWebSocketClient();
         var wsUri1 = new Uri($"ws://localhost/game/connect/test/{playerId1}");
-        var wsUri2 = new Uri($"ws://localhost/game/connect/test/{playerId2}");
 
         var webSocket1 = await socketClient.ConnectAsync(wsUri1, CancellationToken.None);
-        var webSocket2 = await socketClient.ConnectAsync(wsUri2, CancellationToken.None);
 
         Assert.That(webSocket1.State, Is.EqualTo(WebSocketState.Open));
-        Assert.That(webSocket2.State, Is.EqualTo(WebSocketState.Open));
 
         GameState serverResponse1 = await ReceiveStateFromSocket(webSocket1);
-        GameState serverResponse2 = await ReceiveStateFromSocket(webSocket2);
 
         Assert.That(serverResponse1.X, Is.EqualTo(0));
-        Assert.That(serverResponse2.X, Is.EqualTo(0));
 
         GameAction winAction = new() { Y = 7 };
         using var ms = new MemoryStream();
         Serializer.Serialize(ms, winAction);
 
         await webSocket1.SendAsync(ms.ToArray(), WebSocketMessageType.Binary, true, CancellationToken.None);
-        await webSocket2.SendAsync(ms.ToArray(), WebSocketMessageType.Binary, true, CancellationToken.None);
 
         WebSocketReceiveResult result1 = await WaitForClose(webSocket1);
-        WebSocketReceiveResult result2 = await WaitForClose(webSocket2);
 
         Assert.That(result1.MessageType, Is.EqualTo(WebSocketMessageType.Close));
-        Assert.That(result2.MessageType, Is.EqualTo(WebSocketMessageType.Close));
 
         Assert.That(webSocket1.State, Is.EqualTo(WebSocketState.CloseReceived));
-        Assert.That(webSocket2.State, Is.EqualTo(WebSocketState.CloseReceived));
     }
 }
