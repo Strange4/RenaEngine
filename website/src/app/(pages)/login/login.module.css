@@ -1,0 +1,157 @@
+.page {
+  min-height: 100vh;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  background: var(--grad);
+  position: relative;
+  overflow: hidden;
+}
+
+/* pixel-grid overlay echoing the pixel-art brand */
+.page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+
+/* soft glow blob for depth */
+.page::after {
+  content: "";
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  top: -20vmax;
+  right: -15vmax;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.18), transparent 60%);
+  pointer-events: none;
+}
+
+.card {
+  position: relative;
+  z-index: 1;
+  width: min(420px, calc(100vw - 2rem));
+  background: var(--offwhite);
+  border: 1px solid var(--blush-2);
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(58, 10, 42, 0.45);
+  padding: 2rem 2.25rem;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.logo {
+  width: 72px;
+  height: 72px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 4px 10px rgba(194, 0, 122, 0.35));
+}
+
+.title {
+  font-size: 1.9rem;
+  letter-spacing: 0.5px;
+  margin: 0;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.label {
+  width: auto;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--magenta);
+  margin-top: 0.9rem;
+}
+
+.input {
+  width: 100%;
+  margin: 0;
+  font: inherit;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  border: 1.5px solid var(--blush-2);
+  background: #fff;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input:focus {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px var(--blush);
+}
+
+.hint {
+  margin: 0.9rem 0 0;
+  font-size: 0.85rem;
+  color: var(--deep);
+  background: var(--blush);
+  border: 1px solid var(--blush-2);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+}
+
+.hint strong {
+  color: var(--magenta);
+}
+
+.error {
+  margin: 0.9rem 0 0;
+  font-size: 0.85rem;
+  color: var(--deep);
+  background: var(--blush);
+  border: 1px solid var(--blush-2);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+}
+
+.submit {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.8rem 1rem;
+  font: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #fff;
+  background: var(--grad);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(194, 0, 122, 0.4);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(194, 0, 122, 0.5);
+}
+
+.submit:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
