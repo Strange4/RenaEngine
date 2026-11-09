@@ -168,7 +168,7 @@ public class BattleshipRenderingTests
         };
 
         List<GameRenderable> renderables = _game.CollectRenderables(1, placeAction);
-        int[] expected = [1, 2];
+        int[] expected = [2, 1]; // The expected size is the same since it should be handled by the liveviewer
         Assert.That(renderables[0].Size, Is.EqualTo(expected));
         Assert.That(renderables[0].Rotation, Is.EqualTo(90));
     }
