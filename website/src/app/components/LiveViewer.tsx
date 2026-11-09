@@ -35,6 +35,8 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
       const scene = await getSceneSource(gameId).getInitialScene();
       if (unmount.signal.aborted) return;
 
+      // IMPORTANT
+      // The initial scene must contain a map renderable to determine the tile resolution
       const map = scene.renderables[0];
       if (!map || map.type !== RenderableType.MAP) {
         throw new Error("The initial renderable must define the map");

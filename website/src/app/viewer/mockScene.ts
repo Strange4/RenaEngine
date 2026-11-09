@@ -40,6 +40,8 @@ function tiles(
 // but the cloud decoration (0) still goes over the ships (1) since decorations are drawn last
 const MAP: GameRenderable[] = [
   {
+    // The map renderable is special: it defines the tile resolution of the game world, and is used to calculate the viewer's aspect ratio.
+    // It must be the first renderable in the scene.
     id: "map",
     position: [0, 0],
     assetPath: "/sprites/water.svg",
