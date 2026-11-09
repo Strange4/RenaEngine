@@ -126,7 +126,7 @@ describe("Animator", () =>{
 
         animator.animate(sprite, final_state);
         animator.tick(100);
-        animator.resize(2);
+        animator.resizeAnimations(2);
 
         expect(getState(sprite)).toEqual({
             x: 100,

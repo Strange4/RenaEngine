@@ -57,7 +57,7 @@ export class LiveViewRenderer {
     // It ensures that all sprites are resized and repositioned based on the new setup
     updateViewerSetup(viewerSetup: ViewerSetup): void {
         const scale = viewerSetup.tileSize / this.viewerSetup.tileSize;
-        this.animator?.resize(scale);
+        this.animator?.resizeAnimations(scale);
         this.viewerSetup = viewerSetup;
         for (const [id, renderable] of this.renderables) {
             const sprite = this.sprites.get(id);

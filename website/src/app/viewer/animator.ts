@@ -110,7 +110,7 @@ export class Animator{
     }
 
     // Resize all animations based on a scale factor. 
-    resize(scale: number): void {
+    resizeAnimations(scale: number): void {
         for (const [sprite, animation] of this.animations) {
             animation.from = scaleState(animation.from, scale);
             animation.to = scaleState(animation.to, scale);
