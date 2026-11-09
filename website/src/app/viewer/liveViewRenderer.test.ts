@@ -1,6 +1,6 @@
 import type { Container } from "pixi.js";
 import { RenderableType, type GameRenderable, type ViewerSetup } from "@/shared/renderable";
-
+import { Animator } from "./animator";
 class MockPoint {
   x = 0;
   y = 0;
@@ -98,7 +98,7 @@ function renderable(
   return { ...baseRenderable, ...overrides };
 }
 
-function createRenderer() {
+function createRenderer(animator?:Animator) {
   const assetLoader = {
     getTexture: jest.fn((path: string) => textureFor(path)),
     loadFor: jest.fn().mockResolvedValue(undefined),
@@ -106,7 +106,7 @@ function createRenderer() {
 
   return {
     assetLoader,
-    renderer: new LiveViewRenderer(assetLoader, viewerSetup),
+    renderer: new LiveViewRenderer(assetLoader, viewerSetup, animator),
   };
 }
 
@@ -430,4 +430,46 @@ describe("LiveViewRenderer", () => {
     expect(sprite!.position.y).toBe(48);
     expect(sprite!.angle).toBe(90);
   });
+
+  it("stops animating a sprite once it's removed", async()=>{
+    const animator = new Animator(200);
+    const {renderer} = createRenderer(animator);
+    const sprite = renderer.addGameRenderable(baseRenderable) as unknown as MockSprite;
+
+    //start an animation, but remove the sprite before the end of the animation
+    await renderer.updateGameRenderable(renderable({position: [0,1]}));
+    renderer.removeGameRenderable(baseRenderable.id);
+
+    //when removed the sprite stays as is-- we don't touch the next frames as they won't get animated
+    animator.tick(200);
+    expect(sprite.destroyed).toBe(true);
+    expect(sprite.position.x).toBe(80);
+  });
+
+  it("animates an update only if there's an update and an animator", async()=>{
+    const animator = new Animator(200);
+    const {renderer} = createRenderer(animator);
+    const sprite = renderer.addGameRenderable(baseRenderable);
+
+    //some defined sprite
+    expect(sprite.position.x).toBe(80);
+    expect(sprite.position.y).toBe(112);
+
+    //the update is a displacement
+    await renderer.updateGameRenderable(renderable({position: [0,1]}));
+    //it's at its initial state at the very start
+    expect(sprite.position.x).toBe(80);
+    expect(sprite.position.y).toBe(112);
+
+    //if 50% progress it's halfway
+    animator.tick(100);
+    expect(sprite.position.x).toBe(48);
+    expect(sprite.position.y).toBe(80);
+
+    //at the end it's at final state
+    animator.tick(100);
+    expect(sprite.position.x).toBe(16);
+    expect(sprite.position.y).toBe(48);
+  });
+
 });
