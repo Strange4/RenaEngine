@@ -143,7 +143,7 @@ const getPixiMocks = () =>
       screen: { width: number; height: number };
       init: jest.Mock;
       destroy: jest.Mock;
-      renderer: { on: jest.Mock };
+      renderer: { on: jest.Mock; resize: jest.Mock };
       stage: { addChild: jest.Mock };
     }>;
     __containerInstances: Array<{
