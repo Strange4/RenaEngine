@@ -68,6 +68,7 @@ jest.mock("pixi.js", () => {
       screen: { width: 800, height: 600 },
       init: mockInit,
       destroy: jest.fn(),
+      renderer: { resize: jest.fn() },
       stage: new MockContainer(),
     };
 
@@ -164,6 +165,7 @@ const getPixiMocks = () =>
 describe("LiveViewer", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    delete (globalThis as { ResizeObserver?: unknown }).ResizeObserver;
 
     const mocks = getPixiMocks();
     mocks.__appInstances.length = 0;
@@ -200,6 +202,91 @@ describe("LiveViewer", () => {
     });
 
     expect(getSceneSource).toHaveBeenCalledWith("42");
+  });
+
+  it.each([
+    ["missing", []],
+    ["non-map", [{ ...TEST_SCENE[1] }]],
+  ])("logs an error when the initial %s renderable is invalid", async (_case, renderables) => {
+    const error = new Error("The initial renderable must define the map");
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    mockGetInitialScene.mockResolvedValueOnce({ renderables });
+
+    try {
+      render(<LiveViewer gameId="1" />);
+      await waitFor(() => {
+        expect(logSpy).toHaveBeenCalledWith(error);
+      });
+    } finally {
+      logSpy.mockRestore();
+    }
+  });
+
+  it("logs an error when the map has an invalid tile resolution", async () => {
+    const error = new Error("The initial map must have a positive tile resolution");
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    mockGetInitialScene.mockResolvedValueOnce({
+      renderables: [{ ...TEST_SCENE[0], size: [0, 15] }],
+    });
+
+    try {
+      render(<LiveViewer gameId="1" />);
+      await waitFor(() => {
+        expect(logSpy).toHaveBeenCalledWith(error);
+      });
+    } finally {
+      logSpy.mockRestore();
+    }
+  });
+
+  it("uses the scene resolution when the browser width is unavailable", async () => {
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+      configurable: true,
+      value: 0,
+    });
+    jest.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      width: 0,
+    } as DOMRect);
+
+    try {
+      render(<LiveViewer gameId="1" />);
+      await waitFor(() => {
+        expect(getPixiMocks().__appInstances[0].init).toHaveBeenCalledWith(
+          expect.objectContaining({ width: 800, height: 600 }),
+        );
+      });
+    } finally {
+      Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+        configurable: true,
+        value: 0,
+      });
+      HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+    }
+  });
+
+  it("resizes Pixi and the canvas when the browser layout changes", async () => {
+    let resize!: (entries: Array<{ contentRect: { width: number } }>) => void;
+    const observe = jest.fn();
+    const disconnect = jest.fn();
+    (globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
+      constructor(callback: typeof resize) {
+        resize = callback;
+      }
+      observe = observe;
+      disconnect = disconnect;
+    };
+
+    render(<LiveViewer gameId="1" />);
+    await waitFor(() => {
+      expect(observe).toHaveBeenCalled();
+    });
+
+    await act(async () => {
+      resize([{ contentRect: { width: 400 } }]);
+    });
+
+    expect(getPixiMocks().__appInstances[0].renderer.resize).toHaveBeenCalledWith(400, 300);
   });
 
   it("does not set up PixiJS if unmounted while the scene is loading", async () => {
