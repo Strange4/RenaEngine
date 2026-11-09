@@ -229,6 +229,7 @@ button {
 }
 
 .live-viewer-canvas {
+  width: 100%;
   margin-inline: auto;
   overflow: hidden;
   border: 1px solid #374151;

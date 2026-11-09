@@ -7,7 +7,7 @@ import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
 import { RenderableChangeProcessor } from "@/app/viewer/renderableChangeProcessor";
 import { getSceneSource } from "@/app/viewer/sceneSource";
 import { SSERenderableChangeSource } from "../viewer/renderableChangeSource";
-import { ViewerSetup } from "@/shared/renderable";
+import { RenderableType, type ViewerSetup } from "@/shared/renderable";
 
 interface LiveViewerProps {
   gameId: string;
@@ -15,7 +15,7 @@ interface LiveViewerProps {
 
 export default function LiveViewer({ gameId }: LiveViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  // Known once the scene is loaded, sizes the viewer to the game's canvas
+  // Known once the scene is loaded, sizes the viewer to the game's aspect ratio
   const [resolution, setResolution] = useState<[number, number] | null>(null);
 
   useEffect(() => {
@@ -26,20 +26,44 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
     const assets = new AssetLoader();
     // Created once the renderer exists
     let processor: RenderableChangeProcessor | null = null;
+    let changeSource: SSERenderableChangeSource | null = null;
     let initialized = false;
+    let resizeObserver: ResizeObserver | null = null;
     const unmount = new AbortController();
 
     (async () => {
       const scene = await getSceneSource(gameId).getInitialScene();
       if (unmount.signal.aborted) return;
 
-      // TODO (176): get the resolution and tile size from the browser
-      const setup: ViewerSetup = {
-        tileSize: 40,
-        resolution: [920, 480]
+      const map = scene.renderables[0];
+      if (!map || map.type !== RenderableType.MAP) {
+        throw new Error("The initial renderable must define the map");
       }
-      if (unmount.signal.aborted) return;
 
+      const tileResolution = map.size;
+
+      if (
+        !Number.isFinite(tileResolution[0])
+        || !Number.isFinite(tileResolution[1])
+        || tileResolution[0] <= 0
+        || tileResolution[1] <= 0
+      ) {
+        throw new Error("The initial map must have a positive tile resolution");
+      }
+
+      const getSetup = (pixelWidth: number): ViewerSetup => {
+        const tileSize = pixelWidth / tileResolution[0];
+        return {
+          tileSize,
+          resolution: [pixelWidth, tileSize * tileResolution[1]],
+        };
+      }
+
+      const initialWidth = container.clientWidth
+        || container.getBoundingClientRect().width
+        || scene.setup?.resolution[0]
+        || 1;
+      const setup = getSetup(initialWidth);
       setResolution(setup.resolution);
       const renderer = new LiveViewRenderer(assets, setup);
 
@@ -63,8 +87,24 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
       await renderer.renderScene(scene.renderables, unmount.signal);
       if (unmount.signal.aborted) return;
 
+      const resize = (pixelWidth: number) => {
+        if (pixelWidth <= 0 || unmount.signal.aborted) return;
+
+        const nextSetup = getSetup(pixelWidth);
+        renderer.updateViewerSetup(nextSetup);
+        app.renderer.resize(nextSetup.resolution[0], nextSetup.resolution[1]);
+        setResolution(nextSetup.resolution);
+      };
+
+      if (typeof ResizeObserver !== "undefined") {
+        resizeObserver = new ResizeObserver(([entry]) => {
+          resize(entry.contentRect.width);
+        });
+        resizeObserver.observe(container);
+      }
+
       // connect to SSE
-      const changeSource = new SSERenderableChangeSource(`/api/viewer/sse/${gameId}`);
+      changeSource = new SSERenderableChangeSource(`/api/viewer/sse/${gameId}`);
 
       // Applies the RenderableChanges that come after the initial scene
       processor = new RenderableChangeProcessor({
@@ -86,7 +126,9 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
 
     return () => {
       unmount.abort();
+      resizeObserver?.disconnect();
       processor?.dispose();
+      changeSource?.close();
       if (initialized) app.destroy(true, { children: true });
     };
   }, [gameId]);
@@ -98,7 +140,6 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
       style={
         resolution
           ? {
-              width: `${resolution[0]}px`,
               height: `${resolution[1]}px`,
             }
           : undefined
