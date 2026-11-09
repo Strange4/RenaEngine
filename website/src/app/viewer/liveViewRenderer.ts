@@ -12,6 +12,9 @@ export class LiveViewRenderer {
     // Map to keep track of sprites by their IDs
     private sprites = new Map<string, Sprite>();
 
+    // Map to keep track of renderables by their IDs
+    private renderables = new Map<string, GameRenderable>();
+
     private assetLoader: AssetLoader;
 
     constructor(assetLoader: AssetLoader, private viewerSetup: ViewerSetup) {
@@ -45,6 +48,16 @@ export class LiveViewRenderer {
         stage.addChild(this.mapContainer);
         stage.addChild(this.objectContainer);
         stage.addChild(this.decorationContainer);
+    }
+
+    updateViewerSetup(viewerSetup: ViewerSetup): void {
+        this.viewerSetup = viewerSetup;
+        for (const [id, renderable] of this.renderables) {
+            const sprite = this.sprites.get(id);
+            if (sprite) {
+                this.setProperties(sprite, renderable);
+            }
+        }
     }
 
     // Retrieve a sprite by its ID
@@ -107,6 +120,7 @@ export class LiveViewRenderer {
 
         container.addChild(sprite);
         this.addSprite(renderable.id, sprite);
+        this.renderables.set(renderable.id, renderable);
 
         return sprite;
     }
@@ -186,6 +200,7 @@ export class LiveViewRenderer {
         
         //calling the helper function that applies all of the new changes property by property
         this.setProperties(sprite, renderable);
+        this.renderables.set(renderable.id, renderable);
         return sprite; //show new updated sprite image on screen
     }
 
@@ -201,6 +216,7 @@ export class LiveViewRenderer {
         // We don't destroy the texture since other sprites can be using the same asset
         sprite.destroy();
         this.sprites.delete(id);
+        this.renderables.delete(id);
     }
 
 
