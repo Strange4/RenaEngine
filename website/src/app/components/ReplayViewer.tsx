@@ -5,6 +5,7 @@ import { Application } from "pixi.js";
 import { AssetLoader } from "@/app/viewer/assetLoader";
 import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
 import { getSceneSource } from "@/app/viewer/sceneSource";
+import { getInitialMap, getInitialViewerWidth, getResponsiveViewerSetup, createViewerResizeHandler, observeViewerResize } from "@/app/viewer/responsiveViewer";
 import ReplayControls from "./ReplayControls";
 
 interface ReplayViewerProps {
@@ -22,18 +23,24 @@ export default function ReplayViewer({ gameId }: ReplayViewerProps) {
 
     const app = new Application();
     let initialized = false;
+    let resizeObserver: ResizeObserver | null = null;
     const unmount = new AbortController();
 
     (async () => {
       const scene = await getSceneSource(gameId).getInitialScene();
       if (unmount.signal.aborted) return;
 
-      setResolution(scene.setup.resolution);
-      const renderer = new LiveViewRenderer(new AssetLoader(), scene.setup);
+      // The initial map is used to determine the aspect ratio of the game and the tile size
+      const map = getInitialMap(scene.renderables);
+
+      const initialWidth = getInitialViewerWidth(container, scene.setup.resolution[0]);
+      const setup = getResponsiveViewerSetup(map, initialWidth);
+      setResolution(setup.resolution);
+      const renderer = new LiveViewRenderer(new AssetLoader(), setup);
 
       await app.init({
-        width: scene.setup.resolution[0],
-        height: scene.setup.resolution[1],
+        width: setup.resolution[0],
+        height: setup.resolution[1],
         background: "#1f2937",
         antialias: true,
       });
@@ -46,12 +53,25 @@ export default function ReplayViewer({ gameId }: ReplayViewerProps) {
       container.appendChild(app.canvas);
       renderer.addContainerToStage(app.stage);
       await renderer.renderScene(scene.renderables, unmount.signal);
+      if (unmount.signal.aborted) return;
+
+      // resize the viewer when the container width changes
+      const resize = createViewerResizeHandler(
+        map,
+        renderer,
+        app,
+        setResolution,
+        () => unmount.signal.aborted,
+      );
+
+      resizeObserver = observeViewerResize(container, resize);
     })().catch((e) => {
       console.error("Failed to load the replay", e);
     });
 
     return () => {
       unmount.abort();
+      resizeObserver?.disconnect();
       if (initialized) app.destroy(true, { children: true });
     };
   }, [gameId]);
@@ -61,7 +81,7 @@ export default function ReplayViewer({ gameId }: ReplayViewerProps) {
       <div
         ref={containerRef}
         className="live-viewer-canvas"
-        style={resolution ? { width: `${resolution[0]}px`, height: `${resolution[1]}px` } : undefined}
+        style={resolution ? { height: `${resolution[1]}px` } : undefined}
         data-testid="replay-canvas"
       />
       <ReplayControls />

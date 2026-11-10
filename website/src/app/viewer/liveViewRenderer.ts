@@ -13,6 +13,9 @@ export class LiveViewRenderer {
     // Map to keep track of sprites by their IDs
     private sprites = new Map<string, Sprite>();
 
+    // Map to keep track of renderables by their IDs
+    private renderables = new Map<string, GameRenderable>();
+
     private assetLoader: AssetLoader;
 
     //constructor can also take in an optional animator (if there is a need for an animation)
@@ -47,6 +50,21 @@ export class LiveViewRenderer {
         stage.addChild(this.mapContainer);
         stage.addChild(this.objectContainer);
         stage.addChild(this.decorationContainer);
+    }
+
+    // Update the viewer setup and adjust all existing sprites accordingly
+    // This is useful when the viewer's resolution or tile size changes
+    // It ensures that all sprites are resized and repositioned based on the new setup
+    updateViewerSetup(viewerSetup: ViewerSetup): void {
+        const scale = viewerSetup.tileSize / this.viewerSetup.tileSize;
+        this.animator?.resizeAnimations(scale);
+        this.viewerSetup = viewerSetup;
+        for (const [id, renderable] of this.renderables) {
+            const sprite = this.sprites.get(id);
+            if (sprite && !this.animator?.isAnimating(sprite)) {
+                this.setProperties(sprite, renderable);
+            }
+        }
     }
 
     // Retrieve a sprite by its ID
@@ -130,6 +148,7 @@ export class LiveViewRenderer {
 
         container.addChild(sprite);
         this.addSprite(renderable.id, sprite);
+        this.renderables.set(renderable.id, renderable);
 
         return sprite;
     }
@@ -225,6 +244,7 @@ export class LiveViewRenderer {
         //calling the helper function that applies all of the new changes property by property
         this.setProperties(sprite, renderable,true);//Including the Starting state to apply the updates to get to the Final animated state
         //animate = TRUE to allow an animation
+        this.renderables.set(renderable.id, renderable);
         return sprite; //show new updated sprite image on screen
     }
 
@@ -243,6 +263,7 @@ export class LiveViewRenderer {
         // We don't destroy the texture since other sprites can be using the same asset
         sprite.destroy();
         this.sprites.delete(id);
+        this.renderables.delete(id);
     }
 
 
