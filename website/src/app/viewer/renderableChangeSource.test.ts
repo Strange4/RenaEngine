@@ -1,5 +1,6 @@
 import { RenderableChange, RenderableType } from "@/shared/renderable";
 import {
+  RecordedRenderableChangeSource,
   SSERenderableChangeSource,
 } from "./renderableChangeSource";
 
@@ -94,5 +95,26 @@ describe("SSERenderableChangeSource", () => {
     } finally {
       global.EventSource = originalEventSource;
     }
+  });
+});
+
+describe("RecordedRenderableChangeSource", () => {
+  it("sorts the changes by index", () => {
+    const outOfOrder = [MOCK_RENDERABLE_CHANGES[2], MOCK_RENDERABLE_CHANGES[0], MOCK_RENDERABLE_CHANGES[1]];
+    const source = new RecordedRenderableChangeSource(outOfOrder);
+
+    expect(source.getAllChanges()).toEqual(MOCK_RENDERABLE_CHANGES);
+    expect(outOfOrder[0]).toBe(MOCK_RENDERABLE_CHANGES[2]);
+  });
+
+  it("never calls the listener", () => {
+    const source = new RecordedRenderableChangeSource(MOCK_RENDERABLE_CHANGES);
+    const callback = jest.fn();
+
+    source.setChangeListener(callback);
+    source.close();
+
+    expect(callback).not.toHaveBeenCalled();
+    expect(source.getAllChanges()).toHaveLength(MOCK_RENDERABLE_CHANGES.length);
   });
 });
