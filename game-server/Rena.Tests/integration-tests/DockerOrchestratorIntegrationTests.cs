@@ -13,7 +13,7 @@ namespace Rena.Tests.Integration;
 public sealed class DockerOrchestratorIntegrationTests
 {
     private DockerApiStub _api = null!;
-    private IDockerClient _dockerClient = null!;
+    private DockerClient? _dockerClient = null!;
     private DockerService _orchestrator = null!;
 
     [SetUp]
@@ -28,7 +28,7 @@ public sealed class DockerOrchestratorIntegrationTests
     [TearDown]
     public async Task TearDown()
     {
-        this._dockerClient.Dispose();
+        this._dockerClient?.Dispose();
         await this._api.DisposeAsync();
     }
 
@@ -88,7 +88,7 @@ public sealed class DockerOrchestratorIntegrationTests
             Assert.That(this._api.BuildContext["Dockerfile"], Does.Contain("CMD [\"/run.sh\"]"));
 
             using (
-                var logs = await this._dockerClient.Containers.GetContainerLogsAsync(
+                var logs = await this._dockerClient!.Containers.GetContainerLogsAsync(
                     this._api.ContainerId,
                     tty: false,
                     new ContainerLogsParameters { ShowStdout = true, ShowStderr = true }
@@ -205,7 +205,7 @@ public sealed class DockerOrchestratorIntegrationTests
                 Assert.That(buildArgsDocument.RootElement.GetProperty("BUILD_VERSION").GetString(), Is.EqualTo("1.2.3"));
             }
 
-            using var logs = await this._dockerClient.Containers.GetContainerLogsAsync(
+            using var logs = await this._dockerClient!.Containers.GetContainerLogsAsync(
                 this._api.ContainerId,
                 tty: false,
                 new ContainerLogsParameters { ShowStdout = true, ShowStderr = true }
