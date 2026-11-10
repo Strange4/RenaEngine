@@ -46,6 +46,8 @@ dotnet_diagnostic.IDE1006.severity = warning
 dotnet_diagnostic.IDE0028.severity = warning
 dotnet_diagnostic.IDE0059.severity = warning
 dotnet_diagnostic.IDE0330.severity = warning
+dotnet_diagnostic.IDE0052.severity = warning
+
 
 
 dotnet_diagnostic.IDE0003.severity = none
@@ -56,7 +58,7 @@ dotnet_diagnostic.NUnit2045.severity = none
 dotnet_diagnostic.IDE0290.severity = none
 dotnet_diagnostic.CA1873.severity = none
 
-# Enforce 
+# Enforce
 dotnet_diagnostic.CA1859.severity = warning
 
 # Enforce 'this.' for property access
