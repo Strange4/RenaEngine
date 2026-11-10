@@ -49,6 +49,7 @@ export default async function ParticipantPage() {
               Features
             </h2>
             <p className={styles.cardSub}>
+              {/* TODO - CHANGE THIS ONCE FEATURES ARE IMPLEMENTED */}
               Try out the temporary test feature.
             </p>
             <Link className={styles.featureLink} href="/test-feature">
