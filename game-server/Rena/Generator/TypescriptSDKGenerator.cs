@@ -67,8 +67,10 @@ internal class TypescriptSDKGenerator(string tsProtoPath) : ILanguageSDKGenerato
         string stateTypeName = typeInfo.StateTypeName;
         string content =
             $@"import {{ {actionTypeName}, {stateTypeName} }} from ""./{importPath}.ts""
-export type Action = {actionTypeName};
-export type State = {stateTypeName};
+export const Action = {actionTypeName};
+export const State = {stateTypeName};
+export interface Action extends {actionTypeName} {{}}
+export interface State extends {stateTypeName} {{}}
 ";
         await File.WriteAllTextAsync(defaultFilePath, content);
     }
