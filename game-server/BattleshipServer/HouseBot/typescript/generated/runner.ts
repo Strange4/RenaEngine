@@ -2,7 +2,10 @@ import Play from "../main.ts";
 import { State, Action } from "./gameTypes.ts";
 
 
-const url = process.env.URL || "http://localhost:5000/game/connect/test/1236";
+const url = process.env.URL;
+if (!url) {
+  throw new Error("The environment variable for URL was not set");
+}
 
 const ws = new WebSocket(url);
 ws.binaryType = "arraybuffer";
