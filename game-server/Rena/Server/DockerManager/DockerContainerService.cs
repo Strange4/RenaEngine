@@ -37,7 +37,7 @@ public class DockerContainerService(IDockerClient dockerClient, ILogger logger) 
             createParams.Image = imageId;
             createParams.Name = containerName;
 
-            // TODO: figure out why this hangs when trying to build this
+            // TODO (#164): this hangs when the container fails to start. Fix this
             return await this._client.Containers.CreateContainerAsync(createParams);
         }
         catch (DockerApiException ex)
