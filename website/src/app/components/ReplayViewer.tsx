@@ -5,12 +5,7 @@ import { Application } from "pixi.js";
 import { AssetLoader } from "@/app/viewer/assetLoader";
 import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
 import { getSceneSource } from "@/app/viewer/sceneSource";
-import {
-  getInitialMap,
-  getInitialViewerWidth,
-  getResponsiveViewerSetup,
-  observeViewerResize,
-} from "@/app/viewer/responsiveViewer";
+import { getInitialMap, getInitialViewerWidth, getResponsiveViewerSetup, createViewerResizeHandler, observeViewerResize } from "@/app/viewer/responsiveViewer";
 import ReplayControls from "./ReplayControls";
 
 interface ReplayViewerProps {
@@ -60,15 +55,14 @@ export default function ReplayViewer({ gameId }: ReplayViewerProps) {
       await renderer.renderScene(scene.renderables, unmount.signal);
       if (unmount.signal.aborted) return;
 
-      // Resize the viewer when the container width changes
-      const resize = (pixelWidth: number) => {
-        if (pixelWidth <= 0 || unmount.signal.aborted) return;
-
-        const nextSetup = getResponsiveViewerSetup(map, pixelWidth);
-        renderer.updateViewerSetup(nextSetup);
-        app.renderer.resize(nextSetup.resolution[0], nextSetup.resolution[1]);
-        setResolution(nextSetup.resolution);
-      };
+      // resize the viewer when the container width changes
+      const resize = createViewerResizeHandler(
+        map,
+        renderer,
+        app,
+        setResolution,
+        () => unmount.signal.aborted,
+      );
 
       resizeObserver = observeViewerResize(container, resize);
     })().catch((e) => {

@@ -1,4 +1,6 @@
 import { RenderableType, type GameRenderable, type ViewerSetup } from "@/shared/renderable";
+import type { Application } from "pixi.js";
+import type { LiveViewRenderer } from "./liveViewRenderer";
 
 export function getInitialMap(renderables: GameRenderable[]): GameRenderable {
   const map = renderables[0];
@@ -28,6 +30,23 @@ export function getResponsiveViewerSetup(
   return {
     tileSize,
     resolution: [pixelWidth, tileSize * map.size[1]],
+  };
+}
+
+export function createViewerResizeHandler(
+  map: GameRenderable,
+  renderer: LiveViewRenderer,
+  app: Application,
+  setResolution: (resolution: [number, number]) => void,
+  isAborted: () => boolean,
+): (pixelWidth: number) => void {
+  return (pixelWidth: number) => {
+    if (pixelWidth <= 0 || isAborted()) return;
+
+    const nextSetup = getResponsiveViewerSetup(map, pixelWidth);
+    renderer.updateViewerSetup(nextSetup);
+    app.renderer.resize(nextSetup.resolution[0], nextSetup.resolution[1]);
+    setResolution(nextSetup.resolution);
   };
 }
 

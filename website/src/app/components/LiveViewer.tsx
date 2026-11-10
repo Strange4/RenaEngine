@@ -7,12 +7,7 @@ import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
 import { RenderableChangeProcessor } from "@/app/viewer/renderableChangeProcessor";
 import { getSceneSource } from "@/app/viewer/sceneSource";
 import {Animator} from "@/app/viewer/animator";
-import {
-  getInitialMap,
-  getInitialViewerWidth,
-  getResponsiveViewerSetup,
-  observeViewerResize,
-} from "@/app/viewer/responsiveViewer";
+import { getInitialMap, getInitialViewerWidth, getResponsiveViewerSetup, createViewerResizeHandler, observeViewerResize } from "@/app/viewer/responsiveViewer";
 import { SSERenderableChangeSource } from "../viewer/renderableChangeSource";
 
 interface LiveViewerProps {
@@ -71,15 +66,14 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
       await renderer.renderScene(scene.renderables, unmount.signal);
       if (unmount.signal.aborted) return;
 
-      // Resize the viewer when the container width changes
-      const resize = (pixelWidth: number) => {
-        if (pixelWidth <= 0 || unmount.signal.aborted) return;
-
-        const nextSetup = getResponsiveViewerSetup(map, pixelWidth);
-        renderer.updateViewerSetup(nextSetup);
-        app.renderer.resize(nextSetup.resolution[0], nextSetup.resolution[1]);
-        setResolution(nextSetup.resolution);
-      };
+      // resize the viewer when the container width changes
+      const resize = createViewerResizeHandler(
+        map,
+        renderer,
+        app,
+        setResolution,
+        () => unmount.signal.aborted,
+      );
 
       resizeObserver = observeViewerResize(container, resize);
 
