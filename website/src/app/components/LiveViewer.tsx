@@ -7,9 +7,13 @@ import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
 import { RenderableChangeProcessor } from "@/app/viewer/renderableChangeProcessor";
 import { getSceneSource } from "@/app/viewer/sceneSource";
 import {Animator} from "@/app/viewer/animator";
-import { getInitialViewerWidth, getResponsiveViewerSetup, observeViewerResize } from "@/app/viewer/responsiveViewer";
+import {
+  getInitialMap,
+  getInitialViewerWidth,
+  getResponsiveViewerSetup,
+  observeViewerResize,
+} from "@/app/viewer/responsiveViewer";
 import { SSERenderableChangeSource } from "../viewer/renderableChangeSource";
-import { RenderableType } from "@/shared/renderable";
 
 interface LiveViewerProps {
   gameId: string;
@@ -37,22 +41,8 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
       const scene = await getSceneSource(gameId).getInitialScene();
       if (unmount.signal.aborted) return;
 
-      // IMPORTANT
-      // The initial scene must contain a map renderable to determine the tile resolution
-      const map = scene.renderables[0];
-      if (!map || map.type !== RenderableType.MAP) {
-        throw new Error("The initial renderable must define the map");
-      }
-
-      // Just in case, check that the map has a valid size (no negative values or zeroes)
-      if (
-        !Number.isFinite(map.size[0])
-        || !Number.isFinite(map.size[1])
-        || map.size[0] <= 0
-        || map.size[1] <= 0
-      ) {
-        throw new Error("The initial map must have a positive tile resolution");
-      }
+      // The initial map is used to determine the aspect ratio of the game and the tile size
+      const map = getInitialMap(scene.renderables);
 
       const initialWidth = getInitialViewerWidth(container, scene.setup?.resolution[0] || 1);
       const setup = getResponsiveViewerSetup(map, initialWidth);

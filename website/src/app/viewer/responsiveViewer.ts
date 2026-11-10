@@ -1,5 +1,22 @@
-import type { GameRenderable, ViewerSetup } from "@/shared/renderable";
+import { RenderableType, type GameRenderable, type ViewerSetup } from "@/shared/renderable";
 
+export function getInitialMap(renderables: GameRenderable[]): GameRenderable {
+  const map = renderables[0];
+  if (!map || map.type !== RenderableType.MAP) {
+    throw new Error("The initial renderable must define the map");
+  }
+
+  if (
+    !Number.isFinite(map.size[0])
+    || !Number.isFinite(map.size[1])
+    || map.size[0] <= 0
+    || map.size[1] <= 0
+  ) {
+    throw new Error("The initial map must have a positive tile resolution");
+  }
+
+  return map;
+}
 
 // This function calculates the responsive viewer setup
 // based on the map's size and the desired pixel width.
