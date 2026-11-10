@@ -1,9 +1,10 @@
 using System.Collections.Concurrent;
 using LanguageExt;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
 using Rena.GameEngine;
 using Rena.Server.DockerManager;
-using Rena.Server.Rendering;
 using Rena.Utility;
 
 namespace Rena.Server.GameSockets;
@@ -33,14 +34,13 @@ public interface IMatchMaker<G, S, A>
     public Task BuildHostBotImage(string imageId, string codeZipPath, string dockerFilePath, string language);
 }
 
-public class MatchMaker<G, S, A>(IDockerService dockerService, RenderableBroadcaster broadcaster, ILogger logger) : IMatchMaker<G, S, A>
+public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMaker<G,S, A>> logger, IOptions<RenaOptions> serverOptions) : IMatchMaker<G, S, A>
     where G : IGame<S, A>, new()
     where S : class
     where A : class
 {
     private string? _hostBotImageId;
     private readonly ConcurrentDictionary<string, GameRoom<G, S, A>> _playerRooms = [];
-    private readonly ConcurrentDictionary<string, bool> _availableTestContainers = [];
 
     public async Task<GameRoom<G, S, A>> GetTestRoom(string playerId, int numPlayers)
     {
@@ -54,12 +54,11 @@ public class MatchMaker<G, S, A>(IDockerService dockerService, RenderableBroadca
         // TODO #164 add a check to make sure that the player getting a test room is not part of a current room teardown
         // That way a bot that was created, who's room was shut down cannot create a room of bots
         logger.LogInformation("Creating test room for player {playerId}", playerId);
+        // TODO (#137): Instantiate broadcaster and set it to the room
         room = new(numPlayers, logger);
-        room.Broadcaster = broadcaster;
         _playerRooms[playerId] = room;
 
         // TODO #164 add _availableTestContainers check so that we aren't always making new ones
-
         for (int i = 1; i < numPlayers; i++)
         {
             // Right now this will only ever spin up 1 container since we're limiting it to 1v1 for now
@@ -70,12 +69,14 @@ public class MatchMaker<G, S, A>(IDockerService dockerService, RenderableBroadca
             // TODO set the container paramaters (somehow) to map host.docker.internal to the proper gateway
             // Alternatively setup the parameters to connect to the docker network made by the compose
             // (but then you lose local testing) so it would need to be configured based on where it is running
-            Dictionary<string, string> envVars = new() { ["URL"] = $"http://host.docker.internal:5000/game/connect/test/{botId}" };
+            int serverPort = serverOptions.Value.ServerPort;
+            Dictionary<string, string> envVars = new() { ["URL"] = $"http://host.docker.internal:${serverPort}/game/connect/test/{botId}" };
             logger.LogInformation("Starting up host bot {botId}", botId);
             Result<Unit> result = await dockerService.CreateAndStartContainerWithIdAsync(botId, _hostBotImageId!, envVars);
             // TODO #164 add graceful retry or let caller know it failed
             if (!result.IsSuccess)
             {
+                logger.LogError("Couldn't start the container with id: {botId}", botId);
                 throw result.Exception!;
             }
             _playerRooms[botId] = room;
