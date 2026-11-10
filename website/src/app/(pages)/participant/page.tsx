@@ -4,7 +4,7 @@ import LogoutButton from "@/app/components/LogoutButton";
 import SdkDownloadPanel from "@/app/components/SdkDownloadPanel";
 import { getFeatureAccess } from "@/server/lib/feature-access";
 import { getSession } from "@/server/lib/session";
-import { SDK_DOWNLOADS_FEATURE } from "@/shared/features";
+import { isFeatureAllowed, SDK_DOWNLOADS_FEATURE } from "@/shared/features";
 import { isAdmin } from "@/shared/token";
 import styles from "./participant.module.css";
 
@@ -35,7 +35,7 @@ export default async function ParticipantPage() {
             <h2 className={styles.cardTitle} id="sdk-title">
               Starter SDK
             </h2>
-            {sdkAccess.status === "allowed" ? (
+            {isFeatureAllowed(sdkAccess) ? (
               <SdkDownloadPanel />
             ) : (
               <p className={styles.unavailable}>
