@@ -5,6 +5,8 @@ import { Application } from "pixi.js";
 import { AssetLoader } from "@/app/viewer/assetLoader";
 import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
 import { getSceneSource } from "@/app/viewer/sceneSource";
+import { RenderableType } from "@/shared/renderable";
+import { getInitialViewerWidth, getResponsiveViewerSetup, observeViewerResize } from "@/app/viewer/responsiveViewer";
 import ReplayControls from "./ReplayControls";
 
 interface ReplayViewerProps {
@@ -22,18 +24,38 @@ export default function ReplayViewer({ gameId }: ReplayViewerProps) {
 
     const app = new Application();
     let initialized = false;
+    let resizeObserver: ResizeObserver | null = null;
     const unmount = new AbortController();
 
     (async () => {
       const scene = await getSceneSource(gameId).getInitialScene();
       if (unmount.signal.aborted) return;
 
-      setResolution(scene.setup.resolution);
-      const renderer = new LiveViewRenderer(new AssetLoader(), scene.setup);
+      // IMPORTANT
+      // The initial scene must contain a map renderable to determine the tile resolution
+      const map = scene.renderables[0];
+      if (!map || map.type !== RenderableType.MAP) {
+        throw new Error("The initial renderable must define the map");
+      }
+
+      // Just in case, check that the map has a valid size (no negative values or zeroes)
+      if (
+        !Number.isFinite(map.size[0])
+        || !Number.isFinite(map.size[1])
+        || map.size[0] <= 0
+        || map.size[1] <= 0
+      ) {
+        throw new Error("The initial map must have a positive tile resolution");
+      }
+
+      const initialWidth = getInitialViewerWidth(container, scene.setup.resolution[0]);
+      const setup = getResponsiveViewerSetup(map, initialWidth);
+      setResolution(setup.resolution);
+      const renderer = new LiveViewRenderer(new AssetLoader(), setup);
 
       await app.init({
-        width: scene.setup.resolution[0],
-        height: scene.setup.resolution[1],
+        width: setup.resolution[0],
+        height: setup.resolution[1],
         background: "#1f2937",
         antialias: true,
       });
@@ -46,12 +68,26 @@ export default function ReplayViewer({ gameId }: ReplayViewerProps) {
       container.appendChild(app.canvas);
       renderer.addContainerToStage(app.stage);
       await renderer.renderScene(scene.renderables, unmount.signal);
+      if (unmount.signal.aborted) return;
+
+      // Resize the viewer when the container width changes
+      const resize = (pixelWidth: number) => {
+        if (pixelWidth <= 0 || unmount.signal.aborted) return;
+
+        const nextSetup = getResponsiveViewerSetup(map, pixelWidth);
+        renderer.updateViewerSetup(nextSetup);
+        app.renderer.resize(nextSetup.resolution[0], nextSetup.resolution[1]);
+        setResolution(nextSetup.resolution);
+      };
+
+      resizeObserver = observeViewerResize(container, resize);
     })().catch((e) => {
       console.error("Failed to load the replay", e);
     });
 
     return () => {
       unmount.abort();
+      resizeObserver?.disconnect();
       if (initialized) app.destroy(true, { children: true });
     };
   }, [gameId]);
@@ -61,7 +97,7 @@ export default function ReplayViewer({ gameId }: ReplayViewerProps) {
       <div
         ref={containerRef}
         className="live-viewer-canvas"
-        style={resolution ? { width: `${resolution[0]}px`, height: `${resolution[1]}px` } : undefined}
+        style={resolution ? { height: `${resolution[1]}px` } : undefined}
         data-testid="replay-canvas"
       />
       <ReplayControls />
