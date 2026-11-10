@@ -72,8 +72,9 @@ public class MatchMakerTests
     {
         await this.BuildImage();
 
-        var room = await _matchMaker.GetTestRoom("player-1", 2);
-
+        var roomResult = await _matchMaker.GetTestRoom("player-1", 2);
+        Assert.That(roomResult.IsSuccess, Is.True);
+        var room = roomResult.Value;
         Assert.That(room, Is.Not.Null);
         Assert.That(room.IsStarted, Is.False);
     }
@@ -83,9 +84,13 @@ public class MatchMakerTests
     {
         await this.BuildImage();
 
-        var firstRoom = await _matchMaker.GetTestRoom("player-1", 2);
+        var firstRoomResult = await _matchMaker.GetTestRoom("player-1", 2);
+        Assert.That(firstRoomResult.IsSuccess, Is.True);
+        var firstRoom = firstRoomResult.Value;
 
-        var secondRoom = await _matchMaker.GetTestRoom("player-1", 2);
+        var secondRoomResult = await _matchMaker.GetTestRoom("player-1", 2);
+        Assert.That(secondRoomResult.IsSuccess, Is.True);
+        var secondRoom = secondRoomResult.Value;
 
         Assert.That(secondRoom, Is.SameAs(firstRoom));
 

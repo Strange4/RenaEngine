@@ -19,8 +19,11 @@ public interface IMatchMaker<G, S, A>
     /// </remarks>
     /// <param name="playerId">The id of the player trying to get a room</param>
     /// <param name="numPlayers">The number of players that should be in a room</param>
-    /// <returns>The room that the player should be in</returns>
-    public Task<GameRoom<G, S, A>> GetTestRoom(string playerId, int numPlayers);
+    /// <returns>
+    /// A sucessful result with the room that the player should be in.
+    /// A failed result if the player ID is already in a room. (Happens when there a player tries to open to connections at the same time)
+    /// </returns>
+    public Task<Result<GameRoom<G, S, A>>> GetTestRoom(string playerId, int numPlayers);
 
     /// <summary>
     /// Builds the docker image that the host bot containers will be based on
@@ -41,22 +44,31 @@ public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMake
 {
     private string? _hostBotImageId;
     private readonly ConcurrentDictionary<string, GameRoom<G, S, A>> _playerRooms = [];
+    private readonly ConcurrentDictionary<string, bool> _availableTestContainers = [];
 
-    public async Task<GameRoom<G, S, A>> GetTestRoom(string playerId, int numPlayers)
+    public async Task<Result<GameRoom<G, S, A>>> GetTestRoom(string playerId, int numPlayers)
     {
         logger.LogInformation("Getting test room for player {playerId}", playerId);
         var hasRoom = _playerRooms.TryGetValue(playerId, out GameRoom<G, S, A>? room);
         if (hasRoom)
         {
-            return room!;
+            return new(room!);
         }
+
         // Theoretically we would never have to deal with a bot creating a bot room
         // TODO #164 add a check to make sure that the player getting a test room is not part of a current room teardown
         // That way a bot that was created, who's room was shut down cannot create a room of bots
         logger.LogInformation("Creating test room for player {playerId}", playerId);
         // TODO (#137): Instantiate broadcaster and set it to the room
         room = new(numPlayers, logger);
-        _playerRooms[playerId] = room;
+
+        bool notAddedBefore = _playerRooms.TryAdd(playerId, room);
+
+        if (!notAddedBefore)
+        {
+            // Two players tried to connect at the same time
+            return new(new ArgumentException($"{playerId} is in a room"));
+        }
 
         // TODO #164 add _availableTestContainers check so that we aren't always making new ones
         List<Task> startingContainers = [];
@@ -90,7 +102,7 @@ public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMake
 
         await Task.WhenAll(startingContainers);
 
-        return room;
+        return new(room);
     }
 
     public async Task BuildHostBotImage(string imageId, string codeZipPath, string dockerFilePath, string language)

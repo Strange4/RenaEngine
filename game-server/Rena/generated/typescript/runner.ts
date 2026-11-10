@@ -3,10 +3,6 @@ import { State, Action } from "./gameTypes.ts";
 
 const url = process.env.URL || URL;
 
-if (!url) {
-  throw new Error("The URL was not set");
-}
-
 const ws = new WebSocket(url);
 ws.binaryType = "arraybuffer";
 

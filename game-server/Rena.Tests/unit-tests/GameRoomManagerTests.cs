@@ -24,7 +24,7 @@ public class GameRoomManagerTests
 
         _mockRoom = Substitute.For<GameRoom<MockGame, GameState, GameAction>>(2, logger, null);
 
-        _mockMatchmaker.GetTestRoom(Arg.Any<string>(), Arg.Any<int>()).Returns(_mockRoom);
+        _mockMatchmaker.GetTestRoom(Arg.Any<string>(), Arg.Any<int>()).Returns(new Utility.Result<GameRoom<MockGame, GameState, GameAction>>(_mockRoom));
     }
 
     [Test]

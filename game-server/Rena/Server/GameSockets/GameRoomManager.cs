@@ -34,7 +34,14 @@ public class GameRoomManager<G, S, A>(IMatchMaker<G, S, A> matchMaker, int roomS
             return new(new ArgumentException("Player already connected. Please disconnect before trying again."));
         }
 
-        var room = await matchMaker.GetTestRoom(playerId, roomSize);
+        var getRoomResult = await matchMaker.GetTestRoom(playerId, roomSize);
+
+        if (!getRoomResult.IsSuccess)
+        {
+            return new(getRoomResult.Exception!);
+        }
+
+        var room = getRoomResult.Value!;
 
         var channel = Channel.CreateBounded<Result<bool>>(EXPECTED_NUM_MESSAGES);
         bool sucessfullyAddedPlayer = room.AddPlayer(playerId, new(socket, channel.Writer));
@@ -53,7 +60,6 @@ public class GameRoomManager<G, S, A>(IMatchMaker<G, S, A> matchMaker, int roomS
             if (room.IsFull && !room.IsStarted)
             {
                 logger.LogInformation("Player {playerId} is starting the room", playerId);
-                // TODO: make this a getter of a list of connections instead of the concurrent dictionary
                 Task.Run(room.RunRoom).SafeFireAndForget(async exception => await this.HandleRoomExceptions(exception, room.PlayerIds));
             }
         }
