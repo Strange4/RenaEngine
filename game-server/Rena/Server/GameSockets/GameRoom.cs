@@ -52,10 +52,7 @@ public class GameRoom<G, S, A>
         this._logger.LogDebug("Starting the room");
         this.IsStarted = true;
 
-        IGame<S, A> game = new G
-        {
-            Logger = this._logger
-        };
+        IGame<S, A> game = new G { Logger = this._logger };
         Dictionary<string, S> statesToSend = game.GetInitial([.. _connections.Keys]);
         while (!game.IsGameOver())
         {

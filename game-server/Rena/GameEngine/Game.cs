@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-
 using Rena.Server.Rendering;
 
 namespace Rena.GameEngine;

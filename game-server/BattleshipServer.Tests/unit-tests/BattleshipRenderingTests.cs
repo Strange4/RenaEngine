@@ -112,7 +112,6 @@ public class BattleshipRenderingTests
         ShootAction shootAction2 = new ShootAction { ShootAt = new Coordinate { X = 9, Y = 9 } };
         Dictionary<string, PlayerState> stateAfter2 = _game.DoAction(new Dictionary<string, PlayerAction> { { "p2", shootAction2 } });
         Assert.That(stateAfter2.ContainsKey("p1"), Is.True);
-
     }
 
     [Test]
@@ -139,10 +138,7 @@ public class BattleshipRenderingTests
                 Orientation = ShipOrientation.Vertical,
             },
         ];
-        PlaceShipsAction placeAction = new PlaceShipsAction
-        {
-            Ships = verticalFleet,
-        };
+        PlaceShipsAction placeAction = new PlaceShipsAction { Ships = verticalFleet };
 
         _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", placeAction } });
         List<GameRenderable> renderables = _game.CollectRenderables();
@@ -155,8 +151,24 @@ public class BattleshipRenderingTests
     public void TestCollectRenderables_MissShot()
     {
         _game.GetInitial(["p1", "p2"]);
-        _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", new PlaceShipsAction { Ships = _validFleet } } });
-        _game.DoAction(new Dictionary<string, PlayerAction> { { "p2", new PlaceShipsAction { Ships = _validFleet } } });
+        _game.DoAction(
+            new Dictionary<string, PlayerAction>
+            {
+                {
+                    "p1",
+                    new PlaceShipsAction { Ships = _validFleet }
+                },
+            }
+        );
+        _game.DoAction(
+            new Dictionary<string, PlayerAction>
+            {
+                {
+                    "p2",
+                    new PlaceShipsAction { Ships = _validFleet }
+                },
+            }
+        );
 
         ShootAction shootAction = new ShootAction
         {
