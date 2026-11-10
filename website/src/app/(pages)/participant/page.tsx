@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import LogoutButton from "@/app/components/LogoutButton";
+import AppTopBar from "@/app/components/AppTopBar";
 import SdkDownloadPanel from "@/app/components/SdkDownloadPanel";
 import { getFeatureAccess } from "@/server/lib/feature-access";
 import { getSession } from "@/server/lib/session";
@@ -17,10 +17,7 @@ export default async function ParticipantPage() {
 
   return (
     <main className={styles.page}>
-      <header className={styles.topbar}>
-        <span className={styles.team}>{teamName}</span>
-        <LogoutButton />
-      </header>
+      <AppTopBar label={teamName} />
 
       <div className={styles.content}>
         <section className={styles.welcome}>

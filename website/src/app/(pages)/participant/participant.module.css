@@ -7,45 +7,6 @@
   color: var(--ink);
 }
 
-/* ---- top bar ---- */
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 1rem;
-  padding: 0.7rem 1.5rem;
-  background: var(--grad);
-  color: #fff;
-}
-
-.team {
-  font-size: 0.95rem;
-  font-weight: 600;
-}
-
-.logout {
-  width: auto;
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 999px;
-  padding: 0.35rem 1.1rem;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.logout:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.28);
-}
-
-.logout:disabled {
-  cursor: wait;
-  opacity: 0.7;
-}
-
 /* ---- page content ---- */
 .content {
   max-width: 1100px;

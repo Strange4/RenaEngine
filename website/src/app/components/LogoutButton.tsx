@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "./AuthProvider";
 import LoadingScreen from "./LoadingScreen";
-import styles from "../(pages)/participant/participant.module.css";
+import styles from "./AppTopBar.module.css";
 
 export default function LogoutButton() {
   const router = useRouter();
