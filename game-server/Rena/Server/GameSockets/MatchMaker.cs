@@ -74,7 +74,7 @@ public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMake
                     // Alternatively setup the parameters to connect to the docker network made by the compose
                     // (but then you lose local testing) so it would need to be configured based on where it is running
                     int serverPort = serverOptions.Value.ServerPort;
-                    Dictionary<string, string> envVars = new() { ["URL"] = $"http://host.docker.internal:${serverPort}/game/connect/test/{botId}" };
+                    Dictionary<string, string> envVars = new() { ["URL"] = $"http://host.docker.internal:{serverPort}/game/connect/test/{botId}" };
                     logger.LogInformation("Starting up host bot {botId}", botId);
                     Result<Unit> result = await dockerService.CreateAndStartContainerWithIdAsync(botId, _hostBotImageId!, envVars);
                     // TODO #164 add graceful retry or let caller know it failed

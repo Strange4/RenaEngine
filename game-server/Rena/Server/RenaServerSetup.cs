@@ -74,10 +74,10 @@ internal static class RenaServerSetup
             {
                 // TODO: Connect playerId to IGameRoomManager once PR #132 is merged
                 context.Response.Headers.ContentType = "text/event-stream";
-                await context.Response.Body.FlushAsync();
                 Channel<RenderableChange> channel = broadcaster.Connect();
                 try
                 {
+                    await context.Response.Body.FlushAsync();
                     await foreach (RenderableChange change in channel.Reader.ReadAllAsync(context.RequestAborted))
                     {
                         string json = System.Text.Json.JsonSerializer.Serialize(change);

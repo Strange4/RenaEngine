@@ -23,7 +23,9 @@ public class GameSocketConnectionTests
         _mockLogger = Substitute.For<ILogger>();
         _mockManager = Substitute.For<IGameRoomManager>();
         _mockChannel = Substitute.For<ChannelReader<Result<bool>>>();
-        _mockManager.RegisterForTest(Arg.Any<string>(), Arg.Is(_mockWebSocket)).Returns(_mockChannel);
+        _mockManager
+            .RegisterForTest(Arg.Any<string>(), Arg.Is(_mockWebSocket))
+            .Returns(Task.FromResult(new Result<ChannelReader<Result<bool>>>(_mockChannel)));
     }
 
     [TearDown]
@@ -69,14 +71,15 @@ public class GameSocketConnectionTests
         Assert.That(socketConnection.PlayerId, Is.EqualTo(playerId));
 
         var exception = new ArgumentException("Test message");
-        _mockChannel.ReadAsync().Returns(new Result<bool>(exception));
+        _mockManager
+            .RegisterForTest(Arg.Any<string>(), Arg.Any<WebSocket>())
+            .Returns(Task.FromResult(new Result<ChannelReader<Result<bool>>>(exception)));
 
         await socketConnection.HandleConnection();
 
-        await _mockChannel.Received(1).ReadAsync();
-
         await _mockManager.Received(1).RegisterForTest(Arg.Is(playerId), Arg.Is(_mockWebSocket));
         await _mockManager.DidNotReceive().UnRegister(Arg.Is(playerId));
+        await _mockChannel.DidNotReceive().ReadAsync();
 
         await _mockWebSocket
             .Received(1)

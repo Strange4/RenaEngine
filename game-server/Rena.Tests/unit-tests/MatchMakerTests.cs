@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using Rena.Server.DockerManager;
 using Rena.Server.GameSockets;
-using Rena.Server.Rendering;
 
 namespace Rena.Tests.Unit;
 
@@ -10,7 +10,6 @@ namespace Rena.Tests.Unit;
 public class MatchMakerTests
 {
     private IDockerService _dockerService;
-    private RenderableBroadcaster _broadcaster = null!;
     private MatchMaker<MockGame, GameState, GameAction> _matchMaker = null!;
 
     private const string ImageId = "host-bot-image-id";
@@ -21,11 +20,12 @@ public class MatchMakerTests
     public void BeforeEach()
     {
         _dockerService = Substitute.For<IDockerService>();
-        var logger = Substitute.For<ILogger>();
 
-        _broadcaster = null!;
-
-        _matchMaker = new MatchMaker<MockGame, GameState, GameAction>(_dockerService, _broadcaster, logger);
+        _matchMaker = new MatchMaker<MockGame, GameState, GameAction>(
+            _dockerService,
+            Substitute.For<ILogger<MatchMaker<MockGame, GameState, GameAction>>>(),
+            Options.Create(new RenaOptions { ServerPort = 5000 })
+        );
 
         _dockerService
             .CreateAndStartContainerWithIdAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<LanguageExt.Option<IDictionary<string, string>>>())

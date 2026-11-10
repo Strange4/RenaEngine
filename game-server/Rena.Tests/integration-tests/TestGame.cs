@@ -1,4 +1,5 @@
 using System.Runtime.Serialization;
+using Microsoft.Extensions.Logging;
 using Rena.GameEngine;
 using Rena.Server.Rendering;
 
@@ -22,10 +23,9 @@ public class TestGame : IGame<GameState, GameAction>
 {
     public readonly GameState State = new() { X = 0 };
     public bool IsOver = false;
+    public ILogger? Logger { get; set; }
 
     public string GetName() => "Example game";
-
-    public RenderableBroadcaster? Broadcaster;
 
     public Dictionary<string, GameState> GetInitial(HashSet<string> players)
     {
@@ -54,8 +54,5 @@ public class TestGame : IGame<GameState, GameAction>
 
     public bool IsGameOver() => IsOver;
 
-    public void SetBroadcaster(RenderableBroadcaster broadcaster)
-    {
-        Broadcaster = broadcaster;
-    }
+    public List<GameRenderable> CollectRenderables() => [];
 }

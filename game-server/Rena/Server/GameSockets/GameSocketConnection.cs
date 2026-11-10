@@ -19,6 +19,13 @@ public class GameSocketConnection<G, S, A>(WebSocket webSocket, string playerId,
         if (!registerResult.IsSuccess)
         {
             logger.LogError(registerResult.Exception, "Could not register {playerId} to a game", playerId);
+            WebSocketCloseStatus closeStatus = registerResult.Exception is ArgumentException
+                ? WebSocketCloseStatus.PolicyViolation
+                : WebSocketCloseStatus.InternalServerError;
+            string closeReason = registerResult.Exception is ArgumentException
+                ? registerResult.Exception.Message
+                : "Something unnexpected happened";
+            await webSocket.CloseOutputAsync(closeStatus, closeReason, CancellationToken.None);
             return;
         }
         var channel = registerResult.Value!;

@@ -22,7 +22,7 @@ public class GameRoomManagerTests
 
         _manager = new GameRoomManager<MockGame, GameState, GameAction>(_mockMatchmaker, 2, logger);
 
-        _mockRoom = Substitute.For<GameRoom<MockGame, GameState, GameAction>>(2, logger);
+        _mockRoom = Substitute.For<GameRoom<MockGame, GameState, GameAction>>(2, logger, null);
 
         _mockMatchmaker.GetTestRoom(Arg.Any<string>(), Arg.Any<int>()).Returns(_mockRoom);
     }
@@ -32,9 +32,10 @@ public class GameRoomManagerTests
     {
         var socket = Substitute.For<WebSocket>();
 
-        var reader = await _manager.RegisterForTest("player-1", socket);
+        var result = await _manager.RegisterForTest("player-1", socket);
 
-        Assert.That(reader.TryRead(out _), Is.False);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value!.TryRead(out _), Is.False);
     }
 
     [Test]
@@ -42,13 +43,11 @@ public class GameRoomManagerTests
     {
         var socket = Substitute.For<WebSocket>();
 
-        var originalReader = await _manager.RegisterForTest("player-1", socket);
+        var originalResult = await _manager.RegisterForTest("player-1", socket);
 
-        var duplicateReader = await _manager.RegisterForTest("player-1", socket);
+        var duplicateResult = await _manager.RegisterForTest("player-1", socket);
 
-        var duplicateResult = await duplicateReader.ReadAsync();
-
-        Assert.That(originalReader.TryRead(out _), Is.False);
+        Assert.That(originalResult.Value!.TryRead(out _), Is.False);
         Assert.That(duplicateResult.IsSuccess, Is.False);
         Assert.That(duplicateResult.Exception, Is.TypeOf<ArgumentException>());
         Assert.That(duplicateResult.Exception!.Message, Is.EqualTo("Player already connected. Please disconnect before trying again."));
@@ -61,9 +60,9 @@ public class GameRoomManagerTests
 
         MockGame.Mock.IsGameOver().Returns(true);
 
-        var reader1 = await _manager.RegisterForTest("player-1", socket);
+        var reader1 = (await _manager.RegisterForTest("player-1", socket)).Value!;
 
-        var reader2 = await _manager.RegisterForTest("player-2", socket);
+        var reader2 = (await _manager.RegisterForTest("player-2", socket)).Value!;
 
         var result1 = await reader1.ReadAsync();
         var result2 = await reader2.ReadAsync();
@@ -87,9 +86,9 @@ public class GameRoomManagerTests
 
         MockGame.Mock.IsGameOver().Throws(new ArgumentOutOfRangeException(errorMessage, new Exception("inner exception")));
 
-        var reader1 = await _manager.RegisterForTest("player-1", socket);
+        var reader1 = (await _manager.RegisterForTest("player-1", socket)).Value!;
 
-        var reader2 = await _manager.RegisterForTest("player-2", socket);
+        var reader2 = (await _manager.RegisterForTest("player-2", socket)).Value!;
 
         var result1 = await reader1.ReadAsync();
         var result2 = await reader2.ReadAsync();
@@ -108,11 +107,11 @@ public class GameRoomManagerTests
         var playerId = "player-1";
         var socket = Substitute.For<WebSocket>();
 
-        var reader1 = await _manager.RegisterForTest(playerId, socket);
+        var reader1 = (await _manager.RegisterForTest(playerId, socket)).Value!;
 
         await _manager.UnRegister(playerId);
 
-        var reader2 = await _manager.RegisterForTest(playerId, socket);
+        var reader2 = (await _manager.RegisterForTest(playerId, socket)).Value!;
 
         Assert.That(reader1.TryRead(out _), Is.False);
         Assert.That(reader2.TryRead(out _), Is.False);

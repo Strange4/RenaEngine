@@ -29,7 +29,9 @@ public class GameSocketHandlerTests
         >();
         _mockChannel = Substitute.For<ChannelReader<Result<bool>>>();
         IGameRoomManager mockManager = Substitute.For<IGameRoomManager>();
-        mockManager.RegisterForTest(Arg.Any<string>(), Arg.Is(_mockWebSocket)).Returns(_mockChannel);
+        mockManager
+            .RegisterForTest(Arg.Any<string>(), Arg.Is(_mockWebSocket))
+            .Returns(Task.FromResult(new Result<ChannelReader<Result<bool>>>(_mockChannel)));
         _gameSocketHandler = new(mockManager, logger);
 
         _mockWebSocketManager.IsWebSocketRequest.Returns(true);

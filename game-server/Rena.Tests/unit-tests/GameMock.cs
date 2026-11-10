@@ -1,4 +1,5 @@
 using System.Runtime.Serialization;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Rena.GameEngine;
 using Rena.Server.Rendering;
@@ -35,5 +36,11 @@ public class MockGame : IGame<GameState, GameAction>
 
     public bool IsGameOver() => Mock.IsGameOver();
 
-    public void SetBroadcaster(RenderableBroadcaster broadcaster) => Mock.SetBroadcaster(broadcaster);
+    public List<GameRenderable> CollectRenderables() => Mock.CollectRenderables();
+
+    public ILogger? Logger
+    {
+        get => Mock.Logger;
+        set => Mock.Logger = value;
+    }
 }
