@@ -18,28 +18,20 @@ public class GameRoom<G, S, A>
     where A : class
 {
     private readonly ConcurrentDictionary<string, Connection> _connections;
+
     private readonly int _roomSize;
     private readonly ILogger _logger;
-    public RenderableBroadcaster? Broadcaster;
+    private readonly RenderableBroadcaster? _broadcaster;
 
     public bool IsStarted { get; private set; } = false;
 
     public bool IsFull => _connections.Count >= _roomSize;
 
-    public ConcurrentDictionary<string, Connection> Players => _connections;
-
-    public GameRoom(int roomSize, ILogger logger)
+    public GameRoom(int roomSize, ILogger logger, RenderableBroadcaster? renderableBroadcaster = null)
     {
         _connections = [];
+        _broadcaster = renderableBroadcaster;
         _roomSize = roomSize;
-        _logger = logger;
-    }
-
-    public GameRoom(Dictionary<string, Connection> connections, RenderableBroadcaster renderableBroadcaster, ILogger logger)
-    {
-        Broadcaster = renderableBroadcaster;
-        _connections = new(connections);
-        _roomSize = _connections.Count;
         _logger = logger;
     }
 
@@ -63,27 +55,25 @@ public class GameRoom<G, S, A>
         this.IsStarted = true;
 
         IGame<S, A> game = new G();
-        if (Broadcaster == null)
-        {
-            this._logger.LogCritical("No broadcaster for room");
-        }
-        else
-        {
-            game.SetBroadcaster(Broadcaster);
-        }
         Dictionary<string, S> statesToSend = game.GetInitial([.. _connections.Keys]);
         while (!game.IsGameOver())
         {
+            // TODO (#164): break out of this loop and return when
+            // there are no longer players in this room (everyone crashed).
             this._logger.LogDebug("playing a turn in the room");
             Dictionary<string, A> actions = await this.SendAndWaitForResult(statesToSend);
+            // TODO #137: Move diff renderables and broadcast changes
+            // game.CollectRenderables();
             statesToSend = game.DoAction(actions);
         }
 
         this._logger.LogDebug("ended the game");
-        // The game has ended. Please return to your posts
+
+        // Send to all the listeners that the game ended sucessfully
         foreach (var id in _connections.Keys.ToList())
         {
-            await _connections[id].Item2.WriteAsync(new(true));
+            ChannelWriter<Result<bool>> waitingListener = _connections[id].Item2;
+            await waitingListener.WriteAsync(new(true));
         }
     }
 
@@ -95,8 +85,8 @@ public class GameRoom<G, S, A>
             (WebSocket connection, ChannelWriter<Result<bool>> endGameListener) = _connections[id];
             using MemoryStream stream = new();
             Serializer.Serialize(stream, state);
-            // TODO: put a cancelation token for timeout based on settings
-            // TODO: break down the message in to smaller ones instead of sending it all at once
+            // TODO (#164): put a cancelation token for timeout based on settings
+            // TODO (#164): break down the message in to smaller ones instead of sending it all at once
             await connection.SendAsync(new ArraySegment<byte>(stream.ToArray()), WebSocketMessageType.Binary, true, CancellationToken.None);
         }
 
@@ -114,6 +104,9 @@ public class GameRoom<G, S, A>
             {
                 WebSocketReceiveResult result = await connection.ReceiveAsync(buffer, CancellationToken.None);
                 stream.Write(buffer, 0, result.Count);
+                // TODO: #164 when a player is disconnected in a real game, they must have aborted
+                // or the container has crashed. We should update the player status based on the docker container and remove them from the game.
+                // If a real player gets disconnected from a testing game, testing game should abort (since it will be bots playing againts bots).
                 done = result.EndOfMessage;
             }
 
@@ -126,39 +119,4 @@ public class GameRoom<G, S, A>
 
         return results;
     }
-
-    // Parts of this may be useful once I connect this to the actual game
-    // var buffer = new byte[BUFFER_SIZE];
-
-    // while (true)
-    // {
-    //     WebSocketReceiveResult result = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
-
-    //     if (result.MessageType == WebSocketMessageType.Close)
-    //     {
-    //         // Respond to the client's close request to complete the handshake cleanly
-    //         await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing Normally", CancellationToken.None);
-    //         break;
-    //     }
-
-    //     _currentMessage.AddRange(new ArraySegment<byte>(buffer, 0, result.Count));
-
-    //     // Must receive the whole message before continuing
-    //     // Setup for when we will be receiving Action objects from frontend
-    //     if (!result.EndOfMessage)
-    //     {
-    //         continue;
-    //     }
-
-    //     // Read received text string from accumulated bytes
-    //     string message = Encoding.UTF8.GetString([.. _currentMessage]);
-    //     logger.LogInformation("{PlayerId} - Received: {message}", playerId, message);
-
-    //     // Echo a response back
-    //     var responseBytes = Encoding.UTF8.GetBytes($"Echo: {message}\n");
-    //     await webSocket.SendAsync(responseBytes, result.MessageType, true, CancellationToken.None);
-
-    //     // Reset the message
-    //     _currentMessage.Clear();
-    // }
 }
