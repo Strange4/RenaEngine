@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import CopyTokenButton from "./CopyTokenButton";
+import switchStyles from "./Switch.module.css";
 import {
   MASKED_TOKEN,
   formatLastSubmission,
@@ -26,11 +27,13 @@ export default function ParticipantTokenTable({
     <>
       <label className="token-reveal">
         <input
+          className={switchStyles.input}
           type="checkbox"
           role="switch"
           checked={showTokens}
           onChange={(event) => setShowTokens(event.target.checked)}
         />
+        <span className={switchStyles.track} aria-hidden="true" />
         Show tokens
       </label>
       <div className="token-table-wrapper">

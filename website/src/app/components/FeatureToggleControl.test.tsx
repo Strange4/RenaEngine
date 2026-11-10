@@ -19,8 +19,8 @@ describe("FeatureToggleControl", () => {
       "Participant access: Disabled",
     );
     expect(
-      screen.getByRole("button", { name: "Enable feature" }),
-    ).toBeInTheDocument();
+      screen.getByRole("switch", { name: "Test feature" }),
+    ).not.toBeChecked();
   });
 
   it("updates the setting through the protected website endpoint", async () => {
@@ -32,13 +32,14 @@ describe("FeatureToggleControl", () => {
       <FeatureToggleControl feature={TEST_FEATURE} initialEnabled={false} />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Enable feature" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Test feature" }));
 
     await waitFor(() =>
       expect(screen.getByRole("status")).toHaveTextContent(
         "Participant access: Enabled",
       ),
     );
+    expect(screen.getByRole("switch", { name: "Test feature" })).toBeChecked();
     expect(mockFetch).toHaveBeenCalledWith("/api/settings/features/test-feature", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -55,11 +56,29 @@ describe("FeatureToggleControl", () => {
       <FeatureToggleControl feature={TEST_FEATURE} initialEnabled={false} />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Enable feature" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Test feature" }));
 
     expect(await screen.findByText("Game server unavailable")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent(
       "Participant access: Disabled",
     );
+    expect(screen.getByRole("switch", { name: "Test feature" })).not.toBeChecked();
+  });
+
+  it("shows unavailable settings and allows retrying", async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ enabled: true }),
+    });
+    render(<FeatureToggleControl feature={TEST_FEATURE} initialEnabled={null} />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Participant access: Unavailable");
+    expect(screen.getByRole("alert")).toHaveTextContent("Could not read the game server setting.");
+    fireEvent.click(screen.getByRole("switch", { name: "Test feature" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("switch", { name: "Test feature" })).toBeChecked(),
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

@@ -1,0 +1,56 @@
+.input.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+}
+
+.switch,
+.track {
+  display: block;
+  flex: none;
+  width: 47px;
+  height: 26px;
+  padding: 3px;
+  border: 0;
+  border-radius: 999px;
+  background: #f9ccdf;
+}
+
+.switch {
+  cursor: pointer;
+}
+
+.switch::after,
+.track::after {
+  content: "";
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px #a45c7f;
+}
+
+.switch[aria-checked="true"],
+.input:checked + .track {
+  background: var(--grad);
+}
+
+.switch[aria-checked="true"]::after,
+.input:checked + .track::after {
+  margin-left: auto;
+}
+
+.switch:focus-visible,
+.input:focus-visible + .track {
+  outline: 2px solid var(--deep);
+  outline-offset: 3px;
+}
+
+.switch:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
