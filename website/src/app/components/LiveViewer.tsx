@@ -7,8 +7,9 @@ import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
 import { RenderableChangeProcessor } from "@/app/viewer/renderableChangeProcessor";
 import { getSceneSource } from "@/app/viewer/sceneSource";
 import {Animator} from "@/app/viewer/animator";
+import { getInitialViewerWidth, getResponsiveViewerSetup, observeViewerResize } from "@/app/viewer/responsiveViewer";
 import { SSERenderableChangeSource } from "../viewer/renderableChangeSource";
-import { RenderableType, type ViewerSetup } from "@/shared/renderable";
+import { RenderableType } from "@/shared/renderable";
 
 interface LiveViewerProps {
   gameId: string;
@@ -43,32 +44,18 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
         throw new Error("The initial renderable must define the map");
       }
 
-      const tileResolution = map.size;
-
+      // Just in case, check that the map has a valid size (no negative values or zeroes)
       if (
-        !Number.isFinite(tileResolution[0])
-        || !Number.isFinite(tileResolution[1])
-        || tileResolution[0] <= 0
-        || tileResolution[1] <= 0
+        !Number.isFinite(map.size[0])
+        || !Number.isFinite(map.size[1])
+        || map.size[0] <= 0
+        || map.size[1] <= 0
       ) {
         throw new Error("The initial map must have a positive tile resolution");
       }
 
-      // Because the viewer is dynamically sized, calculate based on width + tile resolution to get height.
-      // Map will always fill the width and height will be calculated based on the map's aspect ratio.
-      const getSetup = (pixelWidth: number): ViewerSetup => {
-        const tileSize = pixelWidth / tileResolution[0];
-        return {
-          tileSize,
-          resolution: [pixelWidth, tileSize * tileResolution[1]],
-        };
-      }
-
-      const initialWidth = container.clientWidth
-        || container.getBoundingClientRect().width
-        || scene.setup?.resolution[0]
-        || 1;
-      const setup = getSetup(initialWidth);
+      const initialWidth = getInitialViewerWidth(container, scene.setup?.resolution[0] || 1);
+      const setup = getResponsiveViewerSetup(map, initialWidth);
       setResolution(setup.resolution);
       const animator = new Animator();
       const renderer = new LiveViewRenderer(assets, setup, animator);
@@ -98,18 +85,13 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
       const resize = (pixelWidth: number) => {
         if (pixelWidth <= 0 || unmount.signal.aborted) return;
 
-        const nextSetup = getSetup(pixelWidth);
+        const nextSetup = getResponsiveViewerSetup(map, pixelWidth);
         renderer.updateViewerSetup(nextSetup);
         app.renderer.resize(nextSetup.resolution[0], nextSetup.resolution[1]);
         setResolution(nextSetup.resolution);
       };
 
-      if (typeof ResizeObserver !== "undefined") {
-        resizeObserver = new ResizeObserver(([entry]) => {
-          resize(entry.contentRect.width);
-        });
-        resizeObserver.observe(container);
-      }
+      resizeObserver = observeViewerResize(container, resize);
 
       // connect to SSE
       changeSource = new SSERenderableChangeSource(`/api/viewer/sse/${gameId}`);
