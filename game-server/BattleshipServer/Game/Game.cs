@@ -11,19 +11,14 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
 
     public required ILogger<IGame<PlayerState, PlayerAction>> Logger { set; get; }
 
-    private RenderableBroadcaster? _broadcaster;
-
     private string _player1Id = null!; // normally getInitial is called before doAction so that it is not null
     private string _player2Id = null!;
+
+    private readonly List<GameRenderable> _renderables = [];
 
     public string GetName()
     {
         return "Battleship";
-    }
-
-    public void SetBroadcaster(RenderableBroadcaster renderableBroadcaster)
-    {
-        this._broadcaster = renderableBroadcaster;
     }
 
     public Dictionary<string, PlayerState> GetInitial(HashSet<string> playerIDs)
@@ -31,7 +26,7 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
         _player1Id = playerIDs.First();
         _player2Id = playerIDs.Last();
 
-        this._broadcaster?.BroadcastChange([
+        _renderables.Add(
             new GameRenderable
             {
                 Id = "map",
@@ -40,8 +35,8 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
                 Size = [23, 12],
                 Type = RenderableType.MAP,
                 Layer = 0,
-            },
-        ]);
+            }
+        );
 
         // Boomerang effect: only Player 1 is returned so that Player1 knows it's his turn to start
         return new Dictionary<string, PlayerState> { { _player1Id, this.Logic.GetPlayerState(1) } };
@@ -58,13 +53,11 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
 
         if (status == ActionStatus.Success)
         {
-            // TODO #137: Move renderable diffing into RenaEngine
-            List<GameRenderable> changes = this.CollectRenderables(playerNumber, action);
-            this._broadcaster?.BroadcastChange(changes);
+            this.CreateRenderableFromAction(playerNumber, action);
         }
         else
         {
-            this.Logger.LogDebug("Actionn by {playerNumber} wasn't sucessful. Status: {status}", playerNumber, status);
+            this.Logger.LogDebug("Action by {playerNumber} wasn't sucessful. Status: {status}", playerNumber, status);
         }
 
         string nextPlayerId;
@@ -90,9 +83,8 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
         return new Dictionary<string, PlayerState> { { nextPlayerId, this.Logic.GetPlayerState(nextPlayerNumber) } };
     }
 
-    public List<GameRenderable> CollectRenderables(int playerNumber, PlayerAction action)
+    private void CreateRenderableFromAction(int playerNumber, PlayerAction action)
     {
-        var changes = new List<GameRenderable>();
         int offsetX = playerNumber == 1 ? 1 : 12;
         int targetOffsetX = playerNumber == 1 ? 12 : 1;
         int offsetY = 1;
@@ -102,7 +94,7 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
             {
                 Ship ship = place.Ships[i];
                 bool isHorizontal = ship.Orientation == ShipOrientation.Horizontal;
-                changes.Add(
+                this._renderables.Add(
                     new GameRenderable
                     {
                         Id = $"p{playerNumber}-ship-{i}",
@@ -121,7 +113,7 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
             Player player = this.Logic.GetPlayer(playerNumber);
             ShotRecord? lastShot = player.ShotsFired.LastOrDefault();
             string sprite = (lastShot?.Result is ShotResult.Hit or ShotResult.Sunk) ? "/sprites/hit.png" : "/sprites/miss.png";
-            changes.Add(
+            this._renderables.Add(
                 new GameRenderable
                 {
                     Id = $"shot-{playerNumber}-{shoot.ShootAt.X}-{shoot.ShootAt.Y}",
@@ -133,7 +125,11 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
                 }
             );
         }
-        return changes;
+    }
+
+    public List<GameRenderable> CollectRenderables()
+    {
+        return this._renderables;
     }
 
     public bool IsGameOver()
