@@ -16,7 +16,7 @@ public class BattleshipRenderingTests
     public void Setup()
     {
         _broadcaster = new RenderableBroadcaster();
-        _game = new BattleshipGame { Broadcaster = _broadcaster };
+        _game = new BattleshipGame();
         // csharpier-ignore
         _validFleet =
         [
@@ -71,43 +71,27 @@ public class BattleshipRenderingTests
     [Test]
     public void TestDoAction_PlaceShips()
     {
-        Channel<RenderableChange> channel = _broadcaster.Connect();
-
         Dictionary<string, PlayerState> initialStates = _game.GetInitial(["p1", "p2"]);
         Assert.That(initialStates.ContainsKey("p1"), Is.True);
         Assert.That(initialStates.ContainsKey("p2"), Is.False);
 
-        // GetInitial broadcasts Map Type Renderable Change at the start of the game
-        Assert.That(channel.Reader.TryRead(out RenderableChange? mapChange), Is.True);
-        Assert.That(mapChange, Is.Not.Null);
-        Assert.That(mapChange.Index, Is.EqualTo(1));
-        Assert.That(mapChange!.Changes, Has.Count.EqualTo(1));
-        Assert.That(mapChange.Changes[0].Type, Is.EqualTo(RenderableType.MAP));
+        List<GameRenderable> initialRenderables = _game.CollectRenderables();
+        Assert.That(initialRenderables, Has.Count.EqualTo(1));
+        Assert.That(initialRenderables[0].Type, Is.EqualTo(RenderableType.MAP));
 
         PlaceShipsAction action = new PlaceShipsAction { Ships = _validFleet };
         Dictionary<string, PlayerState> nextStates = _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", action } });
 
         Assert.That(nextStates.ContainsKey("p2"), Is.True);
 
-        Assert.That(channel.Reader.TryRead(out RenderableChange? change), Is.True);
-        Assert.That(change, Is.Not.Null);
-        if (change == null)
-        {
-            Assert.Fail("Expected a change, but received null");
-            return;
-        }
-        Assert.That(change.Index, Is.EqualTo(2));
-        Assert.That(change.Changes, Has.Count.EqualTo(5));
-        Assert.That(change.Changes[0].Type, Is.EqualTo(RenderableType.OBJECT));
-
-        _broadcaster.Disconnect(channel);
+        List<GameRenderable> renderables = _game.CollectRenderables();
+        Assert.That(renderables, Has.Count.EqualTo(6));
+        Assert.That(renderables.Skip(1), Has.All.Property(nameof(GameRenderable.Type)).EqualTo(RenderableType.OBJECT));
     }
 
     [Test]
     public void TestDoAction_Shoot()
     {
-        Channel<RenderableChange> channel = _broadcaster.Connect();
-
         _game.GetInitial(["p1", "p2"]);
 
         // csharpier-ignore
@@ -115,36 +99,25 @@ public class BattleshipRenderingTests
         // csharpier-ignore
         _game.DoAction(new Dictionary<string, PlayerAction> { { "p2", new PlaceShipsAction { Ships = _validFleet } } });
 
-        while (channel.Reader.TryRead(out _)) { } // clears the queue from placement messages.
-
         // csharpier-ignore
         ShootAction shootAction1 = new ShootAction { ShootAt = new Coordinate { X = 0, Y = 0 } };
         Dictionary<string, PlayerState> stateAfter1 = _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", shootAction1 } });
         Assert.That(stateAfter1.ContainsKey("p2"), Is.True);
 
-        Assert.That(channel.Reader.TryRead(out RenderableChange? change), Is.True);
-        Assert.That(change, Is.Not.Null);
-        if (change == null)
-        {
-            Assert.Fail("Expected a change, but received null");
-            return;
-        }
-        Assert.That(change.Changes, Has.Count.EqualTo(1));
-        Assert.That(change.Changes[0].Type, Is.EqualTo(RenderableType.OBJECT));
-        Assert.That(change.Changes[0].AssetPath, Is.EqualTo("/sprites/hit.png"));
+        GameRenderable hit = _game.CollectRenderables()[^1];
+        Assert.That(hit.Type, Is.EqualTo(RenderableType.OBJECT));
+        Assert.That(hit.AssetPath, Is.EqualTo("/sprites/hit.png"));
 
         // csharpier-ignore
         ShootAction shootAction2 = new ShootAction { ShootAt = new Coordinate { X = 9, Y = 9 } };
         Dictionary<string, PlayerState> stateAfter2 = _game.DoAction(new Dictionary<string, PlayerAction> { { "p2", shootAction2 } });
         Assert.That(stateAfter2.ContainsKey("p1"), Is.True);
-
-        _broadcaster.Disconnect(channel);
     }
 
     [Test]
     public void TestDoAction_WhenBroadcasterIsNull_DoesNotThrow()
     {
-        BattleshipGame gameWithoutBroadcaster = new BattleshipGame { Broadcaster = null };
+        BattleshipGame gameWithoutBroadcaster = new();
         gameWithoutBroadcaster.GetInitial(["p1", "p2"]);
 
         PlaceShipsAction action = new PlaceShipsAction { Ships = _validFleet };
@@ -154,37 +127,57 @@ public class BattleshipRenderingTests
     [Test]
     public void TestCollectRenderables_VerticalShip()
     {
-        PlaceShipsAction placeAction = new PlaceShipsAction
-        {
-            Ships =
-            [
-                new Ship
-                {
-                    Name = ShipName.Destroyer,
-                    StartCoordinate = new Coordinate { X = 0, Y = 0 },
-                    Orientation = ShipOrientation.Vertical,
-                },
-            ],
-        };
+        _game.GetInitial(["p1", "p2"]);
+        List<Ship> verticalFleet =
+        [
+            .. _validFleet.Take(_validFleet.Count - 1),
+            new Ship
+            {
+                Name = ShipName.Destroyer,
+                StartCoordinate = new Coordinate { X = 0, Y = 4 },
+                Orientation = ShipOrientation.Vertical,
+            },
+        ];
+        PlaceShipsAction placeAction = new PlaceShipsAction { Ships = verticalFleet };
 
-        List<GameRenderable> renderables = _game.CollectRenderables(1, placeAction);
-        int[] expected = [2, 1]; // The expected size is the same since it should be handled by the liveviewer
-        Assert.That(renderables[0].Size, Is.EqualTo(expected));
-        Assert.That(renderables[0].Rotation, Is.EqualTo(90));
+        _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", placeAction } });
+        List<GameRenderable> renderables = _game.CollectRenderables();
+        int[] expected = [2, 1];
+        Assert.That(renderables[^1].Size, Is.EqualTo(expected));
+        Assert.That(renderables[^1].Rotation, Is.EqualTo(90));
     }
 
     [Test]
     public void TestCollectRenderables_MissShot()
     {
         _game.GetInitial(["p1", "p2"]);
+        _game.DoAction(
+            new Dictionary<string, PlayerAction>
+            {
+                {
+                    "p1",
+                    new PlaceShipsAction { Ships = _validFleet }
+                },
+            }
+        );
+        _game.DoAction(
+            new Dictionary<string, PlayerAction>
+            {
+                {
+                    "p2",
+                    new PlaceShipsAction { Ships = _validFleet }
+                },
+            }
+        );
 
         ShootAction shootAction = new ShootAction
         {
             ShootAt = new Coordinate { X = 9, Y = 9 },
         };
-        List<GameRenderable> renderables = _game.CollectRenderables(1, shootAction);
+        _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", shootAction } });
+        List<GameRenderable> renderables = _game.CollectRenderables();
 
-        Assert.That(renderables[0].AssetPath, Is.EqualTo("/sprites/miss.png"));
+        Assert.That(renderables[^1].AssetPath, Is.EqualTo("/sprites/miss.png"));
     }
 
     // This test is needed: if it fails, it probably means the defaults in Rendering/Renderable.cs changed,

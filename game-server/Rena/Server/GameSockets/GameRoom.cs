@@ -1,74 +1,122 @@
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using System.Text;
 using System.Threading.Channels;
+using LanguageExt;
+using Microsoft.Extensions.Logging;
+using ProtoBuf;
 using Rena.GameEngine;
+using Rena.Server.Rendering;
 using Rena.Utility;
 
 namespace Rena.Server.GameSockets;
 
-public class GameRoom<G, S, A>(Dictionary<string, Tuple<WebSocket, ChannelWriter<Result<bool>>>> connections)
+using Connection = Tuple<WebSocket, ChannelWriter<Result<bool>>>;
+
+public class GameRoom<G, S, A>
     where G : IGame<S, A>, new()
     where S : class
     where A : class
 {
+    private readonly ConcurrentDictionary<string, Connection> _connections;
+
+    private readonly int _roomSize;
+    private readonly ILogger _logger;
+    private readonly RenderableBroadcaster? _broadcaster;
+
+    public bool IsStarted { get; private set; } = false;
+
+    public bool IsFull => _connections.Count >= _roomSize;
+
+    public GameRoom(int roomSize, ILogger logger, RenderableBroadcaster? renderableBroadcaster = null)
+    {
+        _connections = [];
+        _broadcaster = renderableBroadcaster;
+        _roomSize = roomSize;
+        _logger = logger;
+    }
+
+    public bool AddPlayer(string playerId, Connection connectionInfo)
+    {
+        return _connections.TryAdd(playerId, connectionInfo);
+    }
+
+    public Result<bool> RemovePlayer(string playerId)
+    {
+        // Might add more here tbd
+        var result = _connections.TryRemove(playerId, out _);
+        return new(result);
+    }
+
     public async Task RunRoom()
     {
-        // Need to snapshot in case a connection closes while sending
-        foreach (var id in connections.Keys.ToList())
+        this._logger.LogDebug("Starting the room");
+        this.IsStarted = true;
+
+        IGame<S, A> game = new G { Logger = this._logger };
+        Dictionary<string, S> statesToSend = game.GetInitial([.. _connections.Keys]);
+        while (!game.IsGameOver())
         {
-            var responseBytes = Encoding.UTF8.GetBytes($"You, player {id}, have connected to the game\n");
-            try
-            {
-                await connections[id].Item1.SendAsync(responseBytes, WebSocketMessageType.Text, true, CancellationToken.None);
-            }
-            catch (OperationCanceledException e)
-            {
-                await connections[id].Item2.WriteAsync(new(e));
-            }
+            // TODO (#164): break out of this loop and return when
+            // there are no longer players in this room (everyone crashed).
+            this._logger.LogDebug("playing a turn in the room");
+            Dictionary<string, A> actions = await this.SendAndWaitForResult(statesToSend);
+            // TODO #137: Move diff renderables and broadcast changes
+            // game.CollectRenderables();
+            statesToSend = game.DoAction(actions);
         }
 
-        // TODO implement the actual game (the very next PR) (I don't want to make it an issue
-        // since it might do more than implement the game idk)
-        Thread.Sleep(1000);
+        this._logger.LogDebug("ended the game");
 
-        foreach (var id in connections.Keys.ToList())
+        // Send to all the listeners that the game ended sucessfully
+        foreach (var id in _connections.Keys.ToList())
         {
-            await connections[id].Item2.WriteAsync(new(true));
+            ChannelWriter<Result<bool>> waitingListener = _connections[id].Item2;
+            await waitingListener.WriteAsync(new(true));
         }
     }
 
-    // Parts of this may be useful once I connect this to the actual game
-    // var buffer = new byte[BUFFER_SIZE];
+    public ICollection<string> PlayerIds => _connections.Keys;
 
-    // while (true)
-    // {
-    //     WebSocketReceiveResult result = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
+    private async Task<Dictionary<string, A>> SendAndWaitForResult(Dictionary<string, S> playerToState)
+    {
+        foreach ((string id, S state) in playerToState)
+        {
+            this._logger.LogDebug("sedning state to player {id}", id);
+            (WebSocket connection, ChannelWriter<Result<bool>> endGameListener) = _connections[id];
+            using MemoryStream stream = new();
+            Serializer.Serialize(stream, state);
+            // TODO (#164): put a cancelation token for timeout based on settings
+            // TODO (#164): break down the message in to smaller ones instead of sending it all at once
+            await connection.SendAsync(new ArraySegment<byte>(stream.ToArray()), WebSocketMessageType.Binary, true, CancellationToken.None);
+        }
 
-    //     if (result.MessageType == WebSocketMessageType.Close)
-    //     {
-    //         // Respond to the client's close request to complete the handshake cleanly
-    //         await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing Normally", CancellationToken.None);
-    //         break;
-    //     }
+        Dictionary<string, A> results = [];
 
-    //     _currentMessage.AddRange(new ArraySegment<byte>(buffer, 0, result.Count));
+        foreach ((string id, var _) in playerToState)
+        {
+            (WebSocket connection, ChannelWriter<Result<bool>> endGameListener) = _connections[id];
 
-    //     // Must receive the whole message before continuing
-    //     // Setup for when we will be receiving Action objects from frontend
-    //     if (!result.EndOfMessage)
-    //     {
-    //         continue;
-    //     }
+            bool done = false;
+            byte[] buffer = new byte[1024];
+            using MemoryStream stream = new();
+            this._logger.LogDebug("receiving state from player {id}", id);
+            while (!done)
+            {
+                WebSocketReceiveResult result = await connection.ReceiveAsync(buffer, CancellationToken.None);
+                stream.Write(buffer, 0, result.Count);
+                // TODO: #164 when a player is disconnected in a real game, they must have aborted
+                // or the container has crashed. We should update the player status based on the docker container and remove them from the game.
+                // If a real player gets disconnected from a testing game, testing game should abort (since it will be bots playing againts bots).
+                done = result.EndOfMessage;
+            }
 
-    //     // Read received text string from accumulated bytes
-    //     string message = Encoding.UTF8.GetString([.. _currentMessage]);
-    //     logger.LogInformation("{PlayerId} - Received: {message}", playerId, message);
+            // reset the position so that the deserializer can read it
+            stream.Position = 0;
 
-    //     // Echo a response back
-    //     var responseBytes = Encoding.UTF8.GetBytes($"Echo: {message}\n");
-    //     await webSocket.SendAsync(responseBytes, result.MessageType, true, CancellationToken.None);
+            A action = Serializer.Deserialize<A>(stream);
+            results.Add(id, action);
+        }
 
-    //     // Reset the message
-    //     _currentMessage.Clear();
-    // }
+        return results;
+    }
 }
