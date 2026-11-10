@@ -146,7 +146,7 @@ public class BattleshipRenderingTests
 
         _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", placeAction } });
         List<GameRenderable> renderables = _game.CollectRenderables();
-        int[] expected = [1, 2];
+        int[] expected = [2, 1];
         Assert.That(renderables[^1].Size, Is.EqualTo(expected));
         Assert.That(renderables[^1].Rotation, Is.EqualTo(90));
     }

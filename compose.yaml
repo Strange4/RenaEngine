@@ -5,16 +5,16 @@ services:
       dockerfile: ./docker/game-server.Dockerfile
       args:
         RenaOptions__TSProtoPath: ${RenaOptions__TSProtoPath:-/sdk-tools/node_modules/ts-proto/protoc-gen-ts_proto}
-        RenaOptions__GenerationDirectory: /sdks
+        RenaOptions__GenerationDirectory: ${RenaOptions__GenerationDirectory:-/sdks}
     environment:
       RenaOptions__TSProtoPath: ${RenaOptions__TSProtoPath:-/unused}
-      RenaOptions__GenerationDirectory: /sdks
-      RenaOptions__ServerPort: 3000
+      RenaOptions__GenerationDirectory: ${RenaOptions__GenerationDirectory:-/sdks}
+      RenaOptions__ServerPort: ${RenaOptions__ServerPort:-5000}
       RenaOptions__AdminToken: ${ADMIN_TOKEN:-ADMIN-change-me}
       RenaOptions__Features__test-feature: ${TEST_FEATURE_ENABLED:-false}
       RenaOptions__Features__sdk-downloads: ${SDK_DOWNLOADS_ENABLED:-false}
     ports:
-      - "${GAME_SERVER_CONTAINER_PORT:-5001}:3000"
+      - "${RenaOptions__ServerPort:-5000}:${RenaOptions__ServerPort:-5000}"
     networks:
       - game-server-network
 
@@ -22,12 +22,12 @@ services:
     build:
       context: ./website
     environment:
-      GAME_SERVER_URL: http://game-server:3000
+      GAME_SERVER_URL: "http://game-server:${RenaOptions__ServerPort:-5000}"
       ADMIN_TOKEN: ${ADMIN_TOKEN:-ADMIN-change-me}
     depends_on:
       - game-server
     ports:
-      - "${WEBSITE_CONTAINER_PORT:-3000}:3000"
+      - "${WEBSITE_CONTAINER_PORT:-3000}:${WEBSITE_CONTAINER_PORT:-3000}"
     networks:
       - game-server-network
 

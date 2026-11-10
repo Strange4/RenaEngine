@@ -1,6 +1,6 @@
 import type { Container } from "pixi.js";
 import { RenderableType, type GameRenderable, type ViewerSetup } from "@/shared/renderable";
-
+import { Animator } from "./animator";
 class MockPoint {
   x = 0;
   y = 0;
@@ -42,6 +42,7 @@ class MockContainer {
   addChild(...items: (MockContainer | MockSprite)[]): void {
     for (const item of items) {
       if (item instanceof MockSprite) {
+        item.parent?.removeChild(item);
         item.parent = this;
       }
 
@@ -97,7 +98,7 @@ function renderable(
   return { ...baseRenderable, ...overrides };
 }
 
-function createRenderer() {
+function createRenderer(animator?:Animator) {
   const assetLoader = {
     getTexture: jest.fn((path: string) => textureFor(path)),
     loadFor: jest.fn().mockResolvedValue(undefined),
@@ -105,7 +106,7 @@ function createRenderer() {
 
   return {
     assetLoader,
-    renderer: new LiveViewRenderer(assetLoader, viewerSetup),
+    renderer: new LiveViewRenderer(assetLoader, viewerSetup, animator),
   };
 }
 
@@ -391,4 +392,84 @@ describe("LiveViewRenderer", () => {
       }),
     ).toEqual(["map", "objects", "decorations"]);
   });
+
+  it("doesn't update a renderable that doesn't show", async() => {
+    const{renderer} = createRenderer();
+    const sprite = await renderer.updateGameRenderable(renderable({id:"somethingId"}));
+    //no update
+    expect(sprite).toBeUndefined();
+    expect(renderer.getSprite("somethingId")).toBeUndefined();
+    expect(renderer.getContainer(RenderableType.OBJECT).children).toHaveLength(0);
+  });
+
+  it("updates a renderable", async() => {
+    const{renderer, assetLoader} = createRenderer();
+    //show old/original sprite (gives an illusion of an update when it gets replaced by the new updated one)
+    const oldSprite = renderer.addGameRenderable(baseRenderable) as unknown as MockSprite;
+
+    const updated = renderable({
+      position: [0,1], //pixels? To be checked
+      assetPath: "/sprites/rena.png",
+      rotation: 90,
+      type: RenderableType.OBJECT,
+    });
+
+    const sprite = await renderer.updateGameRenderable(updated);
+
+    //new loaded before building sprite
+    expect(assetLoader.loadFor).toHaveBeenCalledWith([updated]);
+    expect(oldSprite.destroyed).toBe(false); //same sprite was used for the renderables- new changes applied to it
+    expect(sprite).toBe(oldSprite);
+    expect(renderer.getSprite(baseRenderable.id)).toBe(sprite);
+
+
+    //updated sprite's properties got updated
+    expect(sprite!.texture).toEqual({path:"/sprites/rena.png"});
+    //0*32+16=16 in x position and in y we have 1*32+16=48   *if translating pixels with a tile size of 32 (check if logic stays depending if we consider tiles or)
+    expect(sprite!.position.x).toBe(16);
+    expect(sprite!.position.y).toBe(48);
+    expect(sprite!.angle).toBe(90);
+  });
+
+  it("stops animating a sprite once it's removed", async()=>{
+    const animator = new Animator(200);
+    const {renderer} = createRenderer(animator);
+    const sprite = renderer.addGameRenderable(baseRenderable) as unknown as MockSprite;
+
+    //start an animation, but remove the sprite before the end of the animation
+    await renderer.updateGameRenderable(renderable({position: [0,1]}));
+    renderer.removeGameRenderable(baseRenderable.id);
+
+    //when removed the sprite stays as is-- we don't touch the next frames as they won't get animated
+    animator.tick(200);
+    expect(sprite.destroyed).toBe(true);
+    expect(sprite.position.x).toBe(80);
+  });
+
+  it("animates an update only if there's an update and an animator", async()=>{
+    const animator = new Animator(200);
+    const {renderer} = createRenderer(animator);
+    const sprite = renderer.addGameRenderable(baseRenderable);
+
+    //some defined sprite
+    expect(sprite.position.x).toBe(80);
+    expect(sprite.position.y).toBe(112);
+
+    //the update is a displacement
+    await renderer.updateGameRenderable(renderable({position: [0,1]}));
+    //it's at its initial state at the very start
+    expect(sprite.position.x).toBe(80);
+    expect(sprite.position.y).toBe(112);
+
+    //if 50% progress it's halfway
+    animator.tick(100);
+    expect(sprite.position.x).toBe(48);
+    expect(sprite.position.y).toBe(80);
+
+    //at the end it's at final state
+    animator.tick(100);
+    expect(sprite.position.x).toBe(16);
+    expect(sprite.position.y).toBe(48);
+  });
+
 });

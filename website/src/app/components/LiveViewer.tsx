@@ -6,6 +6,9 @@ import { AssetLoader } from "@/app/viewer/assetLoader";
 import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
 import { RenderableChangeProcessor } from "@/app/viewer/renderableChangeProcessor";
 import { getSceneSource } from "@/app/viewer/sceneSource";
+import {Animator} from "@/app/viewer/animator";
+import { SSERenderableChangeSource } from "../viewer/renderableChangeSource";
+import { ViewerSetup } from "@/shared/renderable";
 
 interface LiveViewerProps {
   gameId: string;
@@ -28,11 +31,19 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
     const unmount = new AbortController();
 
     (async () => {
-      const { setup, renderables } = await getSceneSource(gameId).getInitialScene();
+      const scene = await getSceneSource(gameId).getInitialScene();
+      if (unmount.signal.aborted) return;
+
+      // TODO (176): get the resolution and tile size from the browser
+      const setup: ViewerSetup = {
+        tileSize: 40,
+        resolution: [920, 480]
+      }
       if (unmount.signal.aborted) return;
 
       setResolution(setup.resolution);
-      const renderer = new LiveViewRenderer(assets, setup);
+      const animator = new Animator();
+      const renderer = new LiveViewRenderer(assets, setup, animator);
 
       await app.init({
         width: setup.resolution[0],
@@ -48,24 +59,29 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
         app.destroy(true, { children: true });
         return;
       }
-
+      //draw every renderable on the screen (there's a sprite for each ID)
       container.appendChild(app.canvas);
+      app.ticker.add((ticker)=> animator.tick(ticker.deltaMS)); //deltaMS is from pixi JS, it's the difference in milliseconds between two frames
       renderer.addContainerToStage(app.stage);
-      await renderer.renderScene(renderables, unmount.signal);
+      await renderer.renderScene(scene.renderables, unmount.signal);
       if (unmount.signal.aborted) return;
+
+      // connect to SSE
+      const changeSource = new SSERenderableChangeSource(`/api/viewer/sse/${gameId}`);
 
       // Applies the RenderableChanges that come after the initial scene
       processor = new RenderableChangeProcessor({
+        //if new, create
         create: async (renderable) => {
           await renderer.createGameRenderable(renderable, unmount.signal);
         },
-        // TODO #86: update the sprite of an existing renderable
-        update: async () => {},
+        // Applies the Renderable Update
+        update: async (renderable) => {
+          await renderer.updateGameRenderable(renderable, unmount.signal);
+        },
         remove: async (id) => renderer.removeGameRenderable(id),
-      });
-      // The server's first change has index 1, so the initial scene is index 0
-      processor.initialize(renderables, 0);
-    })().catch(e => {
+      }, changeSource, scene.renderables);
+    })().catch((e) => {
       console.log(e);
       // TODO put actual error handling here
       // If you change the console.log, make sure to update the relevant test
@@ -82,10 +98,14 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
     <div
       ref={containerRef}
       className="live-viewer-canvas"
-      style={resolution ? {
-        width: `${resolution[0]}px`,
-        height: `${resolution[1]}px`,
-      } : undefined}
+      style={
+        resolution
+          ? {
+              width: `${resolution[0]}px`,
+              height: `${resolution[1]}px`,
+            }
+          : undefined
+      }
       data-testid="live-viewer"
     />
   );
