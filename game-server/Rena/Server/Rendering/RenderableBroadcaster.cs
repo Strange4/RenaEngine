@@ -6,6 +6,7 @@ namespace Rena.Server.Rendering;
 public class RenderableBroadcaster
 {
     private readonly ConcurrentDictionary<Channel<RenderableChange>, byte> _subscribers = new();
+    private readonly List<RenderableChange> _history = [];
     private List<GameRenderable> _lastRenderables = [];
     private readonly Lock _lock = new();
     private int _index = 0;
@@ -22,6 +23,7 @@ public class RenderableBroadcaster
             _index++;
             RenderableChange change = new() { Index = _index, Changes = diff };
             _lastRenderables = changes;
+            _history.Add(change);
 
             foreach (Channel<RenderableChange> subscriber in _subscribers.Keys)
             {
@@ -35,9 +37,9 @@ public class RenderableBroadcaster
         Channel<RenderableChange> channel = Channel.CreateUnbounded<RenderableChange>();
         lock (_lock)
         {
-            if (_lastRenderables.Count > 0)
+            foreach (RenderableChange change in _history)
             {
-                channel.Writer.TryWrite(new RenderableChange { Index = _index, Changes = _lastRenderables });
+                channel.Writer.TryWrite(change);
             }
 
             _subscribers.TryAdd(channel, 0);
