@@ -33,5 +33,5 @@ public interface IGame<S, A>
     /// <returns>The game's renderable objects.</returns>
     public List<GameRenderable> CollectRenderables();
 
-    public ILogger<IGame<S, A>> Logger { set; get; }
+    public ILogger? Logger { set; get; }
 }

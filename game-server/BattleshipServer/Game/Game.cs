@@ -9,7 +9,7 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
 {
     public GameLogic Logic { get; } = new();
 
-    public required ILogger<IGame<PlayerState, PlayerAction>> Logger { set; get; }
+    public ILogger? Logger { set; get; }
 
     private string _player1Id = null!; // normally getInitial is called before doAction so that it is not null
     private string _player2Id = null!;
@@ -47,7 +47,7 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
         var (playerId, action) = playerToAction.First();
         int playerNumber = (playerId == _player1Id) ? 1 : 2;
 
-        this.Logger.LogDebug("Playing turn for player: {playerNumber}", playerNumber);
+        this.Logger?.LogDebug("Playing turn for player: {playerNumber}", playerNumber);
 
         ActionStatus status = this.Logic.ProcessPlayerAction(playerNumber, action);
 
@@ -57,7 +57,7 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
         }
         else
         {
-            this.Logger.LogDebug("Action by {playerNumber} wasn't sucessful. Status: {status}", playerNumber, status);
+            this.Logger?.LogDebug("Action by {playerNumber} wasn't sucessful. Status: {status}", playerNumber, status);
         }
 
         string nextPlayerId;
@@ -74,7 +74,7 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
             nextPlayerId = this.Logic.IsPlayer1Turn ? _player1Id : _player2Id;
         }
 
-        this.Logger.LogDebug("Sending the new state for player: {nextPlayerNumber}", nextPlayerNumber);
+        this.Logger?.LogDebug("Sending the new state for player: {nextPlayerNumber}", nextPlayerNumber);
 
         // Boomerang effect: we only return the state of the player whose turn is next.
         // That player shall complete one action and we will receive this action the next time DoAction is called.
