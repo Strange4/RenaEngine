@@ -1,10 +1,10 @@
-import Play from "../main.ts";
+import Play, { URL, PLAYER_TOKEN } from "../main.ts";
 import { State, Action } from "./gameTypes.ts";
 
+const url = process.env.URL || URL;
 
-const url = process.env.URL;
 if (!url) {
-  throw new Error("The environment variable for URL was not set");
+  throw new Error("The URL was not set");
 }
 
 const ws = new WebSocket(url);

@@ -7,6 +7,9 @@ import { Action, State } from "./generated/gameTypes.ts";
 let isFirstTurn = true;
 let i = 0;
 
+export const URL = "PUT THE URL HERE";
+export const PLAYER_TOKEN = "PUT THE PLAYER TOKEN HERE";
+
 export default async function Play(state: State): Promise<Action> {
   // Play the game!
   if (isFirstTurn) {
