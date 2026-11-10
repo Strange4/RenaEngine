@@ -29,6 +29,7 @@ public class RenaServer<G, S, A>
 
         using (var scope = app.Services.CreateScope())
         {
+            // TODO (#164) see if we have the docker in docker setup done
             var matchMaker = scope.ServiceProvider.GetRequiredService<IMatchMaker<G, S, A>>();
             await matchMaker.BuildHostBotImage("host-bot-image-id", options.HostBotZipPath, options.HostBotDockerfile, "typescript");
         }

@@ -10,7 +10,7 @@ namespace Rena.Server.GameSockets;
 
 public interface IGameRoomManager
 {
-    Task<ChannelReader<Result<bool>>> RegisterForTest(string playerId, WebSocket socket);
+    Task<Result<ChannelReader<Result<bool>>>> RegisterForTest(string playerId, WebSocket socket);
     Task UnRegister(string playerId);
 }
 
@@ -20,39 +20,32 @@ public class GameRoomManager<G, S, A>(IMatchMaker<G, S, A> matchMaker, int roomS
     where A : class
 {
     private const int EXPECTED_NUM_MESSAGES = 1;
-    private readonly ConcurrentDictionary<string, Tuple<WebSocket, ChannelWriter<Result<bool>>>> _connections = [];
+    private readonly ConcurrentDictionary<string, ChannelWriter<Result<bool>>> _channels = [];
     private readonly ConcurrentDictionary<string, GameRoom<G, S, A>> _rooms = [];
     public bool IsCompetitionMode { get; set; } = false;
 
     private readonly Lock _roomStartLock = new();
 
-    public async Task<ChannelReader<Result<bool>>> RegisterForTest(string playerId, WebSocket socket)
+    public async Task<Result<ChannelReader<Result<bool>>>> RegisterForTest(string playerId, WebSocket socket)
     {
         logger.LogInformation("Registering {playerId} for test", playerId);
-        var channel = Channel.CreateBounded<Result<bool>>(EXPECTED_NUM_MESSAGES);
-        if (_connections.ContainsKey(playerId))
+        if (_rooms.ContainsKey(playerId))
         {
-            await channel.Writer.WriteAsync(new(new ArgumentException("Player already connected. Please disconnect before trying again.")));
-            return await Task.FromResult(channel.Reader);
+            return new(new ArgumentException("Player already connected. Please disconnect before trying again."));
         }
-
-        _connections[playerId] = new(socket, channel.Writer);
 
         var room = await matchMaker.GetTestRoom(playerId, roomSize);
-        var result = room.AddPlayer(playerId, new(socket, channel.Writer));
+
+        var channel = Channel.CreateBounded<Result<bool>>(EXPECTED_NUM_MESSAGES);
+        bool sucessfullyAddedPlayer = room.AddPlayer(playerId, new(socket, channel.Writer));
 
         // player failed to join room
-        if (result.IsSuccess && !result.Value)
+        if (!sucessfullyAddedPlayer)
         {
-            await channel.Writer.WriteAsync(new(new Exception("Player could not join the room.")));
-            return await Task.FromResult(channel.Reader);
-        }
-        else if (!result.IsSuccess)
-        {
-            await channel.Writer.WriteAsync(new(result.Exception!));
-            return await Task.FromResult(channel.Reader);
+            return new(new Exception("Player could not join the room. They already in the room. This should never happen"));
         }
 
+        _channels[playerId] = channel.Writer;
         _rooms[playerId] = room;
 
         lock (_roomStartLock)
@@ -60,11 +53,12 @@ public class GameRoomManager<G, S, A>(IMatchMaker<G, S, A> matchMaker, int roomS
             if (room.IsFull && !room.IsStarted)
             {
                 logger.LogInformation("Player {playerId} is starting the room", playerId);
-                Task.Run(room.RunRoom).SafeFireAndForget(async exception => await this.HandleRoomExceptions(exception, new(room.Players)));
+                // TODO: make this a getter of a list of connections instead of the concurrent dictionary
+                Task.Run(room.RunRoom).SafeFireAndForget(async exception => await this.HandleRoomExceptions(exception, room.PlayerIds));
             }
         }
 
-        return await Task.FromResult(channel.Reader);
+        return new(channel.Reader);
     }
 
     public async Task UnRegister(string playerId)
@@ -72,11 +66,11 @@ public class GameRoomManager<G, S, A>(IMatchMaker<G, S, A> matchMaker, int roomS
         // The actual management of websockets and their disconnect/error handling is
         // handled by GameSocketConnection and GameSocketHandler
         _rooms[playerId].RemovePlayer(playerId);
-        _connections.TryRemove(playerId, out _);
+        _channels.TryRemove(playerId, out _);
         _rooms.TryRemove(playerId, out _);
     }
 
-    private async Task HandleRoomExceptions(Exception e, Dictionary<string, Tuple<WebSocket, ChannelWriter<Result<bool>>>> affectedConnections)
+    private async Task HandleRoomExceptions(Exception e, ICollection<string> affectedPlayers)
     {
         logger.LogError(
             "[UnnexpectedGameError]: Something went wrong while playing the game | {error message} | {stacktrace}",
@@ -84,10 +78,12 @@ public class GameRoomManager<G, S, A>(IMatchMaker<G, S, A> matchMaker, int roomS
             e.StackTrace
         );
 
-        foreach (var connection in affectedConnections.Values)
+        foreach (string playerId in affectedPlayers)
         {
+            if (!_channels.TryGetValue(playerId, out ChannelWriter<Result<bool>>? channel))
+                continue;
             // This should theoretically deal with unregistering the correct connections
-            await connection.Item2.WriteAsync(new(e));
+            await channel.WriteAsync(new(e));
         }
     }
 }

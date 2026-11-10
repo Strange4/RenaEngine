@@ -10,46 +10,42 @@ public class GameSocketConnection<G, S, A>(WebSocket webSocket, string playerId,
     where S : class
     where A : class
 {
-    private const int BUFFER_SIZE = 1024;
-
     public string PlayerId => playerId;
-
-    private readonly List<byte> _currentMessage = new(BUFFER_SIZE);
-
-    public virtual async Task HandleConnection()
+    public async Task HandleConnection()
     {
         logger.LogInformation("Registering {playerId} into game manager", playerId);
-        var channel = await gameRoomManager.RegisterForTest(playerId, webSocket);
+        var registerResult = await gameRoomManager.RegisterForTest(playerId, webSocket);
 
-        var result = await channel.ReadAsync();
-
-        // Fix for small bug where duplicate connection unregisters the actual connection
-        // Might want to change the flow later
-        if (result.IsSuccess || result.Exception is not ArgumentException)
+        if (!registerResult.IsSuccess)
         {
-            logger.LogInformation("Unregistering {playerId} from game manager", playerId);
-            await gameRoomManager.UnRegister(playerId);
+            logger.LogError(registerResult.Exception, "Could not register {playerId} to a game", playerId);
+            return;
         }
+        var channel = registerResult.Value!;
+        var roomResult = await channel.ReadAsync();
 
-        if (result.IsSuccess)
+        logger.LogInformation("Unregistering {playerId} from game manager", playerId);
+        await gameRoomManager.UnRegister(playerId);
+
+        if (roomResult.IsSuccess)
         {
             logger.LogInformation("Player {playerId} completed a normal game", playerId);
             await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing Normally", CancellationToken.None);
             return;
         }
 
-        switch (result.Exception)
+        switch (roomResult.Exception)
         {
             case ArgumentException:
                 logger.LogWarning("Player {playerId} tried to connect again while connected", playerId);
-                await webSocket.CloseOutputAsync(WebSocketCloseStatus.PolicyViolation, result.Exception.Message, CancellationToken.None);
+                await webSocket.CloseOutputAsync(WebSocketCloseStatus.PolicyViolation, roomResult.Exception.Message, CancellationToken.None);
                 break;
             default:
                 logger.LogError(
                     "[UnnexpectedError]: Something went wrong while {playerId} was playing a game | {error message} | {stacktrace}",
                     playerId,
-                    result.Exception!.Message,
-                    result.Exception!.StackTrace
+                    roomResult.Exception!.Message,
+                    roomResult.Exception!.StackTrace
                 );
                 await webSocket.CloseOutputAsync(WebSocketCloseStatus.InternalServerError, "Something unnexpected happened", CancellationToken.None);
                 break;

@@ -35,11 +35,9 @@ public class GameRoom<G, S, A>
         _logger = logger;
     }
 
-    public Result<bool> AddPlayer(string playerId, Connection connectionInfo)
+    public bool AddPlayer(string playerId, Connection connectionInfo)
     {
-        // Might add more here tbd
-        bool success = _connections.TryAdd(playerId, connectionInfo);
-        return new(success);
+        return _connections.TryAdd(playerId, connectionInfo);
     }
 
     public Result<bool> RemovePlayer(string playerId)
@@ -76,6 +74,8 @@ public class GameRoom<G, S, A>
             await waitingListener.WriteAsync(new(true));
         }
     }
+
+    public ICollection<string> PlayerIds => _connections.Keys;
 
     private async Task<Dictionary<string, A>> SendAndWaitForResult(Dictionary<string, S> playerToState)
     {
