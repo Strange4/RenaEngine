@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using LanguageExt;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-
 using Rena.GameEngine;
 using Rena.Server.DockerManager;
 using Rena.Utility;
@@ -34,7 +33,8 @@ public interface IMatchMaker<G, S, A>
     public Task BuildHostBotImage(string imageId, string codeZipPath, string dockerFilePath, string language);
 }
 
-public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMaker<G,S, A>> logger, IOptions<RenaOptions> serverOptions) : IMatchMaker<G, S, A>
+public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMaker<G, S, A>> logger, IOptions<RenaOptions> serverOptions)
+    : IMatchMaker<G, S, A>
     where G : IGame<S, A>, new()
     where S : class
     where A : class
@@ -59,28 +59,36 @@ public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMake
         _playerRooms[playerId] = room;
 
         // TODO #164 add _availableTestContainers check so that we aren't always making new ones
+        List<Task> startingContainers = [];
         for (int i = 1; i < numPlayers; i++)
         {
-            // Right now this will only ever spin up 1 container since we're limiting it to 1v1 for now
-            // Will add the Task.WhenAll in #164
-            var botId = Guid.NewGuid().ToString("N");
+            startingContainers.Add(
+                Task.Run(async () =>
+                {
+                    // Right now this will only ever spin up 1 container since we're limiting it to 1v1 for now
+                    // Will add the Task.WhenAll in #164
+                    var botId = Guid.NewGuid().ToString("N");
 
-            // TODO get the game url from constructor?
-            // TODO set the container paramaters (somehow) to map host.docker.internal to the proper gateway
-            // Alternatively setup the parameters to connect to the docker network made by the compose
-            // (but then you lose local testing) so it would need to be configured based on where it is running
-            int serverPort = serverOptions.Value.ServerPort;
-            Dictionary<string, string> envVars = new() { ["URL"] = $"http://host.docker.internal:${serverPort}/game/connect/test/{botId}" };
-            logger.LogInformation("Starting up host bot {botId}", botId);
-            Result<Unit> result = await dockerService.CreateAndStartContainerWithIdAsync(botId, _hostBotImageId!, envVars);
-            // TODO #164 add graceful retry or let caller know it failed
-            if (!result.IsSuccess)
-            {
-                logger.LogError("Couldn't start the container with id: {botId}", botId);
-                throw result.Exception!;
-            }
-            _playerRooms[botId] = room;
+                    // TODO get the game url from constructor?
+                    // TODO set the container paramaters (somehow) to map host.docker.internal to the proper gateway
+                    // Alternatively setup the parameters to connect to the docker network made by the compose
+                    // (but then you lose local testing) so it would need to be configured based on where it is running
+                    int serverPort = serverOptions.Value.ServerPort;
+                    Dictionary<string, string> envVars = new() { ["URL"] = $"http://host.docker.internal:${serverPort}/game/connect/test/{botId}" };
+                    logger.LogInformation("Starting up host bot {botId}", botId);
+                    Result<Unit> result = await dockerService.CreateAndStartContainerWithIdAsync(botId, _hostBotImageId!, envVars);
+                    // TODO #164 add graceful retry or let caller know it failed
+                    if (!result.IsSuccess)
+                    {
+                        logger.LogError("Couldn't start the container with id: {botId}", botId);
+                        throw result.Exception!;
+                    }
+                    _playerRooms[botId] = room;
+                })
+            );
         }
+
+        await Task.WhenAll(startingContainers);
 
         return room;
     }
