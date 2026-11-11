@@ -2,7 +2,7 @@ import type { GameRenderable, ViewerSetup } from "@/shared/renderable";
 import { mockSceneSource } from "./mockScene";
 
 export interface Scene {
-  setup: ViewerSetup;
+  setup: ViewerSetup; // map dimensions gotten from map renderable
   renderables: GameRenderable[];
 }
 

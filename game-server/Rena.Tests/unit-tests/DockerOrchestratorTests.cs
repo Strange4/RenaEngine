@@ -293,6 +293,33 @@ public class DockerOrchestratorTests
         );
     }
 
+    [Test]
+    public async Task DeleteContainerWithIdAsync_RemovesContainer()
+    {
+        this._fixture.ContainerResponses = [new() { ID = "container-123", State = "exited" }];
+        var result = await this._service.DeleteContainerWithIdAsync("container-123");
+
+        Assert.That(IsSuccess(result), Is.True);
+        this._fixture.Containers.Verify(
+            operations => operations.RemoveContainerAsync("container-123", It.IsAny<ContainerRemoveParameters>(), default),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task DeleteContainerWithIdAsync_DoesNotRemoveNotExitedContainer()
+    {
+        this._fixture.ContainerResponses = [new() { ID = "container-123", State = "running" }];
+
+        var result = await this._service.DeleteContainerWithIdAsync("container-123");
+
+        Assert.That(IsFailure(result), Is.True);
+        this._fixture.Containers.Verify(
+            operations => operations.RemoveContainerAsync("container-123", It.IsAny<ContainerRemoveParameters>(), default),
+            Times.Never
+        );
+    }
+
     private sealed class TestDockerBuildContextStrategy(string languageName) : IDockerBuildContextStrategy
     {
         public string LanguageName => languageName;

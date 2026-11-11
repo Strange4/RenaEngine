@@ -472,4 +472,25 @@ describe("LiveViewRenderer", () => {
     expect(sprite.position.y).toBe(48);
   });
 
+  it("preserves an active animation when the viewer is resized", async () => {
+    const animator = new Animator(200);
+    const { renderer } = createRenderer(animator);
+    const sprite = renderer.addGameRenderable(baseRenderable);
+
+    await renderer.updateGameRenderable(renderable({position: [0, 1]}));
+    animator.tick(100);
+
+    renderer.updateViewerSetup({
+      tileSize: 16,
+      resolution: [400, 300],
+    });
+
+    expect(sprite.position.x).toBe(24);
+    expect(sprite.position.y).toBe(40);
+
+    animator.tick(100);
+    expect(sprite.position.x).toBe(8);
+    expect(sprite.position.y).toBe(24);
+  });
+
 });

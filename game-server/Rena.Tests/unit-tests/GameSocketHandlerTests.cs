@@ -15,7 +15,7 @@ public class GameSocketHandlerTests
     private HttpContext _mockHttpContext;
     private WebSocketManager _mockWebSocketManager;
     private WebSocket _mockWebSocket;
-    private GameSocketHandler<MockGame, MockState, MockAction> _gameSocketHandler;
+    private GameSocketHandler<MockGame, GameState, GameAction> _gameSocketHandler;
     private ChannelReader<Result<bool>> _mockChannel;
 
     [SetUp]
@@ -24,12 +24,14 @@ public class GameSocketHandlerTests
         _mockHttpContext = Substitute.For<HttpContext>();
         _mockWebSocketManager = Substitute.For<WebSocketManager>();
         _mockWebSocket = Substitute.For<WebSocket>();
-        ILogger<GameSocketHandler<MockGame, MockState, MockAction>> logger = Substitute.For<
-            ILogger<GameSocketHandler<MockGame, MockState, MockAction>>
+        ILogger<GameSocketHandler<MockGame, GameState, GameAction>> logger = Substitute.For<
+            ILogger<GameSocketHandler<MockGame, GameState, GameAction>>
         >();
         _mockChannel = Substitute.For<ChannelReader<Result<bool>>>();
         IGameRoomManager mockManager = Substitute.For<IGameRoomManager>();
-        mockManager.Register(Arg.Any<string>(), Arg.Is(_mockWebSocket)).Returns(_mockChannel);
+        mockManager
+            .RegisterForTest(Arg.Any<string>(), Arg.Is(_mockWebSocket))
+            .Returns(Task.FromResult(new Result<ChannelReader<Result<bool>>>(_mockChannel)));
         _gameSocketHandler = new(mockManager, logger);
 
         _mockWebSocketManager.IsWebSocketRequest.Returns(true);

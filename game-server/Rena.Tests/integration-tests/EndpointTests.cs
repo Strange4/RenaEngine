@@ -2,12 +2,10 @@ using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Runtime.Serialization;
 using System.Text;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
-using Rena.GameEngine;
 using Rena.Server;
 
 namespace Rena.Tests.Integration;
@@ -246,25 +244,3 @@ public class UploadEndpointTests
 }
 
 public record TestFeatureSettingDto(bool Enabled);
-
-[DataContract]
-public class GameState
-{
-    [DataMember(Order = 1)]
-    public int X;
-}
-
-[DataContract]
-public class GameAction
-{
-    [DataMember(Order = 1)]
-    public int Y;
-}
-
-public class TestGame : IGame<GameState, GameAction>
-{
-    public string GetName()
-    {
-        return "Example game";
-    }
-}
