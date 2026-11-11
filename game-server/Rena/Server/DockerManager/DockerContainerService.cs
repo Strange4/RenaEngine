@@ -37,6 +37,7 @@ public class DockerContainerService(IDockerClient dockerClient, ILogger logger) 
             createParams.Image = imageId;
             createParams.Name = containerName;
 
+            // TODO (#164): this hangs when the container fails to start. Fix this
             return await this._client.Containers.CreateContainerAsync(createParams);
         }
         catch (DockerApiException ex)
@@ -59,6 +60,13 @@ public class DockerContainerService(IDockerClient dockerClient, ILogger logger) 
             return await container.Match(
                 async c =>
                 {
+                    if (!string.Equals(c.State, "exited", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string error = $"Cannot delete container {id} because it is not exited but rather {c.State}";
+                        this._logger.LogError("Container not exited. Cannot delete. {Error}", error);
+                        return new Result<Unit>(Error.FromObject(error));
+                    }
+
                     await this._client.Containers.RemoveContainerAsync(c.ID, parameters.IfNone(new ContainerRemoveParameters()));
                     return new Result<Unit>(unit);
                 },

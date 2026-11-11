@@ -126,6 +126,7 @@ public class GameLogic
          */
 
         ActionStatus status = this.ValidateAction(playerNumber, coordinate);
+        // TODO (#184 skip the players turn if their action is invalid according to the rules)
         if (status != ActionStatus.Success)
             return new(status);
 

@@ -23,6 +23,7 @@ public interface IDockerService
         Option<IDictionary<string, string>> envVars = default
     );
     public Task<Result<Unit>> KillContainerWithIdAsync(string containerId);
+    public Task<Result<Unit>> DeleteContainerWithIdAsync(string containerId);
 }
 
 public abstract class AbstractDockerService(IDockerClient dockerClient, ILogger logger)
@@ -147,6 +148,11 @@ public class DockerService : AbstractDockerService, IDockerService
             },
             error => Task.FromResult(new Result<string>(error))
         );
+    }
+
+    public Task<Result<Unit>> DeleteContainerWithIdAsync(string containerId)
+    {
+        return this._containers.DeleteContainerAsync(containerId);
     }
 
     public Task<Result<Unit>> KillContainerWithIdAsync(string containerId)

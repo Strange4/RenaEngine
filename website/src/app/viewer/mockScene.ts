@@ -39,6 +39,17 @@ function tiles(
 // Layers only order renderables of the same type: water (1) goes over grass (0),
 // but the cloud decoration (0) still goes over the ships (1) since decorations are drawn last
 const MAP: GameRenderable[] = [
+  {
+    // The map renderable is special: it defines the tile resolution of the game world, and is used to calculate the viewer's aspect ratio.
+    // It must be the first renderable in the scene.
+    id: "map",
+    position: [0, 0],
+    assetPath: "/sprites/water.svg",
+    size: MOCK_GRID_SIZE,
+    rotation: 0,
+    type: RenderableType.MAP,
+    layer: -1,
+  },
   ...tiles("grass", "/sprites/grass.png", 0, [0, 0], MOCK_GRID_SIZE),
   ...tiles("water", "/sprites/water.svg", 1, [11, 2], [8, 6]),
 ];

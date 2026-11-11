@@ -166,7 +166,7 @@ internal sealed class DockerApiStub : IAsyncDisposable
                 .Select(value => value.Split('=', 2))
                 .Where(parts => parts.Length == 2)
                 .ToDictionary(parts => parts[0], parts => parts[1], StringComparer.Ordinal)
-            : new Dictionary<string, string>();
+            : [];
         this._containerCreated = true;
         await WriteResponseAsync(context, StatusCodes.Status201Created, $$"""{"Id":"{{this.ContainerId}}","Warnings":[]}""");
     }
