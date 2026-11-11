@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
@@ -19,7 +20,7 @@
 
     <!-- Embedded files -->
     <EmbeddedResource Include="generated\typescript\main.ts" />
-    <EmbeddedResource Include="generated\typescript\glue.ts" />
+    <EmbeddedResource Include="generated\typescript\runner.ts" />
     <EmbeddedResource Include="generated\typescript\README.md" />
     <EmbeddedResource Include="generated\typescript\package-lock.json" />
     <EmbeddedResource Include="generated\typescript\package.json" />

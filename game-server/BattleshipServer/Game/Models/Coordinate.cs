@@ -6,8 +6,8 @@ namespace BattleshipServer.Game.Models;
 public class Coordinate
 {
     [DataMember(Order = 1)]
-    public int X { get; init; } = -1;
+    public int X { get; init; }
 
     [DataMember(Order = 2)]
-    public int Y { get; init; } = -1;
+    public int Y { get; init; }
 }

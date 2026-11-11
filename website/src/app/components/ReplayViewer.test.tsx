@@ -16,6 +16,15 @@ const ship: GameRenderable = {
   layer: 1,
 };
 
+const map: GameRenderable = {
+  id: "map",
+  position: [0, 0],
+  assetPath: "/sprites/map.png",
+  size: [10, 5],
+  type: RenderableType.MAP,
+  layer: 0,
+};
+
 jest.mock("pixi.js", () => {
   const appInstances: any[] = [];
   const spriteInstances: any[] = [];
@@ -27,6 +36,7 @@ jest.mock("pixi.js", () => {
       canvas: document.createElement("canvas"),
       init: jest.fn().mockResolvedValue(undefined),
       destroy: jest.fn(),
+      renderer: { resize: jest.fn() },
       stage: new MockContainer(),
     };
     appInstances.push(app);
@@ -63,16 +73,17 @@ jest.mock("@/app/viewer/sceneSource", () => ({
 
 const getPixiMocks = () =>
   jest.requireMock("pixi.js") as {
-    __appInstances: Array<{ canvas: HTMLCanvasElement; init: jest.Mock; destroy: jest.Mock }>;
+    __appInstances: Array<{ canvas: HTMLCanvasElement; init: jest.Mock; destroy: jest.Mock; renderer: { resize: jest.Mock }; stage: unknown }>;
     __spriteInstances: unknown[];
   };
 
 describe("ReplayViewer", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    delete (globalThis as { ResizeObserver?: unknown }).ResizeObserver;
     getPixiMocks().__appInstances.length = 0;
     getPixiMocks().__spriteInstances.length = 0;
-    mockGetInitialScene.mockResolvedValue({ setup: TEST_SETUP, renderables: [ship] });
+    mockGetInitialScene.mockResolvedValue({ setup: TEST_SETUP, renderables: [map, ship] });
   });
 
   it("puts the controls under the canvas", () => {
@@ -91,17 +102,42 @@ describe("ReplayViewer", () => {
 
     const canvas = screen.getByTestId("replay-canvas");
     const app = getPixiMocks().__appInstances[0];
-    await waitFor(() => expect(getPixiMocks().__spriteInstances).toHaveLength(1));
+    await waitFor(() => expect(getPixiMocks().__spriteInstances).toHaveLength(2));
 
     expect(getSceneSource).toHaveBeenCalledWith("42");
-    expect(canvas).toHaveStyle({ width: "400px", height: "200px" });
+    expect(canvas).toHaveStyle({ height: "200px" });
     expect(canvas).toContainElement(app.canvas);
     expect(app.init).toHaveBeenCalledWith({ width: 400, height: 200, background: "#1f2937", antialias: true });
   });
 
+  it("resizes the canvas when the container width changes", async () => {
+    let resize!: (entries: Array<{ contentRect: { width: number } }>) => void;
+    (globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
+      observe = jest.fn();
+      disconnect = jest.fn();
+
+      constructor(callback: typeof resize) {
+        resize = callback;
+      }
+    };
+
+    render(<ReplayViewer gameId="1" />);
+    const app = getPixiMocks().__appInstances[0] as {
+      renderer: { resize: jest.Mock };
+    };
+    await waitFor(() => expect(getPixiMocks().__spriteInstances).toHaveLength(2));
+
+    act(() => {
+      resize([{ contentRect: { width: 200 } }]);
+    });
+
+    expect(app.renderer.resize).toHaveBeenCalledWith(200, 100);
+    expect(screen.getByTestId("replay-canvas")).toHaveStyle({ height: "100px" });
+  });
+
   it("destroys the app on unmount", async () => {
     const { unmount } = render(<ReplayViewer gameId="1" />);
-    await waitFor(() => expect(getPixiMocks().__spriteInstances).toHaveLength(1));
+    await waitFor(() => expect(getPixiMocks().__spriteInstances).toHaveLength(2));
 
     unmount();
 
@@ -115,7 +151,7 @@ describe("ReplayViewer", () => {
     const { unmount } = render(<ReplayViewer gameId="1" />);
     const app = getPixiMocks().__appInstances[0];
     unmount();
-    await act(async () => resolveScene({ setup: TEST_SETUP, renderables: [ship] }));
+    await act(async () => resolveScene({ setup: TEST_SETUP, renderables: [map, ship] }));
 
     expect(app.init).not.toHaveBeenCalled();
     expect(app.destroy).not.toHaveBeenCalled();

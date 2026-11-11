@@ -9,8 +9,12 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
 {
     public GameLogic Logic { get; } = new();
 
+    public ILogger? Logger { set; get; }
+
     private string _player1Id = null!; // normally getInitial is called before doAction so that it is not null
     private string _player2Id = null!;
+
+    private readonly List<GameRenderable> _renderables = [];
 
     public string GetName()
     {
@@ -31,7 +35,14 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
         var (playerId, action) = playerToAction.First();
         int playerNumber = (playerId == _player1Id) ? 1 : 2;
 
-        this.Logic.ProcessPlayerAction(playerNumber, action);
+        this.Logger?.LogDebug("Playing turn for player: {playerNumber}", playerNumber);
+
+        ActionStatus status = this.Logic.ProcessPlayerAction(playerNumber, action);
+
+        if (status != ActionStatus.Success)
+        {
+            this.Logger?.LogDebug("Action by {playerNumber} wasn't sucessful. Status: {status}", playerNumber, status);
+        }
 
         string nextPlayerId;
         int nextPlayerNumber;
@@ -46,6 +57,8 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
             nextPlayerNumber = this.Logic.IsPlayer1Turn ? 1 : 2;
             nextPlayerId = this.Logic.IsPlayer1Turn ? _player1Id : _player2Id;
         }
+
+        this.Logger?.LogDebug("Sending the new state for player: {nextPlayerNumber}", nextPlayerNumber);
 
         // Boomerang effect: we only return the state of the player whose turn is next.
         // That player shall complete one action and we will receive this action the next time DoAction is called.
@@ -122,5 +135,15 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
                 }
             );
         }
+    }
+
+    public List<GameRenderable> CollectRenderables()
+    {
+        return this._renderables;
+    }
+
+    public bool IsGameOver()
+    {
+        return this.Logic.IsGameOver;
     }
 }

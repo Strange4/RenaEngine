@@ -30,7 +30,7 @@ public class SDKGenerationTests
             archive.GetEntry("package.json"),
             archive.GetEntry("package-lock.json"),
             archive.GetEntry("generated/gameTypes.ts"),
-            archive.GetEntry("generated/glue.ts"),
+            archive.GetEntry("generated/runner.ts"),
         ];
 
         foreach (ZipArchiveEntry? entry in wantedFiles)

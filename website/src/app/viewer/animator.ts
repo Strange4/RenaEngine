@@ -67,6 +67,19 @@ function interpolate(from: AnimatedState, to:AnimatedState, progress:number): An
     };
 }
 
+// Scale animated state by a factor. Useful when viewer resolution or tile size changes.
+// Example: if tile size doubles due to resizing the viewer, then animated state will also double.
+// This ensures that the animated state remains consistent with the new scale.
+function scaleState(state: AnimatedState, scale: number): AnimatedState {
+    return {
+        ...state,
+        x: state.x * scale,
+        y: state.y * scale,
+        width: state.width * scale,
+        height: state.height * scale,
+    };
+}
+
 //Animator will have: an animate (starts the animation of the rotation, displacement, shrinking, etc), 
 // // an update (move everything by a frame-- animation works frame by frame), and a cancel (stop frame)
 export class Animator{
@@ -89,6 +102,20 @@ export class Animator{
     //stop animating a specific sprite
     cancel(sprite: Sprite): void{
         this.animations.delete(sprite); //remove that animation form the list of animations we keep track of
+    }
+
+    // Check if sprite is mid animation
+    isAnimating(sprite: Sprite): boolean {
+        return this.animations.has(sprite);
+    }
+
+    // Resize all animations based on a scale factor. 
+    resizeAnimations(scale: number): void {
+        for (const [sprite, animation] of this.animations) {
+            animation.from = scaleState(animation.from, scale);
+            animation.to = scaleState(animation.to, scale);
+            setState(sprite, scaleState(getState(sprite), scale));
+        }
     }
 
     //move an animation by a frame (we increase the milliseconds time to fast forward to the next frame-- move milliseconds)
