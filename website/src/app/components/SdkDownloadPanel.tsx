@@ -6,6 +6,7 @@ import {
   SDK_LANGUAGES,
   type SdkLanguage,
 } from "@/shared/sdk-languages";
+import styles from "../(pages)/participant/participant.module.css";
 
 async function responseError(response: Response): Promise<string> {
   const body = await response.json().catch(() => null);
@@ -55,14 +56,16 @@ export default function SdkDownloadPanel() {
   }
 
   return (
-    <section className="sdk-download-card" aria-labelledby="sdk-download-title">
-      <h2 id="sdk-download-title">Starter SDK</h2>
-      <p className="sdk-download-intro">
+    <>
+      <p className={styles.cardSub}>
         Choose the language for your participant and download its starter project.
       </p>
 
-      <label htmlFor="sdk-language">Programming language</label>
+      <label className={styles.sdkLabel} htmlFor="sdk-language">
+        Programming language
+      </label>
       <select
+        className={styles.sdkSelect}
         id="sdk-language"
         value={language}
         disabled={downloading}
@@ -79,15 +82,20 @@ export default function SdkDownloadPanel() {
         ))}
       </select>
 
-      <p className="sdk-language-description">{selected.description}</p>
-      <button type="button" disabled={downloading} onClick={download}>
+      <p className={styles.sdkDescription}>{selected.description}</p>
+      <button
+        className={styles.sdkButton}
+        type="button"
+        disabled={downloading}
+        onClick={download}
+      >
         {downloading ? "Preparing download…" : `Download ${selected.label} SDK`}
       </button>
 
-      <div className="sdk-download-feedback" aria-live="polite">
-        {error && <p className="error">{error}</p>}
-        {success && <p className="hint">{success}</p>}
+      <div className={styles.sdkFeedback} aria-live="polite">
+        {error && <p className={styles.sdkError}>{error}</p>}
+        {success && <p className={styles.sdkSuccess}>{success}</p>}
       </div>
-    </section>
+    </>
   );
 }
