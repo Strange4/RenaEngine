@@ -219,7 +219,7 @@ describe("ReplayViewer", () => {
     //wait for viewer to create controller then fire events
     await waitFor(() => expect(ReplayController).toHaveBeenCalledTimes(1));
     fireEvent.click(screen.getByRole("button", {name: "Speed 1x"}));
-    fireEvent.click(screen.getByRole("menuitemradio", {name: "Speed 2x"}));
+    fireEvent.click(screen.getByRole("menuitemradio", {name: "2x"}));
 
     //switched the speed from 1x to 2x, we should see this displayed on the button now
     expect(await screen.findByRole("button", {name: "Speed 2x"})).toBeInTheDocument();
