@@ -14,8 +14,6 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
     private string _player1Id = null!; // normally getInitial is called before doAction so that it is not null
     private string _player2Id = null!;
 
-    private readonly List<GameRenderable> _renderables = [];
-
     public string GetName()
     {
         return "Battleship";
@@ -67,7 +65,7 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
         return new Dictionary<string, PlayerState> { { nextPlayerId, this.Logic.GetPlayerState(nextPlayerNumber) } };
     }
 
-    public List<GameRenderable> GetRenderables()
+    public List<GameRenderable> CollectRenderables()
     {
         // Returns all the renderables that should be in the current frame. Renderable diffing is done in the engine side.
         List<GameRenderable> renderables = [];
@@ -135,11 +133,6 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
                 }
             );
         }
-    }
-
-    public List<GameRenderable> CollectRenderables()
-    {
-        return this._renderables;
     }
 
     public bool IsGameOver()
