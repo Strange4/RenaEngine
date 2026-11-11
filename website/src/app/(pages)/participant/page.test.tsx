@@ -33,7 +33,7 @@ describe("ParticipantPage", () => {
     });
   });
 
-  it("renders SDK downloads for a participant", async () => {
+  it("renders the dashboard for a participant", async () => {
     mockGetSession.mockResolvedValue({
       role: "participant",
       participantId: 42,
@@ -43,10 +43,19 @@ describe("ParticipantPage", () => {
     render(await ParticipantPage());
 
     expect(
-      screen.getByRole("heading", { name: "Participant #42" }),
+      screen.getByRole("heading", { name: "Welcome back, Participant #42" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Starter SDK" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Download TypeScript SDK" }),
+    ).toBeEnabled();
+    expect(
+      screen.getByRole("link", { name: "Open test feature" }),
+    ).toHaveAttribute("href", "/test-feature");
+    expect(
+      screen.getByRole("button", { name: "Log Out" }),
     ).toBeInTheDocument();
     expect(mockGetFeatureAccess).toHaveBeenCalledWith("sdk-downloads");
   });

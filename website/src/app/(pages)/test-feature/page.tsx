@@ -1,13 +1,13 @@
 import { redirect } from "next/navigation";
 import FeatureDisabled from "@/app/components/FeatureDisabled";
 import { getFeatureAccess } from "@/server/lib/feature-access";
-import { TEST_FEATURE } from "@/shared/features";
+import { FeatureAccessStatus, TEST_FEATURE } from "@/shared/features";
 
 export default async function TestFeaturePage() {
   const access = await getFeatureAccess(TEST_FEATURE.key);
-  if (access.status === "unauthenticated") redirect("/login");
+  if (access.status === FeatureAccessStatus.Unauthenticated) redirect("/login");
 
-  if (access.status === "disabled") return <FeatureDisabled />;
+  if (access.status === FeatureAccessStatus.Disabled) return <FeatureDisabled />;
 
   return (
     <main>
