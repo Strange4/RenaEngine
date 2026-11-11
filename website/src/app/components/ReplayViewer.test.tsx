@@ -38,6 +38,7 @@ jest.mock("pixi.js", () => {
       destroy: jest.fn(),
       renderer: { resize: jest.fn() },
       stage: new MockContainer(),
+      ticker: {add: jest.fn()},
     };
     appInstances.push(app);
     return app;

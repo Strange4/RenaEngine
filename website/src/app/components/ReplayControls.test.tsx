@@ -62,7 +62,7 @@ describe("ReplayControls", () => {
 describe("speed menu", ()=>{
 
   it("displays current speed on control bar", ()=>{
-    render(<ReplayControls speed={.25} />);
+    render(<ReplayControls speed={1.25} />);
     expect(button("Speed 1.25x")).toHaveTextContent("Speed 1.25x");
   });
 

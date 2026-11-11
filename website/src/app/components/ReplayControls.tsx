@@ -68,7 +68,7 @@ function SpeedMenuDropdown({speed, onSpeedChange}: SpeedMenuItem){
 //whole speed menu dropdown gets returned as suggested above
   return(
     <div className="replay-speed" ref={menuRef}>
-      <button type="button" className="replay-speed-button" aria-label={`Speed ${formatSpeed}`} aria-haspopup="menu" aria-expanded = {open} title="Playback speed"
+      <button type="button" className="replay-speed-button" aria-label={`Speed ${formatSpeed(speed)}`} aria-haspopup="menu" aria-expanded = {open} title="Playback speed"
       onClick={()=> setOpen((wasOpen) => !wasOpen)}>
 
         Speed {formatSpeed(speed)}
