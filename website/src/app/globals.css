@@ -374,7 +374,7 @@ we can change that if the testers don't like the ui*/
 .replay-speed-menu{
   position: absolute;
   right: 0;
-  bottom: calc(100%+0.5rem);
+  bottom: calc(100% + 0.5rem);
   z-index: 10;
   display: flex;
   flex-direction: column;

@@ -9,6 +9,7 @@ import { getInitialMap, getInitialViewerWidth, getResponsiveViewerSetup, createV
 import ReplayControls from "./ReplayControls";
 import {Animator, ANIMATION_DURATION} from "@/app/viewer/animator"; //animations are needed or else it will be instant
 import {PlaybackState, ReplayController, type ReplayStatus} from "@/app/viewer/replayController";
+import { createRendererHandlers } from "@/app/viewer/renderableHandler";
 
 interface ReplayViewerProps {
   gameId: string;
@@ -82,15 +83,7 @@ export default function ReplayViewer({ gameId }: ReplayViewerProps) {
 
       //Adding missing code fix below for the speed selector to work. we are creating the controller here
       controller = new ReplayController(
-        {
-          create: async (renderable) =>{
-            await renderer.createGameRenderable(renderable, unmount.signal);
-          },
-          update: async(renderable) =>{
-            await renderer.updateGameRenderable(renderable, unmount.signal);
-          },
-          remove: async(id) => renderer.removeGameRenderable(id),
-        }, [], scene.renderables,
+        createRendererHandlers(renderer, unmount.signal), [], scene.renderables,
       );
       controllerRef.current = controller;
 
