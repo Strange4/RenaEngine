@@ -51,7 +51,7 @@ describe("AdminPage", () => {
 
     render(await AdminPage());
 
-    expect(screen.getByRole("heading", { name: "Admin dashboard" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Welcome back!" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Log Out" })).toBeInTheDocument();
     expect(screen.getByRole("table", { name: "Participant tokens" })).toBeInTheDocument();
     expect(screen.queryByText("PARTICIPANT-1-secret")).not.toBeInTheDocument();
