@@ -72,7 +72,7 @@ public class BattleshipRenderingTests
     public void TestDoAction_PlaceShips()
     {
         Dictionary<string, PlayerState> initialStates = _game.GetInitial(["p1", "p2"]);
-        _broadcaster.BroadcastChange([.. _game.GetRenderables()]);
+        _broadcaster.BroadcastChange([.. _game.CollectRenderables()]);
         Assert.That(initialStates.ContainsKey("p1"), Is.True);
         Assert.That(initialStates.ContainsKey("p2"), Is.False);
 
@@ -83,7 +83,7 @@ public class BattleshipRenderingTests
         PlaceShipsAction action = new PlaceShipsAction { Ships = _validFleet };
         Dictionary<string, PlayerState> nextStates = _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", action } });
 
-        _broadcaster.BroadcastChange([.. _game.GetRenderables()]);
+        _broadcaster.BroadcastChange([.. _game.CollectRenderables()]);
         Assert.That(nextStates.ContainsKey("p2"), Is.True);
 
         List<GameRenderable> renderables = _game.CollectRenderables();
@@ -95,19 +95,19 @@ public class BattleshipRenderingTests
     public void TestDoAction_Shoot()
     {
         _game.GetInitial(["p1", "p2"]);
-        _broadcaster.BroadcastChange([.. _game.GetRenderables()]);
+        _broadcaster.BroadcastChange([.. _game.CollectRenderables()]);
 
         // csharpier-ignore
         _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", new PlaceShipsAction { Ships = _validFleet } } });
-        _broadcaster.BroadcastChange([.. _game.GetRenderables()]);
+        _broadcaster.BroadcastChange([.. _game.CollectRenderables()]);
         // csharpier-ignore
         _game.DoAction(new Dictionary<string, PlayerAction> { { "p2", new PlaceShipsAction { Ships = _validFleet } } });
-        _broadcaster.BroadcastChange([.. _game.GetRenderables()]);
+        _broadcaster.BroadcastChange([.. _game.CollectRenderables()]);
 
         // csharpier-ignore
         ShootAction shootAction1 = new ShootAction { ShootAt = new Coordinate { X = 0, Y = 0 } };
         Dictionary<string, PlayerState> stateAfter1 = _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", shootAction1 } });
-        _broadcaster.BroadcastChange([.. _game.GetRenderables()]);
+        _broadcaster.BroadcastChange([.. _game.CollectRenderables()]);
         Assert.That(stateAfter1.ContainsKey("p2"), Is.True);
 
         GameRenderable hit = _game.CollectRenderables()[^1];
@@ -117,8 +117,25 @@ public class BattleshipRenderingTests
         // csharpier-ignore
         ShootAction shootAction2 = new ShootAction { ShootAt = new Coordinate { X = 9, Y = 9 } };
         Dictionary<string, PlayerState> stateAfter2 = _game.DoAction(new Dictionary<string, PlayerAction> { { "p2", shootAction2 } });
-        _broadcaster.BroadcastChange([.. _game.GetRenderables()]);
+        _broadcaster.BroadcastChange([.. _game.CollectRenderables()]);
         Assert.That(stateAfter2.ContainsKey("p1"), Is.True);
+    }
+
+    [Test]
+    public void TestDoAction_InvalidAction()
+    {
+        _game.GetInitial(["p1", "p2"]);
+
+        var invalidAction = new ShootAction
+        {
+            ShootAt = new Coordinate { X = 10, Y = 10 },
+        };
+        ActionStatus status = _game.Logic.ProcessPlayerAction(1, invalidAction);
+        Assert.That(status, Is.Not.EqualTo(ActionStatus.Success));
+        var nextStates = _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", invalidAction } });
+        Assert.That(nextStates.ContainsKey("p1"), Is.True); // Currently, the turn does not change if the action is invalid, so the next state is still player 1
+        Assert.That(nextStates.ContainsKey("p2"), Is.False);
+        Assert.That(_game.Logic.GetPlayer(1).ShotsFired, Is.Empty);
     }
 
     // This test is needed: if it fails, it probably means the defaults in Rendering/Renderable.cs changed,
