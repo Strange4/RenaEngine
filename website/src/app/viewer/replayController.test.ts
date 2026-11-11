@@ -207,6 +207,20 @@ describe ("playback speed", ()=> {
     expect(listener).toHaveBeenCalledWith(expect.objectContaining({speed: 2}));
   });
 
+  it("ignores the speed changes after dispose", () =>{
+    const {controller} = controllerFor();
+    const listener = jest.fn();
+    controller.onStatusChange(listener);
+    controller.dispose();
+
+    controller.setSpeed(2); //2x speed instead of 1x..but after dispose should be ignored
+    expect(controller.getStatus().speed).toBe(1);
+    expect(listener).not.toHaveBeenCalled();
+
+  });
+
+  
+
   //we only accept set speeds. anything else throws error
   it.each([0,-1,55,1.1,Number.NaN])("rejects unsupported speeds", (speed)=>{
     const {controller} = controllerFor();

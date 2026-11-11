@@ -157,4 +157,19 @@ describe("changing the duration", ()=>{
 
         expect(getState(sprite)).toEqual(final_state);//this animation takes no time, so as soon as it happens it's done. done 100% right away
     });
+
+    //it shouldn't take in invalid durations (negatives, etc)
+    it.each([-1, Number.NaN, Number.POSITIVE_INFINITY]) ("rejects invalid durations", (duration) => {
+        const animator = new Animator(200);
+        const sprite = fakeSprite(start_state);
+
+        expect(()=> animator.setDuration(duration)).toThrow("Invalid duration"); 
+
+        //if we are halfway, then the duration remaining would be half
+        animator.animate(sprite, final_state);
+        animator.tick(100); //100ms-- consider halfway
+        expect(sprite.position.x).toBe(50);
+
+
+    });
 });

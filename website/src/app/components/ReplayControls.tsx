@@ -64,7 +64,6 @@ function SpeedMenuDropdown({speed, onSpeedChange}: SpeedMenuItem){
   };
 
 
-
 //whole speed menu dropdown gets returned as suggested above
   return(
     <div className="replay-speed" ref={menuRef}>
