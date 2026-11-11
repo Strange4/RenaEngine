@@ -1,6 +1,6 @@
 import { RenderableType, type GameRenderable, type RenderableChange } from "@/shared/renderable";
 import type { RenderableHandlers } from "./renderableHandler";
-import { PlaybackState, ReplayController, type ReplayStatus } from "./replayController";
+import { PlaybackState, ReplayController, type ReplayStatus, STEP_DELAY, PLAYBACK_SPEEDS} from "./replayController";
 
 const baseRenderable: GameRenderable = {
   id: "base",
@@ -168,5 +168,49 @@ describe("ReplayController", () => {
     expect(() => controller.setSpeed(2)).toThrow("not implemented yet (#174)");
     expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0, speed: 1 });
     expect(testHandlers.calls).toEqual([]);
+  });
+});
+
+describe ("playback speed", ()=> {
+
+  it("sets selected speed", () =>{
+    const {controller} = controllerFor();
+    const listener = jest.fn();
+    controller.onStatusChange(listener);
+    controller.setSpeed(2);
+
+    //shows the new/ selected new speed
+    expect(controller.getStatus()).toMatchObject({state: PlaybackState.PAUSED, position:0, speed:2});
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener).toHaveBeenCalledWith(expect.objectContaining({speed:2})); //user's new selected speed
+  });
+  it ("if no speed changes happen, it does not notify", ()=>{
+    const {controller} = controllerFor();
+    const listener = jest.fn();
+    controller.onStatusChange(listener);
+
+    //default speed of 1x is still there
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it("notifies user if speed change occurs", ()=>{
+
+    const {controller} = controllerFor();
+    const listener = jest.fn();
+    controller.onStatusChange(listener);
+    //it also sets the speed during the speed change selection
+    controller.setSpeed(2);
+
+    //status shows new speed selected
+    expect(controller.getStatus()).toMatchObject({state: PlaybackState.PAUSED, position: 0, speed:2});
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener).toHaveBeenCalledWith(expect.objectContaining({speed: 2}));
+  });
+
+  //we only accept set speeds. anything else throws error
+  it.each([0,-1,55,1.1,Number.NaN])("rejects unsupported speeds", (speed)=>{
+    const {controller} = controllerFor();
+    
+    expect(() => controller.setSpeed(speed)).toThrow("Unsupported playback speed-- playback speed error");
   });
 });
