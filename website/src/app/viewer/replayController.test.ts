@@ -173,21 +173,27 @@ describe("ReplayController", () => {
 
 describe ("playback speed", ()=> {
 
+  //implementing a shared setup to counter the duplicated lines
+    function controllerWithListener(){
+      const {controller} = controllerFor();
+      const listener = jest.fn();
+      controller.onStatusChange(listener);
+      return{controller, listener};
+    }
+
   it("sets selected speed", () =>{
-    const {controller} = controllerFor();
-    const listener = jest.fn();
-    controller.onStatusChange(listener);
-    controller.setSpeed(2);
+    
+    const {controller, listener} = controllerWithListener();
+    controller.setSpeed(1.5);
 
     //shows the new/ selected new speed
-    expect(controller.getStatus()).toMatchObject({state: PlaybackState.PAUSED, position:0, speed:2});
+    expect(controller.getStatus()).toMatchObject({state: PlaybackState.PAUSED, position:0, speed:1.5});
     expect(listener).toHaveBeenCalledTimes(1);
-    expect(listener).toHaveBeenCalledWith(expect.objectContaining({speed:2})); //user's new selected speed
+    expect(listener).toHaveBeenCalledWith(expect.objectContaining({speed:1.5})); //user's new selected speed
   });
   it ("if no speed changes happen, it does not notify", ()=>{
-    const {controller} = controllerFor();
-    const listener = jest.fn();
-    controller.onStatusChange(listener);
+    const {controller, listener} = controllerWithListener();//adding this call to helper to avoid duplicate
+    controller.setSpeed(1);
 
     //default speed of 1x is still there
     expect(listener).not.toHaveBeenCalled();
@@ -195,9 +201,8 @@ describe ("playback speed", ()=> {
 
   it("notifies user if speed change occurs", ()=>{
 
-    const {controller} = controllerFor();
-    const listener = jest.fn();
-    controller.onStatusChange(listener);
+    const {controller, listener} = controllerWithListener();//adding this call to helper to avoid duplicate
+
     //it also sets the speed during the speed change selection
     controller.setSpeed(2);
 
@@ -208,9 +213,8 @@ describe ("playback speed", ()=> {
   });
 
   it("ignores the speed changes after dispose", () =>{
-    const {controller} = controllerFor();
-    const listener = jest.fn();
-    controller.onStatusChange(listener);
+  
+    const {controller, listener} = controllerWithListener();//adding this call to helper to avoid duplicate
     controller.dispose();
 
     controller.setSpeed(2); //2x speed instead of 1x..but after dispose should be ignored
