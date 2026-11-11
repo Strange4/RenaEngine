@@ -146,3 +146,15 @@ describe("Animator", () =>{
         });
     });
 });
+
+describe("changing the duration", ()=>{
+    it("if the duration is 0, the animation finishes on the first frame", ()=>{
+        const animator = new Animator(200);
+        const sprite = fakeSprite(start_state);
+        animator.setDuration(0); //this case
+        animator.animate(sprite, final_state);
+        animator.tick(16);
+
+        expect(getState(sprite)).toEqual(final_state);//this animation takes no time, so as soon as it happens it's done. done 100% right away
+    });
+});
