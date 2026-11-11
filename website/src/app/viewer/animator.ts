@@ -17,6 +17,7 @@ interface Animation{
     from: AnimatedState;
     to: AnimatedState;
     elapsed: number; //milliseconds elapsed since the start of the animation to finish-- shows how far in it is in its animation
+    duration: number; //gets controlled by speed selected--how long is the animation time from start to finish
 }
 
 //read the sprite's state to see if it's mid animation, return its current animated state
@@ -93,10 +94,19 @@ export class Animator{
         this.duration = duration;
     }
 
+    //Now that speed of animation can get selected by the user using the drop down menu, we need to speed up/ slow down the duration
+    setDuration(duration: number): void{
+        //reject invalid duratios like negatives, etc
+        if (!Number.isFinite(duration) || duration < 0){
+            throw new RangeError(`Invalid duration`);
+        }
+        this.duration = duration;
+    }
+
     //from is the initial animated state, to is the final animated state in the animation of said sprite
     //from will be received from the getter, getState
     animate(sprite: Sprite, to: AnimatedState): void{
-        this.animations.set(sprite, {from: getState(sprite),to,elapsed:0});//include the animation in the set of animations we have: (sprite, animatedstate with a beginning and end state+duration)
+        this.animations.set(sprite, {from: getState(sprite),to,elapsed:0, duration: this.duration});//include the animation in the set of animations we have: (sprite, animatedstate with a beginning and end state+duration)
     }
 
     //stop animating a specific sprite
@@ -126,8 +136,8 @@ export class Animator{
             let progress: number; // ranges from 0%-100% animation completion i.e. [0,1]
             //what is the progress given where the animation is at throughout its set duration? 
             // e.g: if duration 60s and it's at 30s elapsed time, progress is 0.5 (50%) because 30s/60s = 0.5
-            if (this.duration > 0) {
-                progress = Math.min(animation.elapsed/this.duration, 1);
+            if (animation.duration > 0) {
+                progress = Math.min(animation.elapsed/animation.duration, 1);
             }
             else{ //duration completed, progress is 100% i.e. 1
                 progress = 1;

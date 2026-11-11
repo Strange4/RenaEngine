@@ -7,6 +7,8 @@ import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
 import { getSceneSource } from "@/app/viewer/sceneSource";
 import { getInitialMap, getInitialViewerWidth, getResponsiveViewerSetup, createViewerResizeHandler, observeViewerResize } from "@/app/viewer/responsiveViewer";
 import ReplayControls from "./ReplayControls";
+import {Animator, ANIMATION_DURATION} from "@/app/viewer/animator"; //animations are needed or else it will be instant
+
 
 interface ReplayViewerProps {
   gameId: string;
@@ -25,6 +27,9 @@ export default function ReplayViewer({ gameId }: ReplayViewerProps) {
     let initialized = false;
     let resizeObserver: ResizeObserver | null = null;
     const unmount = new AbortController();
+
+    //implement animator for smooth movements (this way we get a PixiJS ticker involved in the animation duration and stuff doesn't instantly flash on the screen)
+    const animator = new Animator();
 
     (async () => {
       const scene = await getSceneSource(gameId).getInitialScene();
@@ -51,6 +56,8 @@ export default function ReplayViewer({ gameId }: ReplayViewerProps) {
         return;
       }
       container.appendChild(app.canvas);
+      //since we have animations added now, we also need the pixijs ticker (they come together)
+      app.ticker.add((ticker) => animator.tick(ticker.deltaMS)); //deltaMS is the difference between frames in milliseconds (it's a built in Pixi thing)
       renderer.addContainerToStage(app.stage);
       await renderer.renderScene(scene.renderables, unmount.signal);
       if (unmount.signal.aborted) return;
@@ -65,6 +72,8 @@ export default function ReplayViewer({ gameId }: ReplayViewerProps) {
       );
 
       resizeObserver = observeViewerResize(container, resize);
+
+      //TO DO - future issues: pass the game's recording loaded from server here
     })().catch((e) => {
       console.error("Failed to load the replay", e);
     });
