@@ -10,9 +10,19 @@
   padding: 1.75rem 1.5rem 3rem;
 }
 
-.content h1 {
-  margin: 0 0 1.5rem;
+.welcome {
+  margin-bottom: 1.5rem;
+  background: var(--grad);
+  border-radius: 20px;
+  padding: 1.75rem 2.25rem;
+  color: #fff;
+  box-shadow: 0 16px 40px rgba(194, 0, 122, 0.35);
+}
+
+.welcomeTitle {
   font-size: 1.9rem;
+  letter-spacing: 0.3px;
+  margin: 0 0 0.35rem;
 }
 
 .dashboard {

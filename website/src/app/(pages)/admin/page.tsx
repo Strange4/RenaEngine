@@ -28,11 +28,13 @@ export default async function AdminPage() {
     <div className={styles.page}>
       <AppTopBar label="Admin" />
       <main className={styles.content}>
-        <h1>Admin dashboard</h1>
+        <section className={styles.welcome}>
+          <h1 className={styles.welcomeTitle}>Welcome back!</h1>
+        </section>
         <div className={styles.dashboard}>
           <section className={`${styles.card} ${styles.tokens}`} aria-labelledby="tokens-title">
             <h2 id="tokens-title">Participant Tokens</h2>
-            <p className={styles.description}>Create or Revoke access for participants.</p>
+            <p className={styles.description}>Create or revoke access for participants.</p>
             {tokens ? (
               <ParticipantTokenTable tokens={tokens} />
             ) : (
