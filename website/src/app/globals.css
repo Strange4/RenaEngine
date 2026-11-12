@@ -201,10 +201,6 @@ button {
   height: 2rem;
 }
 
-.token-page {
-  max-width: 960px;
-}
-
 .token-reveal {
   display: flex;
   align-items: center;

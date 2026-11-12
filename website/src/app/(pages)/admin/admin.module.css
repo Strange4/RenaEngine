@@ -1,0 +1,162 @@
+.page {
+  min-height: 100vh;
+  background: #fff5fa;
+  color: var(--ink);
+}
+
+.content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.75rem 1.5rem 3rem;
+}
+
+.welcome {
+  margin-bottom: 1.5rem;
+  background: var(--grad);
+  border-radius: 20px;
+  padding: 1.75rem 2.25rem;
+  color: #fff;
+  box-shadow: 0 16px 40px rgba(194, 0, 122, 0.35);
+}
+
+.welcomeTitle {
+  font-size: 1.9rem;
+  letter-spacing: 0.3px;
+  margin: 0 0 0.35rem;
+}
+
+.dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.card {
+  min-width: 0;
+  background: #fff;
+  border: 1px solid var(--blush-2);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(194, 0, 122, 0.08);
+  padding: 1.5rem 1.75rem;
+}
+
+.card h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+}
+
+.description {
+  margin: 0 0 1.25rem;
+  font-size: 0.85rem;
+  color: var(--deep);
+}
+
+.error {
+  color: #a00036;
+}
+
+.tokens :global(.token-reveal) {
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tokens :global(.token-reveal) > span {
+  order: 1;
+}
+
+.tokens :global(.token-table) caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.tokens :global(.token-table) th,
+.tokens :global(.token-table) td {
+  padding: 0.75rem 0.55rem;
+  border-color: var(--blush-2);
+  font-size: 0.85rem;
+}
+
+.tokens :global(.token-table) thead th {
+  color: var(--deep);
+  font-size: 0.75rem;
+}
+
+.tokens :global(.token-status) {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.7rem;
+}
+
+.tokens :global(.token-status-active) {
+  background: #d7f7e5;
+  color: #087c47;
+}
+
+.tokens :global(.token-status-inactive) {
+  background: var(--blush);
+  color: var(--deep);
+}
+
+.tokens :global(.copy-token) button {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--magenta);
+  background: var(--blush);
+  border: 1px solid var(--blush-2);
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+}
+
+.tokens :global(.copy-token .hint) {
+  color: #087c47;
+}
+
+.tokens :global(.copy-token .error) {
+  color: #a00036;
+}
+
+.feature {
+  padding: 1rem 0;
+}
+
+.feature + .feature {
+  border-top: 1px solid var(--blush-2);
+}
+
+.featureLink {
+  display: inline-block;
+  margin-top: 0.7rem;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--blush-2);
+  border-radius: 999px;
+  color: var(--magenta);
+  background: var(--blush);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (max-width: 600px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .content {
+    padding: 1.5rem 1rem;
+  }
+
+  .card {
+    padding: 1.25rem;
+  }
+}

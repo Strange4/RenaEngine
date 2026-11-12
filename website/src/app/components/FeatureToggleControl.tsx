@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { FeatureDefinition } from "@/shared/features";
+import styles from "./FeatureToggleControl.module.css";
+import switchStyles from "./Switch.module.css";
 
 export default function FeatureToggleControl({
   feature,
@@ -41,15 +43,24 @@ export default function FeatureToggleControl({
   }
 
   return (
-    <section aria-labelledby={`${feature.key}-setting`}>
-      <h2 id={`${feature.key}-setting`}>{feature.label}</h2>
-      <p role="status">
-        Participant access: {available ? (enabled ? "Enabled" : "Disabled") : "Unavailable"}
-      </p>
-      {error && <p className="error">{error}</p>}
-      <button type="button" onClick={toggleFeature} disabled={saving}>
-        {saving ? "Saving..." : enabled ? "Disable feature" : "Enable feature"}
-      </button>
+    <section className={styles.control} aria-labelledby={`${feature.key}-setting`}>
+      <div>
+        <h3 id={`${feature.key}-setting`}>{feature.label}</h3>
+        <p role="status">
+          Participant access: {available ? (enabled ? "Enabled" : "Disabled") : "Unavailable"}
+          {saving && " (Saving...)"}
+        </p>
+        {error && <p className={styles.error} role="alert">{error}</p>}
+      </div>
+      <button
+        className={switchStyles.switch}
+        type="button"
+        role="switch"
+        aria-label={feature.label}
+        aria-checked={enabled}
+        onClick={toggleFeature}
+        disabled={saving}
+      />
     </section>
   );
 }
