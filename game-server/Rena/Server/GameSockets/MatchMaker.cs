@@ -34,6 +34,16 @@ public interface IMatchMaker<G, S, A>
     /// <param name="dockerFilePath">The path to the dockerfile to create the host's bot image</param>
     /// <param name="language">The language that the bot is written in</param>
     public Task BuildHostBotImage(string imageId, string codeZipPath, string dockerFilePath, string language);
+
+    /// <summary>
+    /// Removes the player from the matchmaker so they can no longer connect to a game
+    /// </summary>
+    /// <remarks>
+    /// Remarks this could lead to a memory leak where a room is running in a separate background task
+    /// without ever finishing and having no handle for it if not handled properly
+    /// </remarks>
+    /// <param name="playerId">The player to remove</param>
+    public Task RemovePlayer(string playerId);
 }
 
 public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMaker<G, S, A>> logger, IOptions<RenaOptions> serverOptions)
@@ -110,5 +120,10 @@ public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMake
         // TODO #164 Add error handling maybe?
         Result<string> result = await dockerService.CreateOrReplaceImageAsync(imageId, codeZipPath, dockerFilePath, language);
         _hostBotImageId = result.IsSuccess ? result.Value : throw result.Exception!;
+    }
+
+    public async Task RemovePlayer(string playerId)
+    {
+        _playerRooms.TryRemove(playerId, out _);
     }
 }
