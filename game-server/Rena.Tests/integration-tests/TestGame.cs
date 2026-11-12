@@ -54,5 +54,5 @@ public class TestGame : IGame<GameState, GameAction>
 
     public bool IsGameOver() => IsOver;
 
-    public List<GameRenderable> CollectRenderables() => [];
+    public List<GameRenderable> GetAllRenderables() => [];
 }

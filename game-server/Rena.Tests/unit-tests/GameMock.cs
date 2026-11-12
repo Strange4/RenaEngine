@@ -36,7 +36,7 @@ public class MockGame : IGame<GameState, GameAction>
 
     public bool IsGameOver() => Mock.IsGameOver();
 
-    public List<GameRenderable> CollectRenderables() => Mock.CollectRenderables();
+    public List<GameRenderable> GetAllRenderables() => Mock.GetAllRenderables();
 
     public ILogger? Logger
     {
