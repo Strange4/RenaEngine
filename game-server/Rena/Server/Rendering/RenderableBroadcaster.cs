@@ -9,19 +9,19 @@ public class RenderableBroadcaster
     private readonly List<RenderableChange> _history = [];
     private List<GameRenderable> _lastRenderables = [];
     private readonly Lock _lock = new();
-    private int _index = 0;
+    private int _lastChangeindex = 0;
 
     public void BroadcastChange(List<GameRenderable> changes)
     {
         lock (_lock)
         {
-            List<GameRenderable> diff = RenderableDiffer.GetRenderableDiff(_lastRenderables, changes);
+            List<GameRenderableDiff> diff = RenderableDiffer.GetRenderableDiff(_lastRenderables, changes);
             if (diff.Count == 0)
             {
                 return;
             }
-            _index++;
-            RenderableChange change = new() { Index = _index, Changes = diff };
+            _lastChangeindex++;
+            RenderableChange change = new() { Index = _lastChangeindex, Changes = diff };
             _lastRenderables = changes;
             _history.Add(change);
 
