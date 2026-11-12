@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import CodeUploadPanel from "@/app/components/CodeUploadPanel";
 import LogoutButton from "@/app/components/LogoutButton";
 import SdkDownloadPanel from "@/app/components/SdkDownloadPanel";
 import { getFeatureAccess } from "@/server/lib/feature-access";
@@ -23,6 +24,7 @@ export default async function ParticipantPage() {
           Starter SDK downloads are currently unavailable.
         </p>
       )}
+      <CodeUploadPanel />
       <p>
         <Link href="/test-feature">Open test feature</Link>
       </p>

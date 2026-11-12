@@ -48,6 +48,9 @@ describe("ParticipantPage", () => {
     expect(
       screen.getByRole("heading", { name: "Starter SDK" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Upload submission" }),
+    ).toBeInTheDocument();
     expect(mockGetFeatureAccess).toHaveBeenCalledWith("sdk-downloads");
   });
 
