@@ -23,3 +23,17 @@ export type FeatureKey = (typeof FEATURES)[number]["key"];
 export function isFeatureKey(value: string): value is FeatureKey {
   return FEATURES.some((feature) => feature.key === value);
 }
+
+export enum FeatureAccessStatus {
+  Unauthenticated = "unauthenticated",
+  Disabled = "disabled",
+  Allowed = "allowed",
+}
+
+// Returns true only when the feature may be used; unauthenticated and
+// disabled both count as not allowed.
+export function isFeatureAllowed(access: {
+  status: FeatureAccessStatus;
+}): boolean {
+  return access.status === FeatureAccessStatus.Allowed;
+}
