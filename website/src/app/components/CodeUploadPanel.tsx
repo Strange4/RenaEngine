@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
+import styles from "../(pages)/participant/participant.module.css";
 
 async function responseError(response: Response): Promise<string> {
   const body = await response.json().catch(() => null);
@@ -50,15 +51,20 @@ export default function CodeUploadPanel() {
   }
 
   return (
-    <section className="code-upload-card" aria-labelledby="code-upload-title">
-      <h2 id="code-upload-title">Upload submission</h2>
-      <p className="code-upload-intro">
+    <section className={styles.card} aria-labelledby="code-upload-title">
+      <h2 className={styles.cardTitle} id="code-upload-title">
+        Upload submission
+      </h2>
+      <p className={styles.cardSub}>
         Upload your completed participant project as a ZIP archive.
       </p>
 
       <form onSubmit={upload}>
-        <label htmlFor="submission-file">Project archive</label>
+        <label className={styles.uploadLabel} htmlFor="submission-file">
+          Project archive
+        </label>
         <input
+          className={styles.uploadInput}
           ref={inputRef}
           id="submission-file"
           name="file"
@@ -71,18 +77,22 @@ export default function CodeUploadPanel() {
             setSuccess(null);
           }}
         />
-        <p className="code-upload-description">
+        <p className={styles.uploadDescription}>
           ZIP files up to 8 MiB are accepted. A new upload replaces your previous
           submission.
         </p>
-        <button type="submit" disabled={!file || uploading}>
+        <button
+          className={styles.uploadButton}
+          type="submit"
+          disabled={!file || uploading}
+        >
           {uploading ? "Uploading…" : "Upload submission"}
         </button>
       </form>
 
-      <div className="code-upload-feedback" aria-live="polite">
-        {error && <p className="error">{error}</p>}
-        {success && <p className="hint">{success}</p>}
+      <div className={styles.uploadFeedback} aria-live="polite">
+        {error && <p className={styles.uploadError}>{error}</p>}
+        {success && <p className={styles.uploadSuccess}>{success}</p>}
       </div>
     </section>
   );
