@@ -65,7 +65,7 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
         return new Dictionary<string, PlayerState> { { nextPlayerId, this.Logic.GetPlayerState(nextPlayerNumber) } };
     }
 
-    public List<GameRenderable> CollectRenderables()
+    public List<GameRenderable> GetAllRenderables()
     {
         // Returns all the renderables that should be in the current frame. Renderable diffing is done in the engine side.
         List<GameRenderable> renderables = [];
