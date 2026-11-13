@@ -17,6 +17,10 @@ services:
       - "${RenaOptions__ServerPort:-5000}:${RenaOptions__ServerPort:-5000}"
     networks:
       - game-server-network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add: #needed for docker socket to be usable
+      - "0"
 
   website:
     build:
