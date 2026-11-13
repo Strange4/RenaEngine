@@ -5,7 +5,12 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+
 using Moq;
+
+using NSubstitute.ReturnsExtensions;
+
 using Rena.Server;
 using Rena.Server.GameSockets;
 using Rena.Server.Rendering;
@@ -34,12 +39,18 @@ public class RenderStreamTests
                 { "RenaOptions:Features:test-feature", "false" },
             }
         );
-        var gameRoomManager = new Mock<IGameRoomManager>();
+        var mockGameRoomManager = new Mock<IGameRoomManager>();
+        var mockMatchMaker = new Mock<IMatchMaker<TestGame, GameState, GameAction>>();
+        var mockLogger = new Mock<ILogger>();
+        var normalGameRoomManager = new GameRoomManager<TestGame, GameState, GameAction>(mockMatchMaker.Object, 1, mockLogger.Object);
+
         _broadcaster = new RenderableBroadcaster();
-        gameRoomManager.Setup(s => s.GetBroadcasterForPlayer("pid123")).Returns(new Result<RenderableBroadcaster>(_broadcaster));
+        mockGameRoomManager.Setup(s => s.GetBroadcasterForPlayer(It.IsAny<string>())).Returns<string>(normalGameRoomManager.GetBroadcasterForPlayer);
+
+        mockGameRoomManager.Setup(s => s.GetBroadcasterForPlayer("pid123")).Returns(new Result<RenderableBroadcaster>(_broadcaster));
 
         builder.SetRenaServices<TestGame, GameState, GameAction>();
-        builder.Services.Replace(ServiceDescriptor.Singleton(sp => gameRoomManager.Object));
+        builder.Services.Replace(ServiceDescriptor.Singleton(sp => mockGameRoomManager.Object));
 
         _app = builder.Build();
 
@@ -57,6 +68,16 @@ public class RenderStreamTests
         {
             await _app.DisposeAsync();
         }
+    }
+
+    [Test]
+    public async Task RenderStreamEndpoint_DeniesUnknownStream()
+    {
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+
+        using HttpRequestMessage request = new(HttpMethod.Get, "/render/stream/unknown");
+        using HttpResponseMessage response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
     }
 
     [Test]
