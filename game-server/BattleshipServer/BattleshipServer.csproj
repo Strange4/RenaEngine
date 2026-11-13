@@ -17,7 +17,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="HouseBot/typescript_bot.zip" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="HouseBot/typescript.Dockerfile" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content
+      Include="HouseBot/typescript_bot.zip"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest"
+    />
+    <Content
+      Include="HouseBot/typescript.Dockerfile"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest"
+    />
   </ItemGroup>
 </Project>
