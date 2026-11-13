@@ -27,5 +27,6 @@
 
     <!-- Internal Unit Testing -->
     <InternalsVisibleTo Include="Rena.Tests" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 </Project>

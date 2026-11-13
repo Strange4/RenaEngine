@@ -52,6 +52,10 @@
   color: var(--deep);
 }
 
+.liveViewer {
+  grid-column: 2;
+}
+
 .error {
   color: #a00036;
 }
@@ -148,6 +152,10 @@
 @media (max-width: 600px) {
   .dashboard {
     grid-template-columns: 1fr;
+  }
+
+  .liveViewer {
+    grid-column: auto;
   }
 }
 

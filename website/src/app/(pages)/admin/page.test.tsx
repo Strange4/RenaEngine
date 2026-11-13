@@ -61,6 +61,9 @@ describe("AdminPage", () => {
     expect(screen.getByRole("switch", { name: "Test feature" })).toBeChecked();
     expect(screen.getByRole("switch", { name: "Starter SDK downloads" })).not.toBeChecked();
     expect(screen.getByRole("link", { name: "Open test feature" })).toHaveAttribute("href", "/test-feature");
+    expect(screen.getByRole("heading", { name: "Live Viewer" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Participant ID" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open live viewer" })).toBeInTheDocument();
   });
 
   it("reports a token-store error without hiding unavailable feature settings", async () => {

@@ -1,6 +1,6 @@
 namespace Rena.Utility;
 
-public class Result<T>
+internal class Result<T>
 {
     public bool IsSuccess { get; }
     public T? Value { get; }
