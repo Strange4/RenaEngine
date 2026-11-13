@@ -4,11 +4,12 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Rena.GameEngine;
 using Rena.Server.DockerManager;
+using Rena.Server.Rendering;
 using Rena.Utility;
 
 namespace Rena.Server.GameSockets;
 
-public interface IMatchMaker<G, S, A>
+internal interface IMatchMaker<G, S, A>
     where G : IGame<S, A>, new()
     where S : class
     where A : class
@@ -43,10 +44,10 @@ public interface IMatchMaker<G, S, A>
     /// without ever finishing and having no handle for it if not handled properly
     /// </remarks>
     /// <param name="playerId">The player to remove</param>
-    public Task RemovePlayer(string playerId);
+    public void RemovePlayer(string playerId);
 }
 
-public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMaker<G, S, A>> logger, IOptions<RenaOptions> serverOptions)
+internal class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMaker<G, S, A>> logger, IOptions<RenaOptions> serverOptions)
     : IMatchMaker<G, S, A>
     where G : IGame<S, A>, new()
     where S : class
@@ -69,8 +70,10 @@ public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMake
         // TODO #164 add a check to make sure that the player getting a test room is not part of a current room teardown
         // That way a bot that was created, who's room was shut down cannot create a room of bots
         logger.LogInformation("Creating test room for player {playerId}", playerId);
-        // TODO (#137): Instantiate broadcaster and set it to the room
-        room = new(numPlayers, logger);
+
+        // We're in a test room. And someone might want to watch
+        RenderableBroadcaster broadcaster = new();
+        room = new(numPlayers, logger, broadcaster);
 
         bool notAddedBefore = _playerRooms.TryAdd(playerId, room);
 
@@ -122,7 +125,7 @@ public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMake
         _hostBotImageId = result.IsSuccess ? result.Value : throw result.Exception!;
     }
 
-    public async Task RemovePlayer(string playerId)
+    public void RemovePlayer(string playerId)
     {
         _playerRooms.TryRemove(playerId, out _);
     }
