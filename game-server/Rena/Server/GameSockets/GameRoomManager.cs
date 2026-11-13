@@ -74,6 +74,7 @@ public class GameRoomManager<G, S, A>(IMatchMaker<G, S, A> matchMaker, int roomS
         _rooms[playerId].RemovePlayer(playerId);
         _channels.TryRemove(playerId, out _);
         _rooms.TryRemove(playerId, out _);
+        _ = matchMaker.RemovePlayer(playerId);
     }
 
     private async Task HandleRoomExceptions(Exception e, ICollection<string> affectedPlayers)

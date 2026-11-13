@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Rena.GameEngine;
 using Rena.Server.DockerManager;
+using Rena.Server.Rendering;
 using Rena.Utility;
 
 namespace Rena.Server.GameSockets;
@@ -34,10 +35,15 @@ public interface IMatchMaker<G, S, A>
     /// <param name="dockerFilePath">The path to the dockerfile to create the host's bot image</param>
     /// <param name="language">The language that the bot is written in</param>
     public Task BuildHostBotImage(string imageId, string codeZipPath, string dockerFilePath, string language);
+    public Task RemovePlayer(string playerId);
 }
 
-public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMaker<G, S, A>> logger, IOptions<RenaOptions> serverOptions)
-    : IMatchMaker<G, S, A>
+public class MatchMaker<G, S, A>(
+    IDockerService dockerService,
+    ILogger<MatchMaker<G, S, A>> logger,
+    IOptions<RenaOptions> serverOptions,
+    RenderableBroadcaster? broadcaster = null
+) : IMatchMaker<G, S, A>
     where G : IGame<S, A>, new()
     where S : class
     where A : class
@@ -60,7 +66,7 @@ public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMake
         // That way a bot that was created, who's room was shut down cannot create a room of bots
         logger.LogInformation("Creating test room for player {playerId}", playerId);
         // TODO (#137): Instantiate broadcaster and set it to the room
-        room = new(numPlayers, logger);
+        room = new(numPlayers, logger, broadcaster);
 
         bool notAddedBefore = _playerRooms.TryAdd(playerId, room);
 
@@ -110,5 +116,10 @@ public class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMake
         // TODO #164 Add error handling maybe?
         Result<string> result = await dockerService.CreateOrReplaceImageAsync(imageId, codeZipPath, dockerFilePath, language);
         _hostBotImageId = result.IsSuccess ? result.Value : throw result.Exception!;
+    }
+
+    public async Task RemovePlayer(string playerId)
+    {
+        _playerRooms.TryRemove(playerId, out _);
     }
 }

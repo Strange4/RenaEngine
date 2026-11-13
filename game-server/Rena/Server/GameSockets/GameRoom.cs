@@ -54,6 +54,7 @@ public class GameRoom<G, S, A>
 
         IGame<S, A> game = new G { Logger = this._logger };
         Dictionary<string, S> statesToSend = game.GetInitial([.. _connections.Keys]);
+        _broadcaster?.BroadcastChange(game.GetAllRenderables());
         while (!game.IsGameOver())
         {
             // TODO (#164): break out of this loop and return when
@@ -63,6 +64,7 @@ public class GameRoom<G, S, A>
             // TODO #137: Move diff renderables and broadcast changes
             // game.CollectRenderables();
             statesToSend = game.DoAction(actions);
+            _broadcaster?.BroadcastChange(game.GetAllRenderables());
         }
 
         this._logger.LogDebug("ended the game");
