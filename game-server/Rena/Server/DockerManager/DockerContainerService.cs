@@ -36,6 +36,10 @@ public class DockerContainerService(IDockerClient dockerClient, ILogger logger) 
             var createParams = parameters.IfNone(new CreateContainerParameters());
             createParams.Image = imageId;
             createParams.Name = containerName;
+            createParams.HostConfig = new HostConfig()
+            {
+                ExtraHosts = ["host.docker.internal:host-gateway"]
+            };
 
             // TODO (#164): this hangs when the container fails to start. Fix this
             return await this._client.Containers.CreateContainerAsync(createParams);

@@ -44,7 +44,7 @@ internal interface IMatchMaker<G, S, A>
     /// without ever finishing and having no handle for it if not handled properly
     /// </remarks>
     /// <param name="playerId">The player to remove</param>
-    public Task RemovePlayer(string playerId);
+    public void RemovePlayer(string playerId);
 }
 
 internal class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMaker<G, S, A>> logger, IOptions<RenaOptions> serverOptions)
@@ -125,7 +125,7 @@ internal class MatchMaker<G, S, A>(IDockerService dockerService, ILogger<MatchMa
         _hostBotImageId = result.IsSuccess ? result.Value : throw result.Exception!;
     }
 
-    public async Task RemovePlayer(string playerId)
+    public void RemovePlayer(string playerId)
     {
         _playerRooms.TryRemove(playerId, out _);
     }
