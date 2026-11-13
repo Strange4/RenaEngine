@@ -39,9 +39,9 @@ public class RenderableBroadcasterTests
     {
         // Connect then broadcast
         Channel<RenderableChange> channel = _broadcaster.Connect();
-        _broadcaster.BroadcastChange(_dummyChanges);
+        _broadcaster.SetCurrentRenderables(_dummyChanges);
         Assert.That(channel.Reader.TryRead(out _), Is.True);
-        _broadcaster.BroadcastChange(_dummyChanges);
+        _broadcaster.SetCurrentRenderables(_dummyChanges);
         Assert.That(channel.Reader.TryRead(out _), Is.False);
 
         _broadcaster.Disconnect(channel);
@@ -51,7 +51,7 @@ public class RenderableBroadcasterTests
     public void TestBroadcaster_LateJoinerReceivesLastState()
     {
         // Broadcast then connect
-        _broadcaster.BroadcastChange(_dummyChanges);
+        _broadcaster.SetCurrentRenderables(_dummyChanges);
         Channel<RenderableChange> channel = _broadcaster.Connect();
         Assert.That(channel.Reader.TryRead(out RenderableChange? change), Is.True);
         Assert.That(change, Is.Not.Null);

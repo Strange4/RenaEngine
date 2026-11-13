@@ -1,23 +1,19 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Channels;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Rena.GameEngine;
 using Rena.Generator;
+using Rena.Server.GameSockets;
+using Rena.Server.Rendering;
+using Rena.Utility;
 
 namespace Rena.Server;
 
-internal partial class RenaServerHandlers<G, S, A>
-    where G : IGame<S, A>, new()
-    where S : class
-    where A : class
+internal partial class RenaServerHandlers
 {
-    public static async Task<IResult> GetGameName()
-    {
-        return Results.Ok(new G().GetName());
-    }
-
     public static async Task<IResult> HandleDownloads(string languageName, IOptions<RenaOptions> options)
     {
         if (!SDKBuilder.AvailableLanguageGenerators().Contains(languageName, StringComparer.Ordinal))
@@ -60,6 +56,42 @@ internal partial class RenaServerHandlers<G, S, A>
         // TODO (147) : build a docker image in the background
 
         return Results.Accepted();
+    }
+
+    public static async Task HandleSSEConnection(
+        string playerId,
+        HttpContext context,
+        IGameRoomManager manager,
+        ILogger<RenaServerHandlers> logger,
+        CancellationToken ct
+    )
+    {
+        Result<RenderableBroadcaster> result = manager.GetBroadcasterForPlayer(playerId);
+        if (!result.IsSuccess)
+        {
+            context.Response.StatusCode = 404;
+            logger.LogError(result.Exception, "Couldn't get the broadcast for a player");
+            return;
+        }
+
+        var broadcaster = result.Value!;
+
+        context.Response.Headers.ContentType = "text/event-stream";
+        Channel<RenderableChange> channel = broadcaster.Connect();
+        try
+        {
+            await context.Response.Body.FlushAsync(ct);
+            await foreach (RenderableChange change in channel.Reader.ReadAllAsync(ct))
+            {
+                string json = System.Text.Json.JsonSerializer.Serialize(change);
+                await context.Response.WriteAsync($"event: change\ndata: {json}\n\n", cancellationToken: ct);
+                await context.Response.Body.FlushAsync(ct);
+            }
+        }
+        finally
+        {
+            broadcaster.Disconnect(channel);
+        }
     }
 
     public static IResult GetFeatureSetting(string featureKey, CompetitionSettingsState settings)

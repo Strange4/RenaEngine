@@ -4,8 +4,12 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Moq;
 using Rena.Server;
+using Rena.Server.GameSockets;
 using Rena.Server.Rendering;
+using Rena.Utility;
 
 namespace Rena.Tests.Integration;
 
@@ -14,6 +18,7 @@ public class RenderStreamTests
 {
     private WebApplication _app;
     private HttpClient _client;
+    private RenderableBroadcaster _broadcaster;
 
     [OneTimeSetUp]
     public async Task OneTimeSetUp()
@@ -29,7 +34,12 @@ public class RenderStreamTests
                 { "RenaOptions:Features:test-feature", "false" },
             }
         );
+        var gameRoomManager = new Mock<IGameRoomManager>();
+        _broadcaster = new RenderableBroadcaster();
+        gameRoomManager.Setup(s => s.GetBroadcasterForPlayer("pid123")).Returns(new Result<RenderableBroadcaster>(_broadcaster));
+
         builder.SetRenaServices<TestGame, GameState, GameAction>();
+        builder.Services.Replace(ServiceDescriptor.Singleton(sp => gameRoomManager.Object));
 
         _app = builder.Build();
 
@@ -60,8 +70,7 @@ public class RenderStreamTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("text/event-stream"));
 
-        var broadcaster = _app.Services.GetRequiredService<RenderableBroadcaster>();
-        broadcaster.BroadcastChange([
+        this._broadcaster.SetCurrentRenderables([
             new GameRenderable
             {
                 Id = "sse-test",

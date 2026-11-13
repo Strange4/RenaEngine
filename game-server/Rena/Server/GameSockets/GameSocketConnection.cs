@@ -5,7 +5,7 @@ namespace Rena.Server.GameSockets;
 using Microsoft.Extensions.Logging;
 using Rena.GameEngine;
 
-public class GameSocketConnection<G, S, A>(WebSocket webSocket, string playerId, IGameRoomManager gameRoomManager, ILogger logger)
+internal class GameSocketConnection<G, S, A>(WebSocket webSocket, string playerId, IGameRoomManager gameRoomManager, ILogger logger)
     where G : IGame<S, A>
     where S : class
     where A : class

@@ -12,7 +12,7 @@ namespace Rena.Server.GameSockets;
 
 using Connection = Tuple<WebSocket, ChannelWriter<Result<bool>>>;
 
-public class GameRoom<G, S, A>
+internal class GameRoom<G, S, A>
     where G : IGame<S, A>, new()
     where S : class
     where A : class
@@ -21,16 +21,16 @@ public class GameRoom<G, S, A>
 
     private readonly int _roomSize;
     private readonly ILogger _logger;
-    private readonly RenderableBroadcaster? _broadcaster;
+    public readonly IRenderableWatcher? RenderableWatcher;
 
     public bool IsStarted { get; private set; } = false;
 
     public bool IsFull => _connections.Count >= _roomSize;
 
-    public GameRoom(int roomSize, ILogger logger, RenderableBroadcaster? renderableBroadcaster = null)
+    public GameRoom(int roomSize, ILogger logger, IRenderableWatcher? renderableWatcher = null)
     {
         _connections = [];
-        _broadcaster = renderableBroadcaster;
+        RenderableWatcher = renderableWatcher;
         _roomSize = roomSize;
         _logger = logger;
     }
@@ -54,15 +54,21 @@ public class GameRoom<G, S, A>
 
         IGame<S, A> game = new G { Logger = this._logger };
         Dictionary<string, S> statesToSend = game.GetInitial([.. _connections.Keys]);
+
+        // Set all start renderables
+        this.RenderableWatcher?.SetCurrentRenderables(game.GetAllRenderables());
+
         while (!game.IsGameOver())
         {
             // TODO (#164): break out of this loop and return when
             // there are no longer players in this room (everyone crashed).
             this._logger.LogDebug("playing a turn in the room");
             Dictionary<string, A> actions = await this.SendAndWaitForResult(statesToSend);
-            // TODO #137: Move diff renderables and broadcast changes
-            // game.CollectRenderables();
+
             statesToSend = game.DoAction(actions);
+
+            // After an action, the renderables may have changed. Set them again
+            this.RenderableWatcher?.SetCurrentRenderables(game.GetAllRenderables());
         }
 
         this._logger.LogDebug("ended the game");
