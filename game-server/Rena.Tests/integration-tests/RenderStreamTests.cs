@@ -6,11 +6,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-
 using Moq;
-
 using NSubstitute.ReturnsExtensions;
-
 using Rena.Server;
 using Rena.Server.GameSockets;
 using Rena.Server.Rendering;
