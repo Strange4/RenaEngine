@@ -180,6 +180,7 @@ public class BattleshipPlayerActionTests
         Assert.That(statePlayer1.IsWinner, Is.True);
         Assert.That(statePlayer2.IsWinner, Is.False);
         Assert.That(statePlayer1.SunkShips, Has.Count.EqualTo(5));
+        Assert.That(_gameLogic.TurnCount, Is.EqualTo(201));
     }
 
     [Test]
