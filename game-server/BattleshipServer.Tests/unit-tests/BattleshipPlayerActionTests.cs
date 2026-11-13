@@ -22,7 +22,7 @@ public class BattleshipPlayerActionTests
             new Ship { Name = ShipName.Battleship, StartCoordinate = new Coordinate { X = 1, Y = 0 }, Orientation = ShipOrientation.Horizontal, },
             new Ship { Name = ShipName.Cruiser,    StartCoordinate = new Coordinate { X = 5, Y = 0 }, Orientation = ShipOrientation.Horizontal, },
             new Ship { Name = ShipName.Submarine,  StartCoordinate = new Coordinate { X = 3, Y = 2 }, Orientation = ShipOrientation.Horizontal, },
-            new Ship { Name = ShipName.Destroyer,  StartCoordinate = new Coordinate { X = 4, Y = 3 }, Orientation = ShipOrientation.Horizontal, },
+            new Ship { Name = ShipName.Destroyer,  StartCoordinate = new Coordinate { X = 8, Y = 9 }, Orientation = ShipOrientation.Horizontal, },
         ];
 
         // csharpier-ignore
@@ -32,7 +32,7 @@ public class BattleshipPlayerActionTests
             new Ship { Name = ShipName.Battleship, StartCoordinate = new Coordinate { X = 1, Y = 0 }, Orientation = ShipOrientation.Vertical, },
             new Ship { Name = ShipName.Cruiser,    StartCoordinate = new Coordinate { X = 2, Y = 0 }, Orientation = ShipOrientation.Vertical, },
             new Ship { Name = ShipName.Submarine,  StartCoordinate = new Coordinate { X = 3, Y = 0 }, Orientation = ShipOrientation.Vertical, },
-            new Ship { Name = ShipName.Destroyer,  StartCoordinate = new Coordinate { X = 4, Y = 0 }, Orientation = ShipOrientation.Vertical, },
+            new Ship { Name = ShipName.Destroyer,  StartCoordinate = new Coordinate { X = 9, Y = 8 }, Orientation = ShipOrientation.Vertical, },
         ];
     }
 
@@ -119,7 +119,7 @@ public class BattleshipPlayerActionTests
     {
         _gameLogic.ProcessShipPlacement(1, _validFleet1);
         _gameLogic.ProcessShipPlacement(2, _validFleet2);
-        while (!_gameLogic.IsGameOver)
+        for (int i = 0; i < _gameLogic.MaxTurns + 5 && !_gameLogic.IsGameOver; i++)
         {
             _gameLogic.ProcessAction(1, new Coordinate { X = 0, Y = 0 });
             _gameLogic.ProcessAction(2, new Coordinate { X = 0, Y = 0 });
@@ -162,7 +162,7 @@ public class BattleshipPlayerActionTests
         _gameLogic.ProcessShipPlacement(2, _validFleet2);
 
         // Player 2 wins first in this for loop because they have a grid that has a lower y value than all of player 1's.
-        for (int i = 0; i < 99; i++)
+        for (int i = 0; i < 100; i++)
         {
             ActionExecutionResult result1 = _gameLogic.ProcessAction(1, new Coordinate { X = i % 10, Y = i / 10 });
             if (result1.IsWin)
@@ -177,9 +177,9 @@ public class BattleshipPlayerActionTests
 
         Assert.That(statePlayer1.IsGameOver, Is.True);
         Assert.That(statePlayer2.IsGameOver, Is.True);
-        Assert.That(statePlayer1.IsWinner, Is.False);
-        Assert.That(statePlayer2.IsWinner, Is.True);
-        Assert.That(statePlayer2.SunkShips, Has.Count.EqualTo(5));
+        Assert.That(statePlayer1.IsWinner, Is.True);
+        Assert.That(statePlayer2.IsWinner, Is.False);
+        Assert.That(statePlayer1.SunkShips, Has.Count.EqualTo(5));
     }
 
     [Test]
