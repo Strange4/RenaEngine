@@ -146,3 +146,30 @@ describe("Animator", () =>{
         });
     });
 });
+
+describe("changing the duration", ()=>{
+    it("if the duration is 0, the animation finishes on the first frame", ()=>{
+        const animator = new Animator(200);
+        const sprite = fakeSprite(start_state);
+        animator.setDuration(0); //this case
+        animator.animate(sprite, final_state);
+        animator.tick(16);
+
+        expect(getState(sprite)).toEqual(final_state);//this animation takes no time, so as soon as it happens it's done. done 100% right away
+    });
+
+    //it shouldn't take in invalid durations (negatives, etc)
+    it.each([-1, Number.NaN, Number.POSITIVE_INFINITY]) ("rejects invalid durations", (duration) => {
+        const animator = new Animator(200);
+        const sprite = fakeSprite(start_state);
+
+        expect(()=> animator.setDuration(duration)).toThrow("Invalid duration"); 
+
+        //if we are halfway, then the duration remaining would be half
+        animator.animate(sprite, final_state);
+        animator.tick(100); //100ms-- consider halfway
+        expect(sprite.position.x).toBe(50);
+
+
+    });
+});

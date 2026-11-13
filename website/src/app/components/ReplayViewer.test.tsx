@@ -1,8 +1,9 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, fireEvent} from "@testing-library/react";
 import { AssetLoader } from "@/app/viewer/assetLoader";
 import { getSceneSource } from "@/app/viewer/sceneSource";
 import { RenderableType, type GameRenderable, type ViewerSetup } from "@/shared/renderable";
 import ReplayViewer from "./ReplayViewer";
+import {ReplayController} from "@/app/viewer/replayController"
 
 const TEST_SETUP: ViewerSetup = { tileSize: 40, resolution: [400, 200] };
 
@@ -38,6 +39,7 @@ jest.mock("pixi.js", () => {
       destroy: jest.fn(),
       renderer: { resize: jest.fn() },
       stage: new MockContainer(),
+      ticker: {add: jest.fn()},
     };
     appInstances.push(app);
     return app;
@@ -70,6 +72,15 @@ const mockGetInitialScene = jest.fn();
 jest.mock("@/app/viewer/sceneSource", () => ({
   getSceneSource: jest.fn(() => ({ getInitialScene: mockGetInitialScene })),
 }));
+
+//Adding extra coverage: uses the controller
+jest.mock("@/app/viewer/replayController", ()=> {
+  const actual = jest.requireActual("@/app/viewer/replayController");
+  return{
+    ...actual,
+    ReplayController: jest.fn((...args: unknown[]) => new actual.ReplayController(...args)),
+  };
+});
 
 const getPixiMocks = () =>
   jest.requireMock("pixi.js") as {
@@ -199,5 +210,18 @@ describe("ReplayViewer", () => {
     } finally {
       errorSpy.mockRestore();
     }
+  });
+
+  //Extra coverage-- checking if it displays the selected speed
+  it("shows the selected new speed in the controls bar", async() =>{
+
+    render(<ReplayViewer gameId="1" />);
+    //wait for viewer to create controller then fire events
+    await waitFor(() => expect(ReplayController).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole("button", {name: "Speed 1x"}));
+    fireEvent.click(screen.getByRole("menuitemradio", {name: "2x"}));
+
+    //switched the speed from 1x to 2x, we should see this displayed on the button now
+    expect(await screen.findByRole("button", {name: "Speed 2x"})).toBeInTheDocument();
   });
 });
