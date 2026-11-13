@@ -76,6 +76,7 @@ internal class GameRoomManager<G, S, A>(IMatchMaker<G, S, A> matchMaker, int roo
         _rooms[playerId].RemovePlayer(playerId);
         _channels.TryRemove(playerId, out _);
         _rooms.TryRemove(playerId, out _);
+        matchMaker.RemovePlayer(playerId);
     }
 
     public Result<RenderableBroadcaster> GetBroadcasterForPlayer(string playerId)

@@ -55,9 +55,26 @@ describe("ParticipantPage", () => {
       screen.getByRole("link", { name: "Open test feature" }),
     ).toHaveAttribute("href", "/test-feature");
     expect(
+      screen.getByRole("link", { name: "Open live viewer" }),
+    ).toHaveAttribute("href", "/live-viewer/42");
+    expect(
       screen.getByRole("button", { name: "Log Out" }),
     ).toBeInTheDocument();
     expect(mockGetFeatureAccess).toHaveBeenCalledWith("sdk-downloads");
+  });
+
+  it("links to the signed-in participant's live viewer", async () => {
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 7,
+      token: "PARTICIPANT-7-secret",
+    });
+
+    render(await ParticipantPage());
+
+    expect(
+      screen.getByRole("link", { name: "Open live viewer" }),
+    ).toHaveAttribute("href", "/live-viewer/7");
   });
 
   it("hides SDK download actions when the admin disables the feature", async () => {
