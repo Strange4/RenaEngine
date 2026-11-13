@@ -69,6 +69,7 @@ internal partial class RenaServerHandlers
         Result<RenderableBroadcaster> result = manager.GetBroadcasterForPlayer(playerId);
         if (!result.IsSuccess)
         {
+            // TODO (#198): allow players to view their games before they start.
             context.Response.StatusCode = 404;
             logger.LogError(result.Exception, "Couldn't get the broadcast for a player");
             return;
