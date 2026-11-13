@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AppTopBar from "@/app/components/AppTopBar";
+import AdminLiveViewerForm from "@/app/components/AdminLiveViewerForm";
 import FeatureToggleControl from "@/app/components/FeatureToggleControl";
 import ParticipantTokenTable from "@/app/components/ParticipantTokenTable";
 import { getFeatureSetting } from "@/server/lib/game-server-settings";
@@ -57,6 +58,11 @@ export default async function AdminPage() {
                 )}
               </div>
             ))}
+          </section>
+          <section className={`${styles.card} ${styles.liveViewer}`} aria-labelledby="live-viewer-title">
+            <h2 id="live-viewer-title">Live Viewer</h2>
+            <p className={styles.description}>Open a participant's live game.</p>
+            <AdminLiveViewerForm />
           </section>
         </div>
       </main>
