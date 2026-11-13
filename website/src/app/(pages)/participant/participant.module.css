@@ -66,6 +66,10 @@
   margin: 0 0 1.25rem;
 }
 
+.features {
+  grid-column: 2;
+}
+
 /* ---- SDK panel ---- */
 .sdkLabel {
   width: auto;
@@ -180,5 +184,9 @@
 @media (max-width: 800px) {
   .grid {
     grid-template-columns: 1fr;
+  }
+
+  .features {
+    grid-column: auto;
   }
 }
