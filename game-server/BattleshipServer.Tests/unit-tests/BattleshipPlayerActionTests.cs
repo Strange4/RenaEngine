@@ -96,6 +96,39 @@ public class BattleshipPlayerActionTests
     }
 
     [Test]
+    public void TestInvalidProcessPlayerAction_PlaceShipsAfterFirstTurn()
+    {
+        _gameLogic.ProcessShipPlacement(1, _validFleet1);
+        _gameLogic.ProcessShipPlacement(2, _validFleet2);
+        PlayerAction action = new PlaceShipsAction { Ships = _validFleet1 };
+        ActionStatus status = _gameLogic.ProcessPlayerAction(1, action);
+        Assert.That(status, Is.EqualTo(ActionStatus.InvalidAction));
+    }
+
+    [Test]
+    public void TestInvalidProcessPlayerAction_NullActionAfterFirstTurn()
+    {
+        _gameLogic.ProcessShipPlacement(1, _validFleet1);
+        _gameLogic.ProcessShipPlacement(2, _validFleet2);
+        ActionStatus status = _gameLogic.ProcessPlayerAction(1, null);
+        Assert.That(status, Is.EqualTo(ActionStatus.InvalidAction));
+    }
+
+    [Test]
+    public void TestProcessAction_MaxTurnLimitReached()
+    {
+        _gameLogic.ProcessShipPlacement(1, _validFleet1);
+        _gameLogic.ProcessShipPlacement(2, _validFleet2);
+        while (!_gameLogic.IsGameOver)
+        {
+            _gameLogic.ProcessAction(1, new Coordinate { X = 0, Y = 0 });
+            _gameLogic.ProcessAction(2, new Coordinate { X = 0, Y = 0 });
+        }
+        Assert.That(_gameLogic.TurnCount, Is.EqualTo(_gameLogic.MaxTurns));
+        Assert.That(_gameLogic.IsGameOver, Is.True);
+    }
+
+    [Test]
     public void TestValidGetPlayerState_PlacementPhase()
     {
         PlayerState state = _gameLogic.GetPlayerState(1);
