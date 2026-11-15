@@ -41,7 +41,20 @@ export default async function ParticipantPage() {
             )}
           </section>
 
-          <section className={styles.card} aria-labelledby="features-title">
+          <section className={styles.card} aria-labelledby="live-viewer-title">
+            <h2 className={styles.cardTitle} id="live-viewer-title">
+              Live Viewer
+            </h2>
+            <p className={styles.cardSub}>Watch your live game.</p>
+            <Link
+              className={styles.featureLink}
+              href={`/live-viewer/${session.participantId}`}
+            >
+              Open live viewer
+            </Link>
+          </section>
+
+          <section className={`${styles.card} ${styles.features}`} aria-labelledby="features-title">
             <h2 className={styles.cardTitle} id="features-title">
               Features
             </h2>

@@ -17,17 +17,24 @@ public class GameLogic
     public bool IsPlayer1Turn { get; private set; } = true;
     public bool IsGameOver { get; private set; } = false;
     public bool IsPlayer1Winner { get; private set; } = false;
+    public int TurnCount { get; private set; } = 0;
+    public int MaxTurns { get; private set; } = (2 * BoardSize * BoardSize) + 2;
 
     public ActionStatus ProcessPlayerAction(int playerNumber, PlayerAction? action)
     {
         if (playerNumber is not (1 or 2))
             return ActionStatus.InvalidPlacement;
-        return action switch
+        if (this.IsGameOver)
+            return ActionStatus.GameOver;
+        bool isFirstTurn = this.GetPlayer(playerNumber).PlacedShips.Count == 0;
+        return (isFirstTurn, action) switch
         {
-            PlaceShipsAction placeAction => this.ProcessShipPlacement(playerNumber, placeAction.Ships) == PlacementResult.Success
+            (true, PlaceShipsAction placeAction) => this.ProcessShipPlacement(playerNumber, placeAction.Ships) == PlacementResult.Success
                 ? ActionStatus.Success
-                : ActionStatus.InvalidPlacement,
-            ShootAction shootAction => this.ProcessAction(playerNumber, shootAction.ShootAt).Status,
+                : this.Forfeit(playerNumber, ActionStatus.InvalidPlacement), // Forfeit if the player fails to place their ships correctly on their first turn
+            (true, _) => this.Forfeit(playerNumber, ActionStatus.InvalidAction), // Forfeit if the player tries to do anything other than place ships on their first turn
+            (false, PlaceShipsAction) => ActionStatus.InvalidAction, // Skip the players turn if they try to place ships after their first turn
+            (false, ShootAction shootAction) => this.ProcessAction(playerNumber, shootAction.ShootAt).Status,
             _ => ActionStatus.InvalidAction,
         };
     }
@@ -111,7 +118,10 @@ public class GameLogic
             return PlacementResult.AlreadyPlaced;
         PlacementResult result = ValidateShipPlacement(ships);
         if (result == PlacementResult.Success)
+        {
             player.PlacedShips.AddRange(ships);
+            this.TurnCount++;
+        }
         return result;
     }
 
@@ -126,7 +136,12 @@ public class GameLogic
          */
 
         ActionStatus status = this.ValidateAction(playerNumber, coordinate);
-        // TODO (#184 skip the players turn if their action is invalid according to the rules)
+        if (status == ActionStatus.OutOfBounds || status == ActionStatus.AlreadyFired)
+        {
+            this.EndTurn();
+            return new(status);
+        }
+
         if (status != ActionStatus.Success)
             return new(status);
 
@@ -137,7 +152,7 @@ public class GameLogic
         if (hitShip == null)
         {
             player.ShotsFired.Add(new ShotRecord { Coordinate = coordinate, Result = ShotResult.Miss });
-            this.IsPlayer1Turn = !this.IsPlayer1Turn; // Switch turns
+            this.EndTurn();
             return new(ActionStatus.Success, ShotResult.Miss);
         }
 
@@ -149,12 +164,13 @@ public class GameLogic
             opponent.SunkShips.Add(hitShip);
             if (CheckWinCondition(opponent.PlacedShips, player.ShotsFired))
             {
+                this.TurnCount++;
                 this.IsGameOver = true;
                 this.IsPlayer1Winner = playerNumber == 1;
                 return new(ActionStatus.Success, ShotResult.Sunk, isWin: true);
             }
         }
-        this.IsPlayer1Turn = !this.IsPlayer1Turn; // Switch turns
+        this.EndTurn();
         return new(ActionStatus.Success, isSunk ? ShotResult.Sunk : ShotResult.Hit);
     }
 
@@ -203,5 +219,28 @@ public class GameLogic
     internal static bool CheckWinCondition(List<Ship> opponentShips, List<ShotRecord> shotsFired)
     {
         return opponentShips.All(ship => ship.IsShipSunk(shotsFired));
+    }
+
+    private ActionStatus Forfeit(int playerNumber, ActionStatus returnStatus)
+    {
+        this.IsGameOver = true;
+        this.IsPlayer1Winner = playerNumber == 2;
+        return returnStatus;
+    }
+
+    private void CheckTurnLimit()
+    {
+        if (this.TurnCount >= this.MaxTurns)
+        {
+            this.IsGameOver = true;
+            this.IsPlayer1Winner = Random.Shared.Next(2) == 0;
+        }
+    }
+
+    private void EndTurn()
+    {
+        this.IsPlayer1Turn = !this.IsPlayer1Turn;
+        this.TurnCount++;
+        this.CheckTurnLimit();
     }
 }

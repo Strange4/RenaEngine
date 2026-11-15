@@ -30,7 +30,7 @@ public interface IGame<S, A>
 
     /// <summary>Gets the renderables that represent the game visually.</summary>
     /// <returns>The game's renderable objects.</returns>
-    public List<GameRenderable> CollectRenderables();
+    public List<GameRenderable> GetAllRenderables();
 
     public ILogger? Logger { set; get; }
 }

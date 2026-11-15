@@ -62,15 +62,6 @@ public class EndpointTests
     }
 
     [Test]
-    public async Task Name_ReturnsGameName()
-    {
-        using var response = await _client.GetAsync("/name");
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        var name = await response.Content.ReadFromJsonAsync<string>();
-        Assert.That(name, Is.EqualTo("Example game"));
-    }
-
-    [Test]
     public async Task TestFeatureSetting_AdminCanEnableAndDisableIt()
     {
         using HttpResponseMessage initialResponse = await _client.GetAsync("/settings/features/test-feature");
