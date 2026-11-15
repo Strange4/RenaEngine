@@ -18,6 +18,13 @@ export interface ReplayStatus {
 
 export type ReplayStatusListener = (status: ReplayStatus) => void;
 
+//playback speeds the user can select from the drop-down (1= normal speed, the rest of the # are idem to Youtube's)
+export const PLAYBACK_SPEEDS: readonly number[] = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+
+//every step delay in milliseconds, play() would apply a recorded change. This here is the "delay" in its application
+// for 1x normal speed it's 1000, for double the speed we would divide it by 2, etc etc
+export const STEP_DELAY = 1000; //setting it to match 1x speed sinc ethat's the default
+
 // Plays back a recorded game using the RenderableChangeProcessor
 export class ReplayController {
   private processor: RenderableChangeProcessor;
@@ -85,8 +92,28 @@ export class ReplayController {
   }
 
   // TODO (174)
-  setSpeed(_speed: number): void {
-    throw new Error("Changing the playback speed is not implemented yet (#174)");
+  setSpeed(speed: number): void {
+    if (!PLAYBACK_SPEEDS.includes(speed)){ //we only follow set speeds
+    throw new Error("Unsupported playback speed-- playback speed error");
+    }//else
+    if (this.disposed || speed === this.speed){
+      //speed didn't change- i.e. user keeps same speed-> no need to change/update to new speed
+      return;
+    }
+    //set speed
+    this.speed = speed;
+
+    //TO DO (171): IF play() is waiting for the next change, you will need to call on getStepDelay() to restart the wait--
+    //a long wait needs to finish before the speed settings apply or else the changes won't feel immediate
+
+    //display new speed on playback bar
+    this.notify();
+  }
+
+  //Determines the wait ms of play() between the changes (AT THE CURRENT SPEED)
+  //the wait time gets divided by the speed. Ex. if waiting 50ms at 1x ==> at 2x you will wait half of that, so we divide the delay by the speed
+  getStepDelay(): number{
+    return STEP_DELAY / this.speed;
   }
 
   dispose(): void {
