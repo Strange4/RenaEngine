@@ -282,4 +282,46 @@ describe("ReplayViewer", () => {
       errorSpy.mockRestore();
     }
   });
+
+  it("steps back to the previous change and disables the button at the start", async () => {
+    const flag: GameRenderable = { ...ship, id: "flag", type: RenderableType.DECORATION };
+    render(<ReplayViewer gameId="1" recording={[{ index: 1, changes: [flag] }]} />);
+    const stepForward = screen.getByRole("button", { name: "Step forward" });
+    const stepBack = screen.getByRole("button", { name: "Step back" });
+
+    await waitFor(() => expect(stepForward).toBeEnabled());
+    expect(stepBack).toBeDisabled();
+    await waitFor(() => expect(getPixiMocks().__spriteInstances).toHaveLength(2));
+
+    fireEvent.click(stepForward);
+    await waitFor(() => expect(stepBack).toBeEnabled());
+    const flagSprite = getPixiMocks().__spriteInstances[2] as { destroy: jest.Mock };
+
+    fireEvent.click(stepBack);
+    await waitFor(() => expect(stepBack).toBeDisabled());
+    expect(flagSprite.destroy).toHaveBeenCalled();
+    expect(stepForward).toBeEnabled();
+  });
+
+  it("logs an error if stepping backward fails", async () => {
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const actual = jest.requireActual("@/app/viewer/replayController") as typeof import("@/app/viewer/replayController");
+    const failure = new Error("step failed");
+    const stepSpy = jest.spyOn(actual.ReplayController.prototype, "stepBackward").mockRejectedValueOnce(failure);
+    try {
+      render(<ReplayViewer gameId="1" recording={[{ index: 1, changes: [map] }]} />);
+      const stepForward = screen.getByRole("button", { name: "Step forward" });
+      const stepBack = screen.getByRole("button", { name: "Step back" });
+      await waitFor(() => expect(stepForward).toBeEnabled());
+      fireEvent.click(stepForward);
+      await waitFor(() => expect(stepBack).toBeEnabled());
+
+      fireEvent.click(stepBack);
+
+      await waitFor(() => expect(errorSpy).toHaveBeenCalledWith("Failed to step backward", failure));
+    } finally {
+      stepSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
+  });
 });
