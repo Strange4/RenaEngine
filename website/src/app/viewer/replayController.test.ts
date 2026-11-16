@@ -57,7 +57,6 @@ describe("ReplayController", () => {
     expect(controller.getCurrentState()).toEqual([ship]);
     expect(testHandlers.calls).toEqual([]);
   });
-
   it("is ended if the recording is empty", async () => {
     const { controller } = controllerFor([]);
 
@@ -200,6 +199,47 @@ describe("ReplayController", () => {
       expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0 });
     } finally {
       controller.dispose();
+      jest.useRealTimers();
+    }
+  });
+
+  it("ends playback after applying the final change", async () => {
+    const { controller, testHandlers } = controllerFor([RECORDING[0]]);
+    jest.useFakeTimers();
+
+    try {
+      controller.play();
+      await jest.advanceTimersByTimeAsync(STEP_DELAY);
+      await Promise.resolve();
+
+      expect(testHandlers.calls).toEqual(["create:flag"]);
+      expect(controller.getStatus()).toMatchObject({
+        state: PlaybackState.ENDED,
+        position: 1,
+        length: 1,
+      });
+    } finally {
+      controller.dispose();
+      jest.useRealTimers();
+    }
+  });
+
+  it("logs errors and stops playback if an error occurs during playback", async () => {
+    const { controller, testHandlers } = controllerFor();
+    jest.useFakeTimers();
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    try {
+      testHandlers.create = jest.fn().mockRejectedValueOnce(new Error("asset failed to load"));
+      controller.play();
+      await jest.advanceTimersByTimeAsync(STEP_DELAY);
+
+      expect(testHandlers.calls).toEqual([]);
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0 });
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("Replay playback failed"), expect.any(Error));
+    } finally {
+      controller.dispose();
+      consoleErrorSpy.mockRestore();
       jest.useRealTimers();
     }
   });
