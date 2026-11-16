@@ -201,6 +201,12 @@ button {
   height: 2rem;
 }
 
+/* Pause shares some styles with play */
+.replay-controls .replay-pause svg {
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
 .token-reveal {
   display: flex;
   align-items: center;
