@@ -158,16 +158,29 @@ describe("ReplayController", () => {
     expect(controller.getStatus().position).toBe(0);
   });
 
-  it("throws for the controls that are not done yet", async () => {
+  it("starts and pauses playback without losing its position", async () => {
     const { controller, testHandlers } = controllerFor();
 
-    expect(() => controller.play()).toThrow("not implemented yet (#171)");
-    expect(() => controller.pause()).toThrow("not implemented yet (#171)");
+    jest.useFakeTimers();
+    try {
+      controller.play();
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PLAYING, position: 0 });
+
+      controller.pause();
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0 });
+
+      controller.play();
+      await jest.advanceTimersByTimeAsync(STEP_DELAY);
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PLAYING, position: 1 });
+      expect(testHandlers.calls).toEqual(["create:flag"]);
+    } finally {
+      controller.pause();
+      jest.useRealTimers();
+    }
+
     await expect(controller.stepForward()).rejects.toThrow("not implemented yet (#172)");
     await expect(controller.stepBackward()).rejects.toThrow("not implemented yet (#173)");
-    //expect(() => controller.setSpeed(2)).toThrow("not implemented yet (#174)");
-    expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0, speed: 1 });
-    expect(testHandlers.calls).toEqual([]);
+    expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 1, speed: 1 });
   });
 });
 

@@ -10,13 +10,17 @@ import ReplayControls from "./ReplayControls";
 import {Animator, ANIMATION_DURATION} from "@/app/viewer/animator"; //animations are needed or else it will be instant
 import {PlaybackState, ReplayController, type ReplayStatus} from "@/app/viewer/replayController";
 import { createRendererHandlers } from "@/app/viewer/renderableHandler";
+import type { RenderableChange } from "@/shared/renderable";
 
 interface ReplayViewerProps {
   gameId: string;
+  recording?: RenderableChange[]; // optional, will need to change once server is implemented to fetch the recording for the gameId or recording number, whatever we go with.
 }
 
+const EMPTY_RECORDING: RenderableChange[] = []; // default value of recording if none provided. 
+
 // only draws the initial scene for now, the ReplayController gets connected in 171-175
-export default function ReplayViewer({ gameId }: ReplayViewerProps) {
+export default function ReplayViewer({ gameId, recording = EMPTY_RECORDING }: ReplayViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [resolution, setResolution] = useState<[number, number] | null>(null);
   
@@ -83,7 +87,7 @@ export default function ReplayViewer({ gameId }: ReplayViewerProps) {
 
       //Adding missing code fix below for the speed selector to work. we are creating the controller here
       controller = new ReplayController(
-        createRendererHandlers(renderer, unmount.signal), [], scene.renderables,
+        createRendererHandlers(renderer, unmount.signal), recording, scene.renderables,
       );
       controllerRef.current = controller;
 
@@ -101,7 +105,7 @@ export default function ReplayViewer({ gameId }: ReplayViewerProps) {
       controllerRef.current = null;
       if (initialized) app.destroy(true, { children: true });
     };
-  }, [gameId]);
+  }, [gameId, recording]);
 
   return (
     <div className="replay-viewer" data-testid="replay-viewer">
@@ -115,6 +119,8 @@ export default function ReplayViewer({ gameId }: ReplayViewerProps) {
 //connect the controls
       playing={status?.state === PlaybackState.PLAYING}
       speed={status?.speed}
+      onPlay={() => controllerRef.current?.play()}
+      onPause={() => controllerRef.current?.pause()}
       onSpeedChange={(speed) => controllerRef.current?.setSpeed(speed)}
       />
     </div>
