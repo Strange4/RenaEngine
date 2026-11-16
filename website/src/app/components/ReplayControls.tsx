@@ -9,6 +9,7 @@ interface ReplayControlsProps {
   playing?: boolean;
   speed?: number; //default is 1x
   canStepForward?: boolean; //false disables step forward, e.g. at the end of the recording
+  canStepBackward?: boolean; //false disables step back, e.g. at the start of the recording
   onPlay?: () => void;
   onPause?: () => void;
   onStepBackward?: () => void;
@@ -99,6 +100,7 @@ export default function ReplayControls({
   playing = false,
   speed = 1,
   canStepForward = true,
+  canStepBackward = true,
   onPlay,
   onPause,
   onStepBackward,
@@ -109,7 +111,7 @@ export default function ReplayControls({
 }: ReplayControlsProps) {
   return (
     <div className="replay-controls" role="toolbar" aria-label="Replay controls">
-      <button type="button" aria-label="Step back" title="Step back" onClick={onStepBackward}>
+      <button type="button" aria-label="Step back" title="Step back" onClick={onStepBackward} disabled={!canStepBackward}>
         <RotateCcw aria-hidden="true">{stepNumber}</RotateCcw>
       </button>
       <button type="button" aria-label="Go to start" title="Go to start" onClick={onGoToStart}>
