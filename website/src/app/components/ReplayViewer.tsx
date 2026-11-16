@@ -121,6 +121,10 @@ export default function ReplayViewer({ gameId, recording = EMPTY_RECORDING }: Re
       speed={status?.speed}
       onPlay={() => controllerRef.current?.play()}
       onPause={() => controllerRef.current?.pause()}
+      onStepForward={() => {
+        controllerRef.current?.stepForward().catch((e) => console.error("Failed to step forward", e));
+      }}
+      canStepForward={status !== null && status.state !== PlaybackState.ENDED}
       onSpeedChange={(speed) => controllerRef.current?.setSpeed(speed)}
       />
     </div>
