@@ -321,3 +321,80 @@ describe ("playback speed", ()=> {
     expect(() => controller.setSpeed(speed)).toThrow("Unsupported playback speed-- playback speed error");
   });
 });
+
+describe("step forward", () => {
+  it("applies only the next change and stays paused", async () => {
+    const { controller, testHandlers } = controllerFor();
+
+    await expect(controller.stepForward()).resolves.toBe(true);
+
+    expect(testHandlers.calls).toEqual(["create:flag"]);
+    expect(controller.getCurrentState()).toEqual([ship, flag]);
+    expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 1 });
+  });
+
+  it("steps through the changes in order and stops at the end", async () => {
+    const { controller, testHandlers } = controllerFor([RECORDING[2], RECORDING[0], RECORDING[1]]);
+    const statuses: ReplayStatus[] = [];
+    controller.onStatusChange((status) => statuses.push(status));
+
+    await expect(controller.stepForward()).resolves.toBe(true);
+    await expect(controller.stepForward()).resolves.toBe(true);
+    await expect(controller.stepForward()).resolves.toBe(true);
+    await expect(controller.stepForward()).resolves.toBe(false);
+
+    expect(testHandlers.calls).toEqual(["create:flag", "update:ship:2,1", "remove:ship"]);
+    expect(statuses.map((status) => `${status.state}@${status.position}`)).toEqual([
+      "PAUSED@1",
+      "PAUSED@2",
+      "ENDED@3",
+    ]);
+  });
+
+  it("keeps the order when stepping quickly", async () => {
+    const { controller, testHandlers } = controllerFor();
+
+    const results = await Promise.all([controller.stepForward(), controller.stepForward()]);
+
+    expect(results).toEqual([true, true]);
+    expect(testHandlers.calls).toEqual(["create:flag", "update:ship:2,1"]);
+    expect(controller.getStatus().position).toBe(2);
+  });
+
+  it("pauses playback and keeps the stepped position", async () => {
+    const { controller, testHandlers } = controllerFor();
+    jest.useFakeTimers();
+
+    try {
+      controller.play();
+      await expect(controller.stepForward()).resolves.toBe(true);
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 1 });
+
+      // the paused playback must not apply another change once its delay ends
+      await jest.advanceTimersByTimeAsync(STEP_DELAY * 2);
+      expect(testHandlers.calls).toEqual(["create:flag"]);
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 1 });
+    } finally {
+      controller.dispose();
+      jest.useRealTimers();
+    }
+  });
+
+  it("keeps the position if the change fails", async () => {
+    const testHandlers = handlers();
+    testHandlers.create = jest.fn().mockRejectedValueOnce(new Error("asset failed to load"));
+    const { controller } = controllerFor(RECORDING, testHandlers);
+
+    await expect(controller.stepForward()).rejects.toThrow("asset failed to load");
+    expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0 });
+  });
+
+  it("does nothing after dispose", async () => {
+    const { controller, testHandlers } = controllerFor();
+    controller.dispose();
+
+    await expect(controller.stepForward()).resolves.toBe(false);
+    expect(testHandlers.calls).toEqual([]);
+    expect(controller.getStatus().position).toBe(0);
+  });
+});
