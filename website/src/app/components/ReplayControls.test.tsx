@@ -48,6 +48,22 @@ describe("ReplayControls", () => {
     }
   });
 
+  it("enables step forward by default", () => {
+    render(<ReplayControls />);
+
+    expect(button("Step forward")).toBeEnabled();
+  });
+
+  it("disables step forward when it can't step", () => {
+    const onStepForward = jest.fn();
+    render(<ReplayControls canStepForward={false} onStepForward={onStepForward} />);
+
+    fireEvent.click(button("Step forward"));
+
+    expect(button("Step forward")).toBeDisabled();
+    expect(onStepForward).not.toHaveBeenCalled();
+  });
+
   it("shows pause while playing", () => {
     const onPause = jest.fn();
     render(<ReplayControls playing onPause={onPause} />);
