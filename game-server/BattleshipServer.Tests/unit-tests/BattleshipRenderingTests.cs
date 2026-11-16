@@ -1,5 +1,4 @@
-﻿using System.Threading.Channels;
-using BattleshipServer.Game;
+﻿using BattleshipServer.Game;
 using BattleshipServer.Game.Models;
 using Rena.Server.Rendering;
 
@@ -9,13 +8,11 @@ namespace BattleshipServer.Tests.Unit;
 public class BattleshipRenderingTests
 {
     private BattleshipGame _game = null!;
-    private RenderableBroadcaster _broadcaster = null!;
     private List<Ship> _validFleet = null!;
 
     [SetUp]
     public void Setup()
     {
-        _broadcaster = new RenderableBroadcaster();
         _game = new BattleshipGame();
         // csharpier-ignore
         _validFleet =
@@ -32,47 +29,13 @@ public class BattleshipRenderingTests
     public void TearDown()
     {
         _game = null!;
-        _broadcaster = null!;
         _validFleet = null!;
-    }
-
-    [Test]
-    public async Task TestBroadcaster_DeliversMessageToConnectedClient()
-    {
-        Channel<RenderableChange> channel = _broadcaster.Connect();
-
-        List<GameRenderable> dummyChanges =
-        [
-            new GameRenderable
-            {
-                Id = "test-1",
-                Position = [0, 0],
-                AssetPath = "/sprites/test.test",
-                Size = [1, 1],
-                Rotation = 0,
-                Type = RenderableType.MAP,
-                Layer = 0,
-            },
-        ];
-
-        _broadcaster.BroadcastChange(dummyChanges);
-
-        CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
-        RenderableChange received = await channel.Reader.ReadAsync(cts.Token);
-
-        Assert.That(received, Is.Not.Null);
-        Assert.That(received.Index, Is.EqualTo(1));
-        Assert.That(received.Changes, Has.Count.EqualTo(1));
-        Assert.That(received.Changes[0].Id, Is.EqualTo("test-1"));
-
-        _broadcaster.Disconnect(channel);
     }
 
     [Test]
     public void TestDoAction_PlaceShips()
     {
         Dictionary<string, PlayerState> initialStates = _game.GetInitial(["p1", "p2"]);
-        _broadcaster.BroadcastChange([.. _game.GetAllRenderables()]);
         Assert.That(initialStates.ContainsKey("p1"), Is.True);
         Assert.That(initialStates.ContainsKey("p2"), Is.False);
 
@@ -83,7 +46,6 @@ public class BattleshipRenderingTests
         PlaceShipsAction action = new PlaceShipsAction { Ships = _validFleet };
         Dictionary<string, PlayerState> nextStates = _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", action } });
 
-        _broadcaster.BroadcastChange([.. _game.GetAllRenderables()]);
         Assert.That(nextStates.ContainsKey("p2"), Is.True);
 
         List<GameRenderable> renderables = _game.GetAllRenderables();
@@ -95,19 +57,15 @@ public class BattleshipRenderingTests
     public void TestDoAction_Shoot()
     {
         _game.GetInitial(["p1", "p2"]);
-        _broadcaster.BroadcastChange([.. _game.GetAllRenderables()]);
 
         // csharpier-ignore
         _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", new PlaceShipsAction { Ships = _validFleet } } });
-        _broadcaster.BroadcastChange([.. _game.GetAllRenderables()]);
         // csharpier-ignore
         _game.DoAction(new Dictionary<string, PlayerAction> { { "p2", new PlaceShipsAction { Ships = _validFleet } } });
-        _broadcaster.BroadcastChange([.. _game.GetAllRenderables()]);
 
         // csharpier-ignore
         ShootAction shootAction1 = new ShootAction { ShootAt = new Coordinate { X = 0, Y = 0 } };
         Dictionary<string, PlayerState> stateAfter1 = _game.DoAction(new Dictionary<string, PlayerAction> { { "p1", shootAction1 } });
-        _broadcaster.BroadcastChange([.. _game.GetAllRenderables()]);
         Assert.That(stateAfter1.ContainsKey("p2"), Is.True);
 
         GameRenderable hit = _game.GetAllRenderables()[^1];
@@ -117,7 +75,6 @@ public class BattleshipRenderingTests
         // csharpier-ignore
         ShootAction shootAction2 = new ShootAction { ShootAt = new Coordinate { X = 9, Y = 9 } };
         Dictionary<string, PlayerState> stateAfter2 = _game.DoAction(new Dictionary<string, PlayerAction> { { "p2", shootAction2 } });
-        _broadcaster.BroadcastChange([.. _game.GetAllRenderables()]);
         Assert.That(stateAfter2.ContainsKey("p1"), Is.True);
     }
 

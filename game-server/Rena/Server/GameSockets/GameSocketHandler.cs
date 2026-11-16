@@ -6,7 +6,7 @@ namespace Rena.Server.GameSockets;
 using Microsoft.Extensions.Logging;
 using Rena.GameEngine;
 
-public class GameSocketHandler<G, S, A>(IGameRoomManager gameRoomManager, ILogger<GameSocketHandler<G, S, A>> logger)
+internal class GameSocketHandler<G, S, A>(IGameRoomManager gameRoomManager, ILogger<GameSocketHandler<G, S, A>> logger)
     where G : IGame<S, A>
     where S : class
     where A : class

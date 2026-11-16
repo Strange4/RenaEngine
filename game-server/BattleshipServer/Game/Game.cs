@@ -106,6 +106,8 @@ public class BattleshipGame : IGame<PlayerState, PlayerAction>
                     Id = $"p{playerNumber}-ship-{i}",
                     Position = [offsetX + ship.StartCoordinate.X, 1 + ship.StartCoordinate.Y],
                     Size = [ship.Size, 1], // The same orientation as the asset. If the ship image asset is horizontal, the size is [size, 1]
+
+                    // TODO (#199): add these assets to the local asset path of game-server
                     AssetPath = "/sprites/ship1.png", // can change depending on where the asset is stored
                     Rotation = isHorizontal ? 0 : 90,
                     Type = RenderableType.OBJECT,

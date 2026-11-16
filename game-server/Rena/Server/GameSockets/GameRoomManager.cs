@@ -4,17 +4,19 @@ using System.Threading.Channels;
 using AsyncAwaitBestPractices;
 using Microsoft.Extensions.Logging;
 using Rena.GameEngine;
+using Rena.Server.Rendering;
 using Rena.Utility;
 
 namespace Rena.Server.GameSockets;
 
-public interface IGameRoomManager
+internal interface IGameRoomManager
 {
     Task<Result<ChannelReader<Result<bool>>>> RegisterForTest(string playerId, WebSocket socket);
     Task UnRegister(string playerId);
+    Result<RenderableBroadcaster> GetBroadcasterForPlayer(string playerId);
 }
 
-public class GameRoomManager<G, S, A>(IMatchMaker<G, S, A> matchMaker, int roomSize, ILogger logger) : IGameRoomManager
+internal class GameRoomManager<G, S, A>(IMatchMaker<G, S, A> matchMaker, int roomSize, ILogger logger) : IGameRoomManager
     where G : IGame<S, A>, new()
     where S : class
     where A : class
@@ -74,6 +76,20 @@ public class GameRoomManager<G, S, A>(IMatchMaker<G, S, A> matchMaker, int roomS
         _rooms[playerId].RemovePlayer(playerId);
         _channels.TryRemove(playerId, out _);
         _rooms.TryRemove(playerId, out _);
+        matchMaker.RemovePlayer(playerId);
+    }
+
+    public Result<RenderableBroadcaster> GetBroadcasterForPlayer(string playerId)
+    {
+        if (!this._rooms.TryGetValue(playerId, out GameRoom<G, S, A>? room))
+        {
+            return new(new ArgumentException("This player doesn't have a room"));
+        }
+        if (room.RenderableWatcher is RenderableBroadcaster broadcaster)
+        {
+            return new(broadcaster);
+        }
+        return new(new ArgumentException("This room isn't watchable. Are you sure you can be can be here?"));
     }
 
     private async Task HandleRoomExceptions(Exception e, ICollection<string> affectedPlayers)

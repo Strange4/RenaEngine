@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import ReplayControls from "./ReplayControls";
+import { PLAYBACK_SPEEDS, ReplayController } from "@/app/viewer/replayController";
 
 const button = (name: string) => screen.getByRole("button", { name });
 
@@ -14,6 +15,7 @@ describe("ReplayControls", () => {
       "Play",
       "Go to end",
       "Step forward",
+      "Speed 1x",
     ]);
   });
 
@@ -55,4 +57,34 @@ describe("ReplayControls", () => {
 
     expect(onPause).toHaveBeenCalledTimes(1);
   });
+});
+
+describe("speed menu", ()=>{
+
+  it("displays current speed on control bar", ()=>{
+    render(<ReplayControls speed={1.25} />);
+    expect(button("Speed 1.25x")).toHaveTextContent("Speed 1.25x");
+  });
+
+  it("menu opens with the current speed made evident-- checked", ()=>{
+    render(<ReplayControls speed={1.5} />);
+    fireEvent.click(button("Speed 1.5x"));
+
+    expect(button("Speed 1.5x")).toHaveAttribute("aria-expanded", "true"); //open menu expanded
+    const options = screen.getAllByRole("menuitemradio"); //options as radio buttons
+    expect(options.map((option) => option.textContent)).toEqual(PLAYBACK_SPEEDS.map((speed) =>`${speed}x`));
+    //the current speed is the only one made evident and checked
+    expect(options.filter((option)=> option.getAttribute("aria-checked") === "true")).toEqual([screen.getByRole("menuitemradio", {name: "1.5x"})]);
+
+  });
+
+  //dropdown menu of speed options closes/ collapses when the user clicks anywhere on the screen
+  it("dropdown collapses when user clicks mousedown on screen", ()=>{
+    render(<ReplayControls />);
+    fireEvent.click(button("Speed 1x"));
+    fireEvent.mouseDown(document.body);
+
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+  });
+
 });

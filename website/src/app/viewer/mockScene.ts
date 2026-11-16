@@ -4,7 +4,7 @@ import type { SceneSource } from "./sceneSource";
 export const MOCK_VIEWER_SETUP: ViewerSetup = {
   // 20 x 15 tiles of 40px fills the 800 x 600 canvas exactly
   tileSize: 40,
-  resolution: [800, 600],
+  resolution: [920, 480],
 };
 
 export const MOCK_GRID_SIZE: [number, number] = [
@@ -50,8 +50,8 @@ const MAP: GameRenderable[] = [
     type: RenderableType.MAP,
     layer: -1,
   },
-  ...tiles("grass", "/sprites/grass.png", 0, [0, 0], MOCK_GRID_SIZE),
-  ...tiles("water", "/sprites/water.svg", 1, [11, 2], [8, 6]),
+  ...tiles("grass", "/sprites/grass.png", -1, [0, 0], MOCK_GRID_SIZE),
+  ...tiles("water", "/sprites/water.svg", -1, [11, 2], [8, 6]),
 ];
 
 const OBJECTS: GameRenderable[] = [
@@ -67,7 +67,8 @@ const DECORATIONS: GameRenderable[] = [
   { id: "cloud", position: [12, 5], assetPath: "/sprites/cloud.svg", size: [3, 3], rotation: 0, type: RenderableType.DECORATION, layer: 0 },
 ];
 
-export const MOCK_SCENE: GameRenderable[] = [...MAP, ...OBJECTS, ...DECORATIONS];
+// export const MOCK_SCENE: GameRenderable[] = [...MAP, ...OBJECTS, ...DECORATIONS];
+export const MOCK_SCENE: GameRenderable[] = [...MAP];
 
 export const mockSceneSource: SceneSource = {
   getInitialScene: async () => ({ setup: MOCK_VIEWER_SETUP, renderables: MOCK_SCENE }),
