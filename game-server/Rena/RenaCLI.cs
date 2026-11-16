@@ -19,7 +19,7 @@ public class RenaCLI
             return;
         }
 
-        SDKBuilder<G, S, A>.BuildAll(options).Wait();
+        SDKBuilder.BuildAll<G, S, A>(options).Wait();
         Environment.Exit(0);
     }
 }

@@ -1,8 +1,13 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
-import { Application, Sprite, Container } from "pixi.js";
+import { Sprite, Container } from "pixi.js";
 import { AssetLoader } from "@/app/viewer/assetLoader";
+import { RenderableChangeProcessor } from "@/app/viewer/renderableChangeProcessor";
 import { getSceneSource } from "@/app/viewer/sceneSource";
-import { RenderableType, type GameRenderable, type ViewerSetup } from "@/shared/renderable";
+import {
+  RenderableType,
+  type GameRenderable,
+  type ViewerSetup,
+} from "@/shared/renderable";
 import LiveViewer from "./LiveViewer";
 
 const TEST_VIEWER_SETUP: ViewerSetup = {
@@ -11,6 +16,14 @@ const TEST_VIEWER_SETUP: ViewerSetup = {
 };
 
 const TEST_SCENE: GameRenderable[] = [
+  {
+    id: "map",
+    position: [0, 0],
+    assetPath: "/sprites/map.png",
+    size: [20, 15],
+    type: RenderableType.MAP,
+    layer: 0,
+  },
   {
     id: "test-sprite",
     position: [2, 2],
@@ -55,7 +68,9 @@ jest.mock("pixi.js", () => {
       screen: { width: 800, height: 600 },
       init: mockInit,
       destroy: jest.fn(),
+      renderer: { resize: jest.fn() },
       stage: new MockContainer(),
+      ticker: {add: jest.fn()},
     };
 
     appInstances.push(app);
@@ -63,13 +78,24 @@ jest.mock("pixi.js", () => {
   });
 
   const MockSprite = jest.fn().mockImplementation((texture) => {
+
+    const position ={
+      x: 0,
+      y: 0,
+      set: jest.fn((x: number, y:number) =>{
+        position.x = x;
+        position.y = y;
+      }),
+    };
     const sprite = {
       texture,
-      position: { set: jest.fn() },
+      position,
       anchor: { set: jest.fn() },
       zIndex: 0,
       width: 0,
       height: 0,
+      angle:0,
+      destroy: jest.fn(),
     };
 
     spriteInstances.push(sprite);
@@ -99,6 +125,28 @@ jest.mock("@/app/viewer/sceneSource", () => ({
   getSceneSource: jest.fn(() => ({ getInitialScene: mockGetInitialScene })),
 }));
 
+jest.mock("@/app/viewer/renderableChangeSource", () => ({
+  SSERenderableChangeSource: jest.fn().mockImplementation(() => ({
+    setChangeListener: jest.fn(),
+    getAllChanges: jest.fn().mockReturnValue([]),
+    close: jest.fn(),
+  })),
+}));
+
+// Uses the real processor, wrapped so tests can get the one the viewer created
+jest.mock("@/app/viewer/renderableChangeProcessor", () => {
+  const actual = jest.requireActual("@/app/viewer/renderableChangeProcessor");
+  return {
+    RenderableChangeProcessor: jest.fn(
+      (...args: unknown[]) => new actual.RenderableChangeProcessor(...args),
+    ),
+  };
+});
+
+const getViewerProcessor = () =>
+  (RenderableChangeProcessor as unknown as jest.Mock).mock.results[0]
+    .value as RenderableChangeProcessor;
+
 const getPixiMocks = () =>
   jest.requireMock("pixi.js") as {
     __appInstances: Array<{
@@ -106,8 +154,9 @@ const getPixiMocks = () =>
       screen: { width: number; height: number };
       init: jest.Mock;
       destroy: jest.Mock;
-      renderer: { on: jest.Mock };
+      renderer: { on: jest.Mock; resize: jest.Mock };
       stage: { addChild: jest.Mock };
+      ticker: {add: jest.Mock};
     }>;
     __containerInstances: Array<{
       label: string;
@@ -121,13 +170,15 @@ const getPixiMocks = () =>
       zIndex: number;
       width: number;
       height: number;
+      destroy: jest.Mock;
     }>;
   };
 
 describe("LiveViewer", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+    delete (globalThis as { ResizeObserver?: unknown }).ResizeObserver;
+
     const mocks = getPixiMocks();
     mocks.__appInstances.length = 0;
     mocks.__containerInstances.length = 0;
@@ -140,7 +191,7 @@ describe("LiveViewer", () => {
     });
   });
 
-  it("renders the viewer container sized to the scene", async () => {
+  it("renders the viewer container using the map aspect ratio", async () => {
     render(<LiveViewer gameId="1" />);
 
     const viewer = screen.getByTestId("live-viewer");
@@ -150,7 +201,6 @@ describe("LiveViewer", () => {
 
     await waitFor(() => {
       expect(viewer).toHaveStyle({
-        width: "800px",
         height: "600px",
       });
     });
@@ -164,6 +214,91 @@ describe("LiveViewer", () => {
     });
 
     expect(getSceneSource).toHaveBeenCalledWith("42");
+  });
+
+  it.each([
+    ["missing", []],
+    ["non-map", [{ ...TEST_SCENE[1] }]],
+  ])("logs an error when the initial %s renderable is invalid", async (_case, renderables) => {
+    const error = new Error("The initial renderable must define the map");
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    mockGetInitialScene.mockResolvedValueOnce({ renderables });
+
+    try {
+      render(<LiveViewer gameId="1" />);
+      await waitFor(() => {
+        expect(logSpy).toHaveBeenCalledWith(error);
+      });
+    } finally {
+      logSpy.mockRestore();
+    }
+  });
+
+  it("logs an error when the map has an invalid tile resolution", async () => {
+    const error = new Error("The initial map must have a positive tile resolution");
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    mockGetInitialScene.mockResolvedValueOnce({
+      renderables: [{ ...TEST_SCENE[0], size: [0, 15] }],
+    });
+
+    try {
+      render(<LiveViewer gameId="1" />);
+      await waitFor(() => {
+        expect(logSpy).toHaveBeenCalledWith(error);
+      });
+    } finally {
+      logSpy.mockRestore();
+    }
+  });
+
+  it("uses the scene resolution when the browser width is unavailable", async () => {
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+      configurable: true,
+      value: 0,
+    });
+    jest.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      width: 0,
+    } as DOMRect);
+
+    try {
+      render(<LiveViewer gameId="1" />);
+      await waitFor(() => {
+        expect(getPixiMocks().__appInstances[0].init).toHaveBeenCalledWith(
+          expect.objectContaining({ width: 800, height: 600 }),
+        );
+      });
+    } finally {
+      Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+        configurable: true,
+        value: 0,
+      });
+      HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+    }
+  });
+
+  it("resizes Pixi and the canvas when the browser layout changes", async () => {
+    let resize!: (entries: Array<{ contentRect: { width: number } }>) => void;
+    const observe = jest.fn();
+    const disconnect = jest.fn();
+    (globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
+      constructor(callback: typeof resize) {
+        resize = callback;
+      }
+      observe = observe;
+      disconnect = disconnect;
+    };
+
+    render(<LiveViewer gameId="1" />);
+    await waitFor(() => {
+      expect(observe).toHaveBeenCalled();
+    });
+
+    await act(async () => {
+      resize([{ contentRect: { width: 400 } }]);
+    });
+
+    expect(getPixiMocks().__appInstances[0].renderer.resize).toHaveBeenCalledWith(400, 300);
   });
 
   it("does not set up PixiJS if unmounted while the scene is loading", async () => {
@@ -198,12 +333,13 @@ describe("LiveViewer", () => {
       expect(viewer.querySelector("canvas")).not.toBeNull();
     });
 
-    const { __appInstances, __spriteInstances, __containerInstances } = getPixiMocks();
+    const { __appInstances, __spriteInstances, __containerInstances } =
+      getPixiMocks();
     const app = __appInstances[0];
     const stage = app.stage;
 
     const [mapContainer, objectContainer, decorationContainer] =
-    __containerInstances.slice(1);
+      __containerInstances.slice(1);
 
     expect(app.init).toHaveBeenCalledWith({
       width: 800,
@@ -231,31 +367,31 @@ describe("LiveViewer", () => {
     expect(stage.addChild).toHaveBeenNthCalledWith(2, objectContainer);
     expect(stage.addChild).toHaveBeenNthCalledWith(3, decorationContainer);
 
-    expect(Sprite).toHaveBeenCalledTimes(2);
+    expect(Sprite).toHaveBeenCalledTimes(3);
 
-    expect(__spriteInstances).toHaveLength(2);
+    expect(__spriteInstances).toHaveLength(3);
 
-    const [spriteOne, spriteTwo] = __spriteInstances;
+    const [, spriteOne, spriteTwo] = __spriteInstances;
 
     expect(spriteOne.texture).toBe("mock-texture");
-    expect(spriteOne.position.set).toHaveBeenCalledWith(80, 80);
+    expect(spriteOne.position.set).toHaveBeenCalledWith(100, 100);
     expect(spriteOne.anchor.set).toHaveBeenCalledWith(1 / 6, 1 / 6);
     expect(spriteOne.zIndex).toBe(1);
-    expect(spriteOne.width).toBe(96);
-    expect(spriteOne.height).toBe(96);
+    expect(spriteOne.width).toBe(120);
+    expect(spriteOne.height).toBe(120);
 
     expect(spriteTwo.texture).toBe("mock-texture");
-    expect(spriteTwo.position.set).toHaveBeenCalledWith(16, 16);
+    expect(spriteTwo.position.set).toHaveBeenCalledWith(20, 20);
     expect(spriteTwo.anchor.set).toHaveBeenCalledWith(1 / 6, 1 / 6);
     expect(spriteTwo.zIndex).toBe(2);
-    expect(spriteTwo.width).toBe(96);
-    expect(spriteTwo.height).toBe(96);
+    expect(spriteTwo.width).toBe(120);
+    expect(spriteTwo.height).toBe(120);
 
     expect(objectContainer.addChild).toHaveBeenCalledTimes(2);
     expect(objectContainer.addChild).toHaveBeenNthCalledWith(1, spriteOne);
     expect(objectContainer.addChild).toHaveBeenNthCalledWith(2, spriteTwo);
 
-    expect(mapContainer.addChild).not.toHaveBeenCalled();
+    expect(mapContainer.addChild).toHaveBeenCalledWith(__spriteInstances[0]);
     expect(decorationContainer.addChild).not.toHaveBeenCalled();
   });
 
@@ -315,9 +451,10 @@ describe("LiveViewer", () => {
 
     (AssetLoader as jest.Mock).mockImplementationOnce(() => ({
       loadFor: jest.fn(
-        () => new Promise<void>((resolve) => {
-          resolveAssets = resolve;
-        }),
+        () =>
+          new Promise<void>((resolve) => {
+            resolveAssets = resolve;
+          }),
       ),
       getTexture: jest.fn().mockReturnValue("mock-texture"),
     }));
@@ -343,6 +480,134 @@ describe("LiveViewer", () => {
     expect(Sprite).not.toHaveBeenCalled();
   });
 
+  it("removes the sprite when a change marks its renderable as removed", async () => {
+    render(<LiveViewer gameId="1" />);
+
+    await waitFor(() => {
+      expect(RenderableChangeProcessor).toHaveBeenCalledTimes(1);
+    });
+
+    const [, removedSprite, keptSprite] = getPixiMocks().__spriteInstances;
+
+    await act(async () => {
+      await getViewerProcessor().process({
+        index: 1,
+        changes: [{ ...TEST_SCENE[1], removed: true }],
+      });
+    });
+
+    expect(removedSprite.destroy).toHaveBeenCalledTimes(1);
+    expect(keptSprite.destroy).not.toHaveBeenCalled();
+  });
+
+  it("creates a sprite when a change introduces a new renderable", async () => {
+    render(<LiveViewer gameId="1" />);
+
+    await waitFor(() => {
+      expect(RenderableChangeProcessor).toHaveBeenCalledTimes(1);
+    });
+
+    const newRenderable: GameRenderable = {
+      id: "new-flag",
+      position: [4, 1],
+      assetPath: "/sprites/flag.svg",
+      size: [1, 1],
+      type: RenderableType.DECORATION,
+      layer: 5,
+    };
+
+    await act(async () => {
+      await getViewerProcessor().process({
+        index: 1,
+        changes: [newRenderable],
+      });
+    });
+
+    const assets = (AssetLoader as jest.Mock).mock.results[0].value as {
+      loadFor: jest.Mock;
+    };
+    expect(assets.loadFor).toHaveBeenLastCalledWith([newRenderable]);
+
+    const { __spriteInstances, __containerInstances } = getPixiMocks();
+    expect(__spriteInstances).toHaveLength(4);
+
+    const created = __spriteInstances[3];
+    expect(created.texture).toBe("mock-texture");
+    expect(created.position.set).toHaveBeenCalledWith(180, 60);
+    expect(created.zIndex).toBe(5);
+    expect(created.width).toBe(40);
+    expect(created.height).toBe(40);
+
+    const decorationContainer = __containerInstances[3];
+    expect(decorationContainer.addChild).toHaveBeenCalledWith(created);
+
+    // the processor now tracks it alongside the initial scene
+    expect(
+      getViewerProcessor()
+        .getCurrentState()
+        .map(({ id }) => id),
+    ).toEqual(["map", "test-sprite", "test-sprite-two", "new-flag"]);
+  });
+
+  it("does not create the sprite if unmounted while its asset is loading", async () => {
+    const { unmount } = render(<LiveViewer gameId="1" />);
+
+    await waitFor(() => {
+      expect(RenderableChangeProcessor).toHaveBeenCalledTimes(1);
+    });
+
+    let resolveAsset!: () => void;
+    const assets = (AssetLoader as jest.Mock).mock.results[0].value as {
+      loadFor: jest.Mock;
+    };
+    assets.loadFor.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveAsset = resolve;
+      }),
+    );
+
+    const pending = getViewerProcessor().process({
+      index: 1,
+      changes: [{ ...TEST_SCENE[1], id: "late-sprite" }],
+    });
+
+    // wait for the create handler to start loading the asset (first call was the initial scene)
+    await waitFor(() => {
+      expect(assets.loadFor).toHaveBeenCalledTimes(2);
+    });
+
+    unmount();
+
+    await act(async () => {
+      resolveAsset();
+      await pending;
+    });
+
+    // only the two sprites from the initial scene
+    expect(Sprite).toHaveBeenCalledTimes(3);
+  });
+
+  it("stops applying changes once the viewer is unmounted", async () => {
+    const { unmount } = render(<LiveViewer gameId="1" />);
+
+    await waitFor(() => {
+      expect(RenderableChangeProcessor).toHaveBeenCalledTimes(1);
+    });
+
+    const processor = getViewerProcessor();
+    unmount();
+
+    // a change arriving after unmount should not touch the destroyed app
+    await act(async () => {
+      await processor.process({
+        index: 1,
+        changes: [{ ...TEST_SCENE[1], removed: true }],
+      });
+    });
+
+    expect(getPixiMocks().__spriteInstances[1].destroy).not.toHaveBeenCalled();
+  });
+
   it("logs an error when PixiJS initialization fails", async () => {
     const error = new Error("Pixi initialization failed");
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
@@ -366,5 +631,39 @@ describe("LiveViewer", () => {
     } finally {
       logSpy.mockRestore();
     }
+  });
+
+  it("updates a renderable", async()=>{
+
+    render(<LiveViewer gameId="15" />);
+    await waitFor(() => {
+      expect(RenderableChangeProcessor).toHaveBeenCalledTimes(1);
+    });
+
+    const [, oldShip, updatedShip] = getPixiMocks().__spriteInstances;
+
+    //Say the change is a movement/displacement
+    const displacement: GameRenderable = {...TEST_SCENE[1], position:[4,1]};
+    await act(async() => {
+      await getViewerProcessor().process({index:1, changes:[displacement]});
+    });
+
+
+    expect(oldShip.destroy).not.toHaveBeenCalled();
+    expect(updatedShip.destroy).not.toHaveBeenCalled();
+    const{__spriteInstances} = getPixiMocks();
+    expect(getPixiMocks().__spriteInstances).toHaveLength(3);
+
+    //Viewere registered ticker function simulates passing frames
+    const tick = getPixiMocks().__appInstances[0].ticker.add.mock.calls[0][0];
+    //halfway in the animation the sprite's properties are also halfway till their final state
+    //initial is at 80,80  final is at 144,48
+    tick({deltaMS: 100});
+    expect(oldShip.position.set).toHaveBeenLastCalledWith(140,80);
+
+    //at the end of the animation, it's at the final state
+    tick({deltaMS: 100});
+    expect(oldShip.position.set).toHaveBeenLastCalledWith(180,60); //some coordinate position for update
+    expect(oldShip.position.set).toHaveBeenCalledWith(180, 60);
   });
 });

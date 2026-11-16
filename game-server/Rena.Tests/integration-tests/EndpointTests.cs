@@ -1,10 +1,11 @@
+using System.IO.Compression;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Runtime.Serialization;
+using System.Text;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
-using Rena.GameEngine;
 using Rena.Server;
 
 namespace Rena.Tests.Integration;
@@ -58,15 +59,6 @@ public class EndpointTests
 
         var content = await response.Content.ReadAsStringAsync();
         Assert.That(content, Is.EqualTo("Hello World!"));
-    }
-
-    [Test]
-    public async Task Name_ReturnsGameName()
-    {
-        using var response = await _client.GetAsync("/name");
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        var name = await response.Content.ReadFromJsonAsync<string>();
-        Assert.That(name, Is.EqualTo("Example game"));
     }
 
     [Test]
@@ -132,26 +124,114 @@ public class EndpointTests
     }
 }
 
-public record TestFeatureSettingDto(bool Enabled);
-
-[DataContract]
-public class GameState
+[TestFixture]
+public class UploadEndpointTests
 {
-    [DataMember(Order = 1)]
-    public int X;
-}
+    private WebApplication _app;
+    private HttpClient _client;
 
-[DataContract]
-public class GameAction
-{
-    [DataMember(Order = 1)]
-    public int Y;
-}
-
-public class TestGame : IGame<GameState, GameAction>
-{
-    public string GetName()
+    [OneTimeSetUp]
+    public async Task OneTimeSetUp()
     {
-        return "Example game";
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Testing", Args = [] });
+
+        builder.WebHost.UseTestServer();
+        builder.Configuration.AddInMemoryCollection(
+            new Dictionary<string, string?> { { "RenaOptions:TSProtoPath", "TESTING" }, { "RenaOptions:UploadsDirectory", "./uploads" } }
+        );
+        builder.SetRenaServices<TestGame, GameState, GameAction>();
+
+        _app = builder.Build();
+
+        _app.UseRenaEndpoints<TestGame, GameState, GameAction>();
+
+        await _app.StartAsync();
+        _client = _app.GetTestClient();
+    }
+
+    [OneTimeTearDown]
+    public async Task OneTimeTearDown()
+    {
+        _client?.Dispose();
+        if (_app is not null)
+        {
+            await _app.DisposeAsync();
+        }
+    }
+
+    [TearDown]
+    public async Task Cleanup()
+    {
+        if (Directory.Exists("./uploads"))
+            Directory.Delete("./uploads", true);
+    }
+
+    [Test]
+    public async Task Uploads_WritesFile()
+    {
+        // Prepare zip
+        using MultipartFormDataContent formData = new();
+        using MemoryStream zipStream = new();
+        using (ZipArchive zipArchive = new(zipStream, ZipArchiveMode.Create, true))
+        {
+            ZipArchiveEntry entry = zipArchive.CreateEntry("main.ts", CompressionLevel.NoCompression);
+
+            using StreamWriter writer = new(entry.Open());
+            writer.Write("function main() { console.log(\"Hello world!\"); }; main();");
+        }
+        ByteArrayContent content = new(zipStream.ToArray());
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
+        formData.Add(content, "file", "TestFile.zip");
+        string playerId = "PLAYER-42";
+
+        // Send zip
+        HttpResponseMessage response = await _client.PostAsync($"/upload/{playerId}", formData);
+
+        // Verify Zip
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Accepted));
+        string zipFilePath = Path.Combine("./uploads", $"{playerId}.zip");
+        Assert.That(zipFilePath, Does.Exist);
+
+        using ZipArchive localZip = await ZipFile.OpenReadAsync(zipFilePath);
+
+        Assert.That(localZip.Entries.Length, Is.EqualTo(1));
+        ZipArchiveEntry? zipFile = localZip.GetEntry("main.ts");
+        Assert.That(zipFile, Is.Not.Null);
+    }
+
+    [Test]
+    public async Task Uploads_RefusesNonZip()
+    {
+        // Prepare file
+        using MultipartFormDataContent formData = new();
+        ByteArrayContent content = new(Encoding.UTF8.GetBytes("I am a file"));
+        content.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
+        formData.Add(content, "file", "file.txt");
+        string playerId = "PLAYER-42";
+
+        // Send file
+        HttpResponseMessage response = await _client.PostAsync($"/upload/{playerId}", formData);
+
+        // Verify that is wasn't accepted
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.UnsupportedMediaType));
+    }
+
+    [Test]
+    public async Task Uploads_RefusesBadPlayerID()
+    {
+        // Prepare file
+        using MultipartFormDataContent formData = new();
+        ByteArrayContent content = new(Encoding.UTF8.GetBytes("I am a file"));
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        formData.Add(content, "file", "file.zip");
+        string playerId = "passwd.exe";
+
+        // Send file
+        HttpResponseMessage response = await _client.PostAsync($"/upload/{playerId}", formData);
+
+        // Verify that is wasn't accepted
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
     }
 }
+
+public record TestFeatureSettingDto(bool Enabled);

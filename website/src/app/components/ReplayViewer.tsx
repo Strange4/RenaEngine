@@ -1,0 +1,122 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { Application } from "pixi.js";
+import { AssetLoader } from "@/app/viewer/assetLoader";
+import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
+import { getSceneSource } from "@/app/viewer/sceneSource";
+import { getInitialMap, getInitialViewerWidth, getResponsiveViewerSetup, createViewerResizeHandler, observeViewerResize } from "@/app/viewer/responsiveViewer";
+import ReplayControls from "./ReplayControls";
+import {Animator, ANIMATION_DURATION} from "@/app/viewer/animator"; //animations are needed or else it will be instant
+import {PlaybackState, ReplayController, type ReplayStatus} from "@/app/viewer/replayController";
+import { createRendererHandlers } from "@/app/viewer/renderableHandler";
+
+interface ReplayViewerProps {
+  gameId: string;
+}
+
+// only draws the initial scene for now, the ReplayController gets connected in 171-175
+export default function ReplayViewer({ gameId }: ReplayViewerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [resolution, setResolution] = useState<[number, number] | null>(null);
+  
+  const [status, setStatus] = useState<ReplayStatus | null> (null);//controller's latest status (speed, position etc)---> show it to the user
+  const controllerRef = useRef<ReplayController | null>(null); //control handlers can reach controller
+
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const app = new Application();
+    let initialized = false;
+    let resizeObserver: ResizeObserver | null = null;
+    const unmount = new AbortController();
+    let controller: ReplayController | null = null;
+
+    //implement animator for smooth movements (this way we get a PixiJS ticker involved in the animation duration and stuff doesn't instantly flash on the screen)
+    const animator = new Animator();
+
+    (async () => {
+      const scene = await getSceneSource(gameId).getInitialScene();
+      if (unmount.signal.aborted) return;
+
+      // The initial map is used to determine the aspect ratio of the game and the tile size
+      const map = getInitialMap(scene.renderables);
+
+      const initialWidth = getInitialViewerWidth(container, scene.setup.resolution[0]);
+      const setup = getResponsiveViewerSetup(map, initialWidth);
+      setResolution(setup.resolution);
+      const renderer = new LiveViewRenderer(new AssetLoader(), setup, animator); //passing in the animator to the renderer for playback viewer animations
+
+      await app.init({
+        width: setup.resolution[0],
+        height: setup.resolution[1],
+        background: "#1f2937",
+        antialias: true,
+      });
+      initialized = true;
+
+      if (unmount.signal.aborted) {
+        app.destroy(true, { children: true });
+        return;
+      }
+      container.appendChild(app.canvas);
+      //since we have animations added now, we also need the pixijs ticker (they come together)
+      app.ticker.add((ticker) => animator.tick(ticker.deltaMS)); //deltaMS is the difference between frames in milliseconds (it's a built in Pixi thing)
+      renderer.addContainerToStage(app.stage);
+      await renderer.renderScene(scene.renderables, unmount.signal);
+      if (unmount.signal.aborted) return;
+
+      // resize the viewer when the container width changes
+      const resize = createViewerResizeHandler(
+        map,
+        renderer,
+        app,
+        setResolution,
+        () => unmount.signal.aborted,
+      );
+
+      resizeObserver = observeViewerResize(container, resize);
+
+      //TO DO - future issues: pass the game's recording loaded from server here
+
+      //Adding missing code fix below for the speed selector to work. we are creating the controller here
+      controller = new ReplayController(
+        createRendererHandlers(renderer, unmount.signal), [], scene.renderables,
+      );
+      controllerRef.current = controller;
+
+      //show the status
+      setStatus(controller.getStatus());
+      controller.onStatusChange(setStatus);
+    })().catch((e) => {
+      console.error("Failed to load the replay", e);
+    });
+
+    return () => {
+      unmount.abort();
+      resizeObserver?.disconnect();
+      controller?.dispose(); //dispose removes the status listener
+      controllerRef.current = null;
+      if (initialized) app.destroy(true, { children: true });
+    };
+  }, [gameId]);
+
+  return (
+    <div className="replay-viewer" data-testid="replay-viewer">
+      <div
+        ref={containerRef}
+        className="live-viewer-canvas"
+        style={resolution ? { height: `${resolution[1]}px` } : undefined}
+        data-testid="replay-canvas"
+      />
+      <ReplayControls 
+//connect the controls
+      playing={status?.state === PlaybackState.PLAYING}
+      speed={status?.speed}
+      onSpeedChange={(speed) => controllerRef.current?.setSpeed(speed)}
+      />
+    </div>
+  );
+}

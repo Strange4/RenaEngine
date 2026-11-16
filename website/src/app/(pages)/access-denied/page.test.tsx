@@ -25,17 +25,16 @@ beforeEach(() => {
 });
 
 describe("AccessDeniedPage", () => {
-  it("explains the denial and provides a home-page link", () => {
-    const { container } = render(<AccessDeniedPage />);
+  it("explains the denial and provides a way back", () => {
+    render(<AccessDeniedPage />);
 
     expect(
       screen.getByRole("heading", { name: "Access Denied" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("403 · Forbidden")).toBeInTheDocument();
+    expect(screen.getByText("403")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Go to your home page" }),
-    ).toHaveAttribute("href", "/");
-    expect(container.querySelector("main")).toHaveClass("access-denied-page");
+      screen.getByRole("button", { name: "Go back" }),
+    ).toBeInTheDocument();
   });
 
   it("returns to a same-origin previous page", () => {

@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import styles from "./access-denied.module.css";
 
 // Shows a friendly 403 message when the user cannot access a page.
-// Offers a way back or a link to the home page.
+// Offers a way back to the previous page.
 export default function AccessDeniedPage() {
   const router = useRouter();
 
@@ -24,23 +24,21 @@ export default function AccessDeniedPage() {
   }
 
   return (
-    <main className="access-denied-page">
-      <section className="access-denied-card" aria-labelledby="access-denied-title">
-        <div className="access-denied-icon" aria-hidden="true">
-          !
+    <main className={styles.page}>
+      <section className={styles.card} aria-labelledby="access-denied-title">
+        <div className={styles.text}>
+          <p className={styles.code}>403</p>
+          <h1 className={styles.title} id="access-denied-title">
+            Access Denied
+          </h1>
+          <p className={styles.message}>
+            You&rsquo;re not permitted to view this resource. Sorry!
+          </p>
+          <button className={styles.back} type="button" onClick={returnToPreviousPage}>
+            Go back
+          </button>
         </div>
-        <p className="access-denied-code">403 · Forbidden</p>
-        <h1 id="access-denied-title">Access Denied</h1>
-        <p className="access-denied-message">
-          You don’t have permission to view this page. You can return to where
-          you were or head back to your home page.
-        </p>
-        <button className="access-denied-back" type="button" onClick={returnToPreviousPage}>
-          Go back
-        </button>
-        <Link className="access-denied-home" href="/">
-          Go to your home page
-        </Link>
+        <img className={styles.art} src="/images/access-denied-art.png" alt="" />
       </section>
     </main>
   );

@@ -25,7 +25,7 @@ internal class EmbeddedFileIO
         var assembly = Assembly.GetExecutingAssembly();
         using Stream? stream =
             assembly.GetManifestResourceStream("Rena." + namespacedSourceDirectory + "." + sourceFileName)
-            ?? throw new ArgumentNullException(nameof(sourceFileName), "Coudldn't read the embedded file");
+            ?? throw new ArgumentNullException(nameof(sourceFileName), $"Couldn't read the embedded file {sourceFileName}");
 
         StreamReader reader = new(stream);
         string text = await reader.ReadToEndAsync();

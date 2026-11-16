@@ -2,23 +2,10 @@ using System.Net.WebSockets;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Rena.GameEngine;
 using Rena.Server.GameSockets;
 using Rena.Utility;
 
 namespace Rena.Tests.Unit;
-
-public class MockGame : IGame<MockState, MockAction>
-{
-    public string GetName()
-    {
-        return "MockGame";
-    }
-}
-
-public class MockState { }
-
-public class MockAction { }
 
 [TestFixture]
 public class GameSocketConnectionTests
@@ -36,7 +23,9 @@ public class GameSocketConnectionTests
         _mockLogger = Substitute.For<ILogger>();
         _mockManager = Substitute.For<IGameRoomManager>();
         _mockChannel = Substitute.For<ChannelReader<Result<bool>>>();
-        _mockManager.Register(Arg.Any<string>(), Arg.Is(_mockWebSocket)).Returns(_mockChannel);
+        _mockManager
+            .RegisterForTest(Arg.Any<string>(), Arg.Is(_mockWebSocket))
+            .Returns(Task.FromResult(new Result<ChannelReader<Result<bool>>>(_mockChannel)));
     }
 
     [TearDown]
@@ -52,7 +41,7 @@ public class GameSocketConnectionTests
 
         _mockWebSocket.State.Returns(WebSocketState.Open);
 
-        var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(_mockWebSocket, playerId, _mockManager, _mockLogger);
+        var socketConnection = new GameSocketConnection<MockGame, GameState, GameAction>(_mockWebSocket, playerId, _mockManager, _mockLogger);
 
         Assert.That(socketConnection.PlayerId, Is.EqualTo(playerId));
 
@@ -62,7 +51,7 @@ public class GameSocketConnectionTests
 
         await _mockChannel.Received(1).ReadAsync();
 
-        await _mockManager.Received(1).Register(Arg.Is(playerId), Arg.Is(_mockWebSocket));
+        await _mockManager.Received(1).RegisterForTest(Arg.Is(playerId), Arg.Is(_mockWebSocket));
         await _mockManager.Received(1).UnRegister(Arg.Is(playerId));
 
         await _mockWebSocket
@@ -77,19 +66,20 @@ public class GameSocketConnectionTests
 
         _mockWebSocket.State.Returns(WebSocketState.Open);
 
-        var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(_mockWebSocket, playerId, _mockManager, _mockLogger);
+        var socketConnection = new GameSocketConnection<MockGame, GameState, GameAction>(_mockWebSocket, playerId, _mockManager, _mockLogger);
 
         Assert.That(socketConnection.PlayerId, Is.EqualTo(playerId));
 
         var exception = new ArgumentException("Test message");
-        _mockChannel.ReadAsync().Returns(new Result<bool>(exception));
+        _mockManager
+            .RegisterForTest(Arg.Any<string>(), Arg.Any<WebSocket>())
+            .Returns(Task.FromResult(new Result<ChannelReader<Result<bool>>>(exception)));
 
         await socketConnection.HandleConnection();
 
-        await _mockChannel.Received(1).ReadAsync();
-
-        await _mockManager.Received(1).Register(Arg.Is(playerId), Arg.Is(_mockWebSocket));
-        await _mockManager.Received(1).UnRegister(Arg.Is(playerId));
+        await _mockManager.Received(1).RegisterForTest(Arg.Is(playerId), Arg.Is(_mockWebSocket));
+        await _mockManager.DidNotReceive().UnRegister(Arg.Is(playerId));
+        await _mockChannel.DidNotReceive().ReadAsync();
 
         await _mockWebSocket
             .Received(1)
@@ -103,7 +93,7 @@ public class GameSocketConnectionTests
 
         _mockWebSocket.State.Returns(WebSocketState.Open);
 
-        var socketConnection = new GameSocketConnection<MockGame, MockState, MockAction>(_mockWebSocket, playerId, _mockManager, _mockLogger);
+        var socketConnection = new GameSocketConnection<MockGame, GameState, GameAction>(_mockWebSocket, playerId, _mockManager, _mockLogger);
 
         Assert.That(socketConnection.PlayerId, Is.EqualTo(playerId));
 
@@ -114,7 +104,7 @@ public class GameSocketConnectionTests
 
         await _mockChannel.Received(1).ReadAsync();
 
-        await _mockManager.Received(1).Register(Arg.Is(playerId), Arg.Is(_mockWebSocket));
+        await _mockManager.Received(1).RegisterForTest(Arg.Is(playerId), Arg.Is(_mockWebSocket));
         await _mockManager.Received(1).UnRegister(Arg.Is(playerId));
 
         await _mockWebSocket

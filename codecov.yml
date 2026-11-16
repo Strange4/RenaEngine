@@ -5,6 +5,7 @@ ignore:
   - "**/*.yaml"
   - "**/*.json"
   - "**/*.md"
+  - "game-server/BattleshipServer/HouseBot/*"
 
 coverage:
   status:

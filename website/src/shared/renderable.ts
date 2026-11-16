@@ -43,9 +43,9 @@ export interface RenderableChange{
 }
 
 /*
-Game Texture setup (no actions, just visuals)
+Viewer rendering setup calculated from the map and browser layout (no actions)
 */
 export interface ViewerSetup{
-    tileSize: number;
-    resolution: [number,number]; //game host can personalize the size of the pixiJs Canvas showing the game rendering [width, height]
+    tileSize: number; //pixels per game tile, calculated by the viewer
+    resolution: [number,number]; //pixel resolution calculated from the browser layout
 }

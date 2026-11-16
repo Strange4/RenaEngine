@@ -3,6 +3,7 @@
 
 # sdk generation stuff
 sdks/
+build/
 
 # dotenv files
 .env

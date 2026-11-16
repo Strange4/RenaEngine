@@ -6,6 +6,7 @@ import { buildToken } from "@/shared/credentials";
 import { homePathFor, isAdmin, parseToken } from "@/shared/token";
 import { useAuth } from "./AuthProvider";
 import LoadingScreen from "./LoadingScreen";
+import styles from "../(pages)/login/login.module.css";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -52,9 +53,10 @@ export default function LoginForm() {
   if (redirecting) return <LoadingScreen message="Signing you in…" />;
 
   return (
-    <form onSubmit={onSubmit}>
-      <label htmlFor="user-id">ID</label>
+    <form className={styles.form} onSubmit={onSubmit}>
+      <label className={styles.label} htmlFor="user-id">ID</label>
       <input
+        className={styles.input}
         id="user-id"
         type="text"
         autoComplete="username"
@@ -64,8 +66,9 @@ export default function LoginForm() {
           setError(null);
         }}
       />
-      <label htmlFor="user-password">Password</label>
+      <label className={styles.label} htmlFor="user-password">Password</label>
       <input
+        className={styles.input}
         id="user-password"
         type="password"
         autoComplete="current-password"
@@ -75,9 +78,9 @@ export default function LoginForm() {
           setError(null);
         }}
       />
-      {roleLabel && <p className="hint">Detected role: {roleLabel}</p>}
-      {error && <p className="error">{error}</p>}
-      <button type="submit" disabled={loading}>
+      {roleLabel && <p className={styles.hint}>Detected role: {roleLabel}</p>}
+      {error && <p className={styles.error}>{error}</p>}
+      <button className={styles.submit} type="submit" disabled={loading}>
         {loading ? "Logging in..." : "Log In"}
       </button>
     </form>
