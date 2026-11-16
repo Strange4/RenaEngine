@@ -158,6 +158,13 @@ describe("ReplayController", () => {
     expect(controller.getStatus().position).toBe(0);
   });
 
+  it("Throws for unimplemented stepForward and stepBackward", async () => {
+    const { controller } = controllerFor();
+    
+    await expect(controller.stepForward()).rejects.toThrow("Stepping forward is not implemented yet (#172)");
+    await expect(controller.stepBackward()).rejects.toThrow("Stepping backward is not implemented yet (#173)");
+  });
+
   it("starts and pauses playback without losing its position", async () => {
     const { controller, testHandlers } = controllerFor();
 
@@ -177,10 +184,40 @@ describe("ReplayController", () => {
       controller.pause();
       jest.useRealTimers();
     }
-
-    await expect(controller.stepForward()).rejects.toThrow("not implemented yet (#172)");
-    await expect(controller.stepBackward()).rejects.toThrow("not implemented yet (#173)");
     expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 1, speed: 1 });
+  });
+
+  it("does not apply a change when paused during the playback delay", async () => {
+    const { controller, testHandlers } = controllerFor();
+    jest.useFakeTimers();
+
+    try {
+      controller.play();
+      controller.pause();
+      await jest.advanceTimersByTimeAsync(STEP_DELAY);
+
+      expect(testHandlers.calls).toEqual([]);
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0 });
+    } finally {
+      controller.dispose();
+      jest.useRealTimers();
+    }
+  });
+
+  it("stops playback when disposed during the playback delay", async () => {
+    const { controller, testHandlers } = controllerFor();
+    jest.useFakeTimers();
+
+    try {
+      controller.play();
+      controller.dispose();
+      await jest.advanceTimersByTimeAsync(STEP_DELAY);
+
+      expect(testHandlers.calls).toEqual([]);
+      expect(controller.getStatus().position).toBe(0);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });
 
