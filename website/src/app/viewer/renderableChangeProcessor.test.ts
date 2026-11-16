@@ -61,6 +61,17 @@ describe("RenderableChangeProcessor", () => {
     expect(processor.getCurrentState()).toEqual([first, second]);
   });
 
+  it("looks up the current state of one renderable", async () => {
+    const shown = { ...baseRenderable, id: "shown" };
+    const processor = new RenderableChangeProcessor(handlers(), sourceStub(), [shown]);
+
+    expect(processor.getRenderable("shown")).toEqual(shown);
+    expect(processor.getRenderable("missing")).toBeUndefined();
+
+    await processor.process(change({ ...shown, removed: true }));
+    expect(processor.getRenderable("shown")).toBeUndefined();
+  });
+
   it("updates renderables when their data changes and ignores unchanged ones", async () => {
     const testHandlers = handlers();
     const current: GameRenderable = { ...baseRenderable, id: "existing", position: [1, 1] };
