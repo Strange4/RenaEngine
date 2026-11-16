@@ -157,12 +157,6 @@ describe("ReplayController", () => {
     expect(controller.getStatus().position).toBe(0);
   });
 
-  it("Throws for unimplemented stepBackward", async () => {
-    const { controller } = controllerFor();
-
-    await expect(controller.stepBackward()).rejects.toThrow("Stepping backward is not implemented yet (#173)");
-  });
-
   it("starts and pauses playback without losing its position", async () => {
     const { controller, testHandlers } = controllerFor();
 

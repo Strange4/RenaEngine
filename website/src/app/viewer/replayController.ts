@@ -1,6 +1,6 @@
 import type { GameRenderable, RenderableChange } from "@/shared/renderable";
 import type { RenderableHandlers } from "./renderableHandler";
-import { RenderableChangeProcessor } from "./renderableChangeProcessor";
+import { areRenderablesEqual, RenderableChangeProcessor } from "./renderableChangeProcessor";
 import { RecordedRenderableChangeSource } from "./renderableChangeSource";
 
 export enum PlaybackState {
@@ -29,6 +29,7 @@ export const STEP_DELAY = 1000; //setting it to match 1x speed sinc ethat's the 
 export class ReplayController {
   private processor: RenderableChangeProcessor;
   private changes: RenderableChange[];
+  private undoChanges: RenderableChange[] = []; // undoChanges[i] restores the scene to before changes[i]
   private position = 0;
   private playing = false;
   private speed = 1;
@@ -107,9 +108,11 @@ export class ReplayController {
     this.notify();
   }
 
-  // TODO (173)
-  async stepBackward(): Promise<boolean> {
-    throw new Error("Stepping backward is not implemented yet (#173)");
+  // Undoes the last applied change, restoring the scene to how it was right before it.
+  // Pauses playback first so the replay stays on that state. Returns false if at the start
+  stepBackward(): Promise<boolean> {
+    this.pause();
+    return this.enqueueStep(() => this.applyPrevious());
   }
 
   // TODO (174)
@@ -155,13 +158,52 @@ export class ReplayController {
     if (this.position >= this.changes.length) {
       return false;
     }
-    await this.processor.process(this.changes[this.position]);
+    const change = this.changes[this.position];
+    const before = this.statesOf(change);
+    await this.processor.process(change);
     if (this.disposed) {
       return false;
     }
+    this.undoChanges[this.position] = this.undoChangeFor(change, before);
     this.position++;
     this.notify();
     return true;
+  }
+
+  private async applyPrevious(): Promise<boolean> {
+    if (this.position === 0) {
+      return false;
+    }
+    await this.processor.process(this.undoChanges[this.position - 1]);
+    if (this.disposed) {
+      return false;
+    }
+    this.position--;
+    this.notify();
+    return true;
+  }
+
+  // The current state of every renderable the change touches (undefined if it isn't shown)
+  private statesOf(change: RenderableChange): Map<string, GameRenderable | undefined> {
+    return new Map(change.changes.map((renderable) => [renderable.id, this.processor.getRenderable(renderable.id)]));
+  }
+
+  // Builds the change that brings each touched renderable back to its state before the change:
+  // created ones get removed, removed ones get created again, and updated ones go back to their old values
+  private undoChangeFor(change: RenderableChange, before: Map<string, GameRenderable | undefined>): RenderableChange {
+    const changes: GameRenderable[] = [];
+    for (const [id, previous] of before) {
+      const current = this.processor.getRenderable(id);
+      if (previous && current && areRenderablesEqual(previous, current)) {
+        continue; // ended up the same, nothing to undo
+      }
+      if (previous) {
+        changes.push(previous);
+      } else if (current) {
+        changes.push({ ...current, removed: true });
+      }
+    }
+    return { index: change.index, changes };
   }
   // Runs the playback loop, applying changes at the current speed until paused or finished
   private async runPlayback(): Promise<void> {
