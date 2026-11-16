@@ -76,6 +76,11 @@ export class RenderableChangeProcessor {
   getCurrentState(): GameRenderable[] {
     return Array.from(this.currentRenderables.values());
   }
+
+  // Returns the current state of one renderable, or undefined if it isn't shown
+  getRenderable(id: string): GameRenderable | undefined {
+    return this.currentRenderables.get(id);
+  }
 }
 
 // Checks if two renderables would look the same (to avoid unnecessary updates)
