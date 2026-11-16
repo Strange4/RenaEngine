@@ -241,4 +241,45 @@ describe("ReplayViewer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Pause" }));
     expect(await screen.findByRole("button", { name: "Play" })).toBeInTheDocument();
   });
+
+  it("steps forward one change at a time and disables the button at the end", async () => {
+    const flag: GameRenderable = { ...ship, id: "flag", type: RenderableType.DECORATION };
+    render(<ReplayViewer gameId="1" recording={[{ index: 1, changes: [flag] }]} />);
+    const stepForward = screen.getByRole("button", { name: "Step forward" });
+
+    await waitFor(() => expect(stepForward).toBeEnabled());
+    await waitFor(() => expect(getPixiMocks().__spriteInstances).toHaveLength(2));
+    fireEvent.click(stepForward);
+
+    await waitFor(() => expect(getPixiMocks().__spriteInstances).toHaveLength(3));
+    await waitFor(() => expect(stepForward).toBeDisabled());
+    expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument();
+  });
+
+  it("disables step forward when the recording is empty", async () => {
+    render(<ReplayViewer gameId="1" />);
+
+    await waitFor(() => expect(ReplayController).toHaveBeenCalledTimes(1));
+
+    expect(screen.getByRole("button", { name: "Step forward" })).toBeDisabled();
+  });
+
+  it("logs an error if stepping forward fails", async () => {
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const actual = jest.requireActual("@/app/viewer/replayController") as typeof import("@/app/viewer/replayController");
+    const failure = new Error("step failed");
+    const stepSpy = jest.spyOn(actual.ReplayController.prototype, "stepForward").mockRejectedValueOnce(failure);
+    try {
+      render(<ReplayViewer gameId="1" recording={[{ index: 1, changes: [map] }]} />);
+      const stepForward = screen.getByRole("button", { name: "Step forward" });
+      await waitFor(() => expect(stepForward).toBeEnabled());
+
+      fireEvent.click(stepForward);
+
+      await waitFor(() => expect(errorSpy).toHaveBeenCalledWith("Failed to step forward", failure));
+    } finally {
+      stepSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
+  });
 });
