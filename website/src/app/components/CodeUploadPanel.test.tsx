@@ -61,6 +61,49 @@ describe("CodeUploadPanel", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows a generic error when the API response is not JSON", async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      json: async () => {
+        throw new SyntaxError("Unexpected token <");
+      },
+    });
+    render(<CodeUploadPanel />);
+    const file = new File(["zip"], "agent.zip", {
+      type: "application/zip",
+    });
+
+    fireEvent.change(screen.getByLabelText("Project archive"), {
+      target: { files: [file] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Upload submission" }));
+
+    expect(
+      await screen.findByText("Could not upload the submission. Please try again."),
+    ).toBeInTheDocument();
+  });
+
+  it("disables upload again when the selection is cleared", () => {
+    render(<CodeUploadPanel />);
+    const file = new File(["zip"], "agent.zip", {
+      type: "application/zip",
+    });
+
+    fireEvent.change(screen.getByLabelText("Project archive"), {
+      target: { files: [file] },
+    });
+    expect(
+      screen.getByRole("button", { name: "Upload submission" }),
+    ).toBeEnabled();
+
+    fireEvent.change(screen.getByLabelText("Project archive"), {
+      target: { files: [] },
+    });
+    expect(
+      screen.getByRole("button", { name: "Upload submission" }),
+    ).toBeDisabled();
+  });
+
   it("shows a connection error when the request fails", async () => {
     mockFetch.mockRejectedValue(new Error("offline"));
     render(<CodeUploadPanel />);

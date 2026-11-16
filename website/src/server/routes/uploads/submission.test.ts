@@ -126,6 +126,27 @@ describe("POST /api/upload", () => {
     });
   });
 
+  it.each([
+    [415, "Select a ZIP archive to upload"],
+    [500, "The game server could not accept the submission"],
+  ])(
+    "maps game server status %i to a participant message",
+    async (status, error) => {
+      const file = new File(["zip"], "agent.zip");
+      mockGetSession.mockResolvedValue({
+        role: "participant",
+        participantId: 42,
+        token: "PARTICIPANT-42-secret",
+      });
+      mockUploadSubmission.mockResolvedValue(new Response(null, { status }));
+
+      const response = await POST(uploadRequest(file));
+
+      expect(response.status).toBe(status);
+      expect(await response.json()).toEqual({ error });
+    },
+  );
+
   it("rejects oversized archives before forwarding them", async () => {
     const file = new File(["zip"], "agent.zip");
     mockGetSession.mockResolvedValue({
