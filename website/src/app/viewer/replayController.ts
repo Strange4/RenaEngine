@@ -72,9 +72,11 @@ export class ReplayController {
     return this.enqueueStep(() => this.applyNext());
   }
 
-  // TODO (172)
-  async stepForward(): Promise<boolean> {
-    throw new Error("Stepping forward is not implemented yet (#172)");
+  // Applies only the next change so the user can inspect it. Pauses playback first so the
+  // replay stays on the stepped change. Returns false if there's no change left
+  stepForward(): Promise<boolean> {
+    this.pause();
+    return this.applyNextChange();
   }
 
   // Starts playback of the recording, applying changes at the current speed until paused or finished

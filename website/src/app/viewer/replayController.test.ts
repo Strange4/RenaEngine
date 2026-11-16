@@ -157,10 +157,9 @@ describe("ReplayController", () => {
     expect(controller.getStatus().position).toBe(0);
   });
 
-  it("Throws for unimplemented stepForward and stepBackward", async () => {
+  it("Throws for unimplemented stepBackward", async () => {
     const { controller } = controllerFor();
-    
-    await expect(controller.stepForward()).rejects.toThrow("Stepping forward is not implemented yet (#172)");
+
     await expect(controller.stepBackward()).rejects.toThrow("Stepping backward is not implemented yet (#173)");
   });
 
