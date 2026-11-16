@@ -125,4 +125,44 @@ describe("POST /api/upload", () => {
       error: "The selected ZIP exceeds the 8 MiB upload limit",
     });
   });
+
+  it("rejects oversized archives before forwarding them", async () => {
+    const file = new File(["zip"], "agent.zip");
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-secret",
+    });
+    const request = new Request("http://localhost/api/upload", {
+      method: "POST",
+      headers: { "content-length": String(64 * 1024 * 1024) },
+      body: (() => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return formData;
+      })(),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(413);
+    expect(mockUploadSubmission).not.toHaveBeenCalled();
+  });
+
+  it("rejects archives over the limit when no content length is sent", async () => {
+    const file = new File([new Uint8Array(8 * 1024 * 1024 + 1)], "agent.zip");
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-secret",
+    });
+
+    const response = await POST(uploadRequest(file));
+
+    expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({
+      error: "The selected ZIP exceeds the 8 MiB upload limit",
+    });
+    expect(mockUploadSubmission).not.toHaveBeenCalled();
+  });
 });
