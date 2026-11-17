@@ -277,11 +277,7 @@ public class UploadEndpointTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.UnsupportedMediaType));
     }
 
-    private static HttpRequestMessage CreateUploadRequest(
-        string playerId,
-        MultipartFormDataContent content,
-        string? token = "TEST-ADMIN-TOKEN"
-    )
+    private static HttpRequestMessage CreateUploadRequest(string playerId, MultipartFormDataContent content, string? token = "TEST-ADMIN-TOKEN")
     {
         HttpRequestMessage request = new(HttpMethod.Post, $"/upload/{playerId}") { Content = content };
         if (token is not null)

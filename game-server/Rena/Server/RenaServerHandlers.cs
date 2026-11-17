@@ -29,12 +29,7 @@ internal partial class RenaServerHandlers
             : Results.File(zipName, contentType: "application/zip");
     }
 
-    public static async Task<IResult> HandleUpload(
-        string playerId,
-        IFormFile file,
-        HttpRequest httpRequest,
-        IOptions<RenaOptions> options
-    )
+    public static async Task<IResult> HandleUpload(string playerId, IFormFile file, HttpRequest httpRequest, IOptions<RenaOptions> options)
     {
         string authorization = httpRequest.Headers.Authorization.ToString();
         if (!authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
@@ -56,18 +51,9 @@ internal partial class RenaServerHandlers
             return Results.StatusCode(413);
         }
 
-        List<string> allowedContentTypes =
-        [
-            "application/zip",
-            "application/x-zip",
-            "application/octet-stream",
-            "application/x-zip-compressed",
-        ];
+        List<string> allowedContentTypes = ["application/zip", "application/x-zip", "application/octet-stream", "application/x-zip-compressed"];
 
-        if (
-            !allowedContentTypes.Contains(file.ContentType)
-            || !file.FileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
-        )
+        if (!allowedContentTypes.Contains(file.ContentType) || !file.FileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
         {
             return Results.StatusCode(415);
         }
