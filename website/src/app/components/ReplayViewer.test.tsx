@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import { act, render, screen, waitFor, fireEvent} from "@testing-library/react";
 import { AssetLoader } from "@/app/viewer/assetLoader";
 import { getSceneSource } from "@/app/viewer/sceneSource";

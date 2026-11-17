@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import fs from "fs";
 import path from "path";
 import { RenderableType, type GameRenderable } from "@/shared/renderable";

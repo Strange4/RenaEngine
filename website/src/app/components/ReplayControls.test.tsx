@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import { fireEvent, render, screen } from "@testing-library/react";
 import ReplayControls from "./ReplayControls";
 import { PLAYBACK_SPEEDS, ReplayController } from "@/app/viewer/replayController";
