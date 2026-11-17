@@ -26,6 +26,8 @@ export default function CodeUploadPanel() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // Validates the chosen file and keeps it as the pending upload, or shows the
+  // validation error. Results from superseded selections are ignored.
   async function selectFile(selected: File | null) {
     const currentValidation = ++validationId.current;
     setFile(null);
@@ -46,6 +48,7 @@ export default function CodeUploadPanel() {
     setFile(selected);
   }
 
+  // Handles a file dropped on the dropzone by validating it like a picked file.
   function dropFile(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
     setDragging(false);
@@ -53,6 +56,8 @@ export default function CodeUploadPanel() {
     void selectFile(event.dataTransfer.files[0] ?? null);
   }
 
+  // Posts the pending file to /api/upload and shows either the success message
+  // or the error returned by the server.
   async function upload(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!file) return;

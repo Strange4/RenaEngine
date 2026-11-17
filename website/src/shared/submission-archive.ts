@@ -16,6 +16,9 @@ const MIN_END_RECORD_SIZE = 22;
 // Largest comment length the 16-bit comment field can declare (65535 bytes).
 const MAX_ZIP_COMMENT_SIZE = 0xffff;
 
+// Reads the ZIP central directory and returns each entry's file name. Returns
+// null if the buffer is not a well-formed ZIP this parser supports: multi-disk
+// archives, ZIP64, encrypted entries, or directory sizes that do not match.
 function zipEntryNames(buffer: ArrayBuffer): string[] | null {
   const bytes = new Uint8Array(buffer);
   if (bytes.byteLength < MIN_END_RECORD_SIZE) return null;
@@ -103,6 +106,12 @@ function zipEntryNames(buffer: ArrayBuffer): string[] | null {
   return offset === directoryOffset + directorySize ? names : null;
 }
 
+// Checks an uploaded file before it is forwarded to the game server. The checks
+// run in this order and stop at the first failure:
+// 1. The file is at most 8 MiB (413).
+// 2. The file name ends in .zip (415).
+// 3. The bytes parse as a ZIP archive (415).
+// 4. The archive contains main.ts at its top level (422).
 export async function validateSubmissionArchive(
   file: File,
 ): Promise<SubmissionArchiveValidation> {
