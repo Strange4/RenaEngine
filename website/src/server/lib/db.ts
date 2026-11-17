@@ -8,16 +8,14 @@ function dbPath(): string {
 
 const MIGRATIONS: string[] = [
   /* users table:
-   * id: Internal database key only; never use it as a user reference.
-   * login_id: Unique ID users enter; all application references use this value.
-   * role: User permissions category; only admin and participant are allowed, currently.
-   * password_hash: Slow password-hash output; never store the plaintext password.
+   * id: Auto-incrementing user ID for routing, API context, and relations.
+   * token: Unique login credential for admins and participants.
+   * role: Permission level; either admin or participant.
    */
   `CREATE TABLE users (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    login_id      TEXT NOT NULL UNIQUE,
-    role          TEXT NOT NULL CHECK (role IN ('admin', 'participant')),
-    password_hash TEXT NOT NULL
+    id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    token TEXT NOT NULL UNIQUE,
+    role  TEXT NOT NULL CHECK (role IN ('admin', 'participant'))
   )`,
 ];
 

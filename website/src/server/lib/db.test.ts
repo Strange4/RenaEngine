@@ -18,7 +18,7 @@ describe("migrate", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it("creates the users table with the expected ID/password columns", () => {
+  it("creates the users table with the expected token columns", () => {
     migrate(db);
 
     const columns = db
@@ -26,52 +26,46 @@ describe("migrate", () => {
       .all() as { name: string; type: string; notnull: number }[];
     const byName = Object.fromEntries(columns.map((c) => [c.name, c]));
 
-    expect(Object.keys(byName)).toEqual([
-      "id",
-      "login_id",
-      "role",
-      "password_hash",
-    ]);
+    expect(Object.keys(byName)).toEqual(["id", "token", "role"]);
     expect(byName.id.type).toBe("INTEGER");
-    expect(byName.login_id.type).toBe("TEXT");
-    expect(byName.login_id.notnull).toBe(1);
+    expect(byName.token.type).toBe("TEXT");
+    expect(byName.token.notnull).toBe(1);
     expect(byName.role.notnull).toBe(1);
-    expect(byName.password_hash.notnull).toBe(1);
   });
 
   it("enforces the role check constraint", () => {
     migrate(db);
 
     const insert = db.prepare(
-      "INSERT INTO users (login_id, role, password_hash) VALUES (?, ?, ?)",
+      "INSERT INTO users (token, role) VALUES (?, ?)",
     );
-    expect(() => insert.run("admin", "admin", "hash-1")).not.toThrow();
-    expect(() => insert.run("1", "participant", "hash-2")).not.toThrow();
-    expect(() => insert.run("bad-role", "superuser", "hash-3")).toThrow();
+    expect(() => insert.run("token-1", "admin")).not.toThrow();
+    expect(() => insert.run("token-2", "participant")).not.toThrow();
+    expect(() => insert.run("token-3", "superuser")).toThrow();
   });
 
-  it("enforces unique login IDs", () => {
+  it("enforces unique tokens across roles", () => {
     migrate(db);
 
     const insert = db.prepare(
-      "INSERT INTO users (login_id, role, password_hash) VALUES (?, ?, ?)",
+      "INSERT INTO users (token, role) VALUES (?, ?)",
     );
-    insert.run("1", "participant", "hash-1");
-    expect(() => insert.run("1", "participant", "hash-2")).toThrow();
+    insert.run("same-token", "participant");
+    expect(() => insert.run("same-token", "admin")).toThrow();
   });
 
   it("auto-increments ids and never reuses them", () => {
     migrate(db);
 
     const insert = db.prepare(
-      "INSERT INTO users (login_id, role, password_hash) VALUES (?, ?, ?)",
+      "INSERT INTO users (token, role) VALUES (?, ?)",
     );
-    const first = insert.run("1", "participant", "hash-a").lastInsertRowid;
-    insert.run("2", "participant", "hash-b");
+    const first = insert.run("token-a", "participant").lastInsertRowid;
+    insert.run("token-b", "participant");
     db.prepare("DELETE FROM users WHERE id = ?").run(
-      insert.run("3", "participant", "hash-c").lastInsertRowid,
+      insert.run("token-c", "participant").lastInsertRowid,
     );
-    const fourth = insert.run("4", "participant", "hash-d").lastInsertRowid;
+    const fourth = insert.run("token-d", "participant").lastInsertRowid;
 
     expect(first).toBe(1);
     expect(fourth).toBe(4);
@@ -80,12 +74,8 @@ describe("migrate", () => {
   it("is idempotent across runs", () => {
     migrate(db);
     db.prepare(
-      "INSERT INTO users (login_id, role, password_hash) VALUES (?, ?, ?)",
-    ).run(
-      "admin",
-      "admin",
-      "hash-keep",
-    );
+      "INSERT INTO users (token, role) VALUES (?, ?)",
+    ).run("token-keep", "admin");
 
     expect(() => migrate(db)).not.toThrow();
 
@@ -138,7 +128,7 @@ describe("getDb", () => {
       .all() as { name: string }[];
     expect(
       columns.map((column) => column.name),
-    ).toEqual(["id", "login_id", "role", "password_hash"]);
+    ).toEqual(["id", "token", "role"]);
     expect(getDb()).toBe(db);
   });
 });
