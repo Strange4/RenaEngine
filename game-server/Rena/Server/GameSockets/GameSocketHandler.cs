@@ -1,3 +1,4 @@
+// No substantial AI-generated code
 using System.Net.WebSockets;
 using Microsoft.AspNetCore.Http;
 
