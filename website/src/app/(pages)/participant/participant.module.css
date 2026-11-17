@@ -164,9 +164,41 @@
   margin-bottom: 0.35rem;
 }
 
+.uploadDropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 1rem;
+  border: 2px dashed var(--blush-2);
+  border-radius: 14px;
+  background: var(--blush);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.uploadDropzone:hover,
+.uploadDropzone:focus-within,
+.uploadDropzoneActive {
+  border-color: var(--pink);
+  background: #fff;
+  box-shadow: 0 0 0 3px var(--blush);
+}
+
+.uploadDropzone .uploadLabel {
+  margin: 0;
+}
+
+.uploadDropzoneText {
+  color: var(--deep);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+}
+
 .uploadInput {
   width: 100%;
-  margin: 0;
+  margin: 0.25rem 0 0;
   padding: 0.55rem;
   font: inherit;
   border: 1.5px solid var(--blush-2);
@@ -191,6 +223,14 @@
   color: var(--deep);
   font-weight: 700;
   cursor: pointer;
+}
+
+.uploadSelection {
+  margin: 0.65rem 0 0;
+  color: var(--deep);
+  font-size: 0.85rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .uploadDescription {
@@ -237,7 +277,10 @@
 }
 
 .uploadError {
-  color: var(--magenta);
+  color: #b42318;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: pre-line;
 }
 
 .uploadSuccess {

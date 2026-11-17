@@ -1,6 +1,12 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import {
+  useRef,
+  useState,
+  type DragEvent,
+  type FormEvent,
+} from "react";
+import { validateSubmissionArchive } from "@/shared/submission-archive";
 import styles from "../(pages)/participant/participant.module.css";
 
 async function responseError(response: Response): Promise<string> {
@@ -12,10 +18,40 @@ async function responseError(response: Response): Promise<string> {
 
 export default function CodeUploadPanel() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const validationId = useRef(0);
   const [file, setFile] = useState<File | null>(null);
+  const [validating, setValidating] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  async function selectFile(selected: File | null) {
+    const currentValidation = ++validationId.current;
+    setFile(null);
+    setError(null);
+    setSuccess(null);
+    if (!selected) return;
+
+    setValidating(true);
+    const validation = await validateSubmissionArchive(selected);
+    if (currentValidation !== validationId.current) return;
+
+    setValidating(false);
+    if (!validation.ok) {
+      setError(validation.error);
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
+    setFile(selected);
+  }
+
+  function dropFile(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    setDragging(false);
+    if (uploading || validating) return;
+    void selectFile(event.dataTransfer.files[0] ?? null);
+  }
 
   async function upload(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -60,23 +96,38 @@ export default function CodeUploadPanel() {
       </p>
 
       <form onSubmit={upload}>
-        <label className={styles.uploadLabel} htmlFor="submission-file">
-          Project archive
-        </label>
-        <input
-          className={styles.uploadInput}
-          ref={inputRef}
-          id="submission-file"
-          name="file"
-          type="file"
-          accept=".zip,application/zip,application/x-zip,application/x-zip-compressed"
-          disabled={uploading}
-          onChange={(event) => {
-            setFile(event.target.files?.[0] ?? null);
-            setError(null);
-            setSuccess(null);
+        <label
+          className={`${styles.uploadDropzone} ${dragging ? styles.uploadDropzoneActive : ""}`}
+          htmlFor="submission-file"
+          onDragEnter={(event) => {
+            event.preventDefault();
+            if (!uploading && !validating) setDragging(true);
           }}
-        />
+          onDragOver={(event) => event.preventDefault()}
+          onDragLeave={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+              setDragging(false);
+            }
+          }}
+          onDrop={dropFile}
+        >
+          <span className={styles.uploadLabel}>Project archive</span>
+          <span className={styles.uploadDropzoneText}>
+            Drop a ZIP archive here or select a file
+          </span>
+          <input
+            className={styles.uploadInput}
+            ref={inputRef}
+            id="submission-file"
+            name="file"
+            aria-label="Project archive"
+            type="file"
+            accept=".zip,application/zip,application/x-zip,application/x-zip-compressed"
+            disabled={uploading || validating}
+            onChange={(event) => void selectFile(event.target.files?.[0] ?? null)}
+          />
+        </label>
+        {file && <p className={styles.uploadSelection}>Selected: {file.name}</p>}
         <p className={styles.uploadDescription}>
           ZIP files up to 8 MiB are accepted. A new upload replaces your previous
           submission.
@@ -84,9 +135,13 @@ export default function CodeUploadPanel() {
         <button
           className={styles.uploadButton}
           type="submit"
-          disabled={!file || uploading}
+          disabled={!file || uploading || validating}
         >
-          {uploading ? "Uploading…" : "Upload submission"}
+          {validating
+            ? "Validating…"
+            : uploading
+              ? "Uploading…"
+              : "Upload submission"}
         </button>
       </form>
 

@@ -5,15 +5,18 @@ import { uploadSubmission } from "./game-server-uploads";
 
 const mockFetch = jest.fn();
 const originalGameServerUrl = process.env.GAME_SERVER_URL;
+const originalAdminToken = process.env.ADMIN_TOKEN;
 
 beforeEach(() => {
   mockFetch.mockReset();
   global.fetch = mockFetch as unknown as typeof fetch;
   process.env.GAME_SERVER_URL = "https://game-server.example/base";
+  process.env.ADMIN_TOKEN = "shared-secret";
 });
 
 afterAll(() => {
   process.env.GAME_SERVER_URL = originalGameServerUrl;
+  process.env.ADMIN_TOKEN = originalAdminToken;
 });
 
 describe("uploadSubmission", () => {
@@ -35,6 +38,7 @@ describe("uploadSubmission", () => {
     expect(options).toMatchObject({
       method: "POST",
       cache: "no-store",
+      headers: { Authorization: "Bearer shared-secret" },
     });
     expect(options.body).toBeInstanceOf(FormData);
     expect((options.body as FormData).get("file")).toMatchObject({
@@ -46,6 +50,14 @@ describe("uploadSubmission", () => {
 
   it("returns null when the game server URL is unavailable", async () => {
     delete process.env.GAME_SERVER_URL;
+    const file = new File(["zip"], "agent.zip");
+
+    await expect(uploadSubmission(42, file)).resolves.toBeNull();
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("returns null when the service token is unavailable", async () => {
+    delete process.env.ADMIN_TOKEN;
     const file = new File(["zip"], "agent.zip");
 
     await expect(uploadSubmission(42, file)).resolves.toBeNull();

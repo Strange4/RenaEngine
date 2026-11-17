@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { uploadSubmission } from "@/server/lib/game-server-uploads";
 import { getSession } from "@/server/lib/session";
+import {
+  SUBMISSION_ENTRYPOINT_ERROR,
+  validateSubmissionArchive,
+} from "@/shared/submission-archive";
 import { isAdmin } from "@/shared/token";
 
 async function responseFile(request: Request): Promise<File | null> {
@@ -12,6 +16,7 @@ async function responseFile(request: Request): Promise<File | null> {
 function upstreamError(status: number): string {
   if (status === 413) return "The selected ZIP exceeds the 8 MiB upload limit";
   if (status === 415) return "Select a ZIP archive to upload";
+  if (status === 422) return SUBMISSION_ENTRYPOINT_ERROR;
   return "The game server could not accept the submission";
 }
 
@@ -32,6 +37,14 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Select a ZIP archive to upload" },
       { status: 400 },
+    );
+  }
+
+  const validation = await validateSubmissionArchive(file);
+  if (!validation.ok) {
+    return NextResponse.json(
+      { error: validation.error },
+      { status: validation.status },
     );
   }
 

@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 import { POST } from "./submission";
+import { zipFile } from "@/test-utils/zip";
 
 const mockGetSession = jest.fn();
 const mockUploadSubmission = jest.fn();
@@ -65,9 +66,7 @@ describe("POST /api/upload", () => {
   });
 
   it("uploads the archive using the participant session", async () => {
-    const file = new File(["zip contents"], "agent.zip", {
-      type: "application/zip",
-    });
+    const file = zipFile(["main.ts"]);
     mockGetSession.mockResolvedValue({
       role: "participant",
       participantId: 42,
@@ -91,7 +90,7 @@ describe("POST /api/upload", () => {
   });
 
   it("reports when the game server cannot be reached", async () => {
-    const file = new File(["zip"], "agent.zip");
+    const file = zipFile(["main.ts"]);
     mockGetSession.mockResolvedValue({
       role: "participant",
       participantId: 42,
@@ -108,7 +107,7 @@ describe("POST /api/upload", () => {
   });
 
   it("preserves upload validation errors from the game server", async () => {
-    const file = new File(["too large"], "agent.zip");
+    const file = zipFile(["main.ts"]);
     mockGetSession.mockResolvedValue({
       role: "participant",
       participantId: 42,
@@ -124,5 +123,57 @@ describe("POST /api/upload", () => {
     expect(await response.json()).toEqual({
       error: "The selected ZIP exceeds the 8 MiB upload limit",
     });
+  });
+
+  it.each([
+    [415, "Select a ZIP archive to upload"],
+    [
+      422,
+      "Invalid ZIP structure.\nExpected:\nagent.zip\n└── main.ts\nmain.ts must be at the top level, not inside src/ or another folder.",
+    ],
+    [500, "The game server could not accept the submission"],
+  ])("maps upstream status %i to a safe error", async (status, error) => {
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-secret",
+    });
+    mockUploadSubmission.mockResolvedValue(new Response(null, { status }));
+
+    const response = await POST(uploadRequest(zipFile(["main.ts"])));
+
+    expect(response.status).toBe(status);
+    expect(await response.json()).toEqual({ error });
+  });
+
+  it("rejects non-ZIP files without contacting the game server", async () => {
+    const file = new File(["text"], "agent.txt", { type: "text/plain" });
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-secret",
+    });
+
+    const response = await POST(uploadRequest(file));
+
+    expect(response.status).toBe(415);
+    expect(mockUploadSubmission).not.toHaveBeenCalled();
+  });
+
+  it("rejects archives without main.ts", async () => {
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-secret",
+    });
+
+    const response = await POST(uploadRequest(zipFile(["src/main.ts"])));
+
+    expect(response.status).toBe(422);
+    expect(await response.json()).toEqual({
+      error:
+        "Invalid ZIP structure.\nExpected:\nagent.zip\n└── main.ts\nmain.ts must be at the top level, not inside src/ or another folder.",
+    });
+    expect(mockUploadSubmission).not.toHaveBeenCalled();
   });
 });
