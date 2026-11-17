@@ -1,4 +1,5 @@
-﻿using Rena.Server.Rendering;
+﻿// No substantial AI-generated code
+using Rena.Server.Rendering;
 
 namespace Rena.Tests.Unit;
 
