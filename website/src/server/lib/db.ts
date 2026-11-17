@@ -8,14 +8,14 @@ function dbPath(): string {
 
 const MIGRATIONS: string[] = [
   /* users table:
-   * id: Auto-incrementing user ID for routing, API context, and relations.
-   * token: Unique login credential for admins and participants.
-   * role: Permission level; either admin or participant.
+   * id: (PK) Auto-incrementing user ID for routing, API calls, and relations.
+   * token_hash: Unique SHA-256 hash of the login token (raw token not stored).
+   * role: Permission level; either admin or participant (for now). 
    */
   `CREATE TABLE users (
-    id    INTEGER PRIMARY KEY AUTOINCREMENT,
-    token TEXT NOT NULL UNIQUE,
-    role  TEXT NOT NULL CHECK (role IN ('admin', 'participant'))
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    token_hash TEXT NOT NULL UNIQUE,
+    role       TEXT NOT NULL CHECK (role IN ('admin', 'participant'))
   )`,
 ];
 

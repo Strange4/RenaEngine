@@ -26,10 +26,10 @@ describe("migrate", () => {
       .all() as { name: string; type: string; notnull: number }[];
     const byName = Object.fromEntries(columns.map((c) => [c.name, c]));
 
-    expect(Object.keys(byName)).toEqual(["id", "token", "role"]);
+    expect(Object.keys(byName)).toEqual(["id", "token_hash", "role"]);
     expect(byName.id.type).toBe("INTEGER");
-    expect(byName.token.type).toBe("TEXT");
-    expect(byName.token.notnull).toBe(1);
+    expect(byName.token_hash.type).toBe("TEXT");
+    expect(byName.token_hash.notnull).toBe(1);
     expect(byName.role.notnull).toBe(1);
   });
 
@@ -37,35 +37,35 @@ describe("migrate", () => {
     migrate(db);
 
     const insert = db.prepare(
-      "INSERT INTO users (token, role) VALUES (?, ?)",
+      "INSERT INTO users (token_hash, role) VALUES (?, ?)",
     );
-    expect(() => insert.run("token-1", "admin")).not.toThrow();
-    expect(() => insert.run("token-2", "participant")).not.toThrow();
-    expect(() => insert.run("token-3", "superuser")).toThrow();
+    expect(() => insert.run("hash-1", "admin")).not.toThrow();
+    expect(() => insert.run("hash-2", "participant")).not.toThrow();
+    expect(() => insert.run("hash-3", "superuser")).toThrow();
   });
 
-  it("enforces unique tokens across roles", () => {
+  it("enforces unique token hashes across roles", () => {
     migrate(db);
 
     const insert = db.prepare(
-      "INSERT INTO users (token, role) VALUES (?, ?)",
+      "INSERT INTO users (token_hash, role) VALUES (?, ?)",
     );
-    insert.run("same-token", "participant");
-    expect(() => insert.run("same-token", "admin")).toThrow();
+    insert.run("same-hash", "participant");
+    expect(() => insert.run("same-hash", "admin")).toThrow();
   });
 
   it("auto-increments ids and never reuses them", () => {
     migrate(db);
 
     const insert = db.prepare(
-      "INSERT INTO users (token, role) VALUES (?, ?)",
+      "INSERT INTO users (token_hash, role) VALUES (?, ?)",
     );
-    const first = insert.run("token-a", "participant").lastInsertRowid;
-    insert.run("token-b", "participant");
+    const first = insert.run("hash-a", "participant").lastInsertRowid;
+    insert.run("hash-b", "participant");
     db.prepare("DELETE FROM users WHERE id = ?").run(
-      insert.run("token-c", "participant").lastInsertRowid,
+      insert.run("hash-c", "participant").lastInsertRowid,
     );
-    const fourth = insert.run("token-d", "participant").lastInsertRowid;
+    const fourth = insert.run("hash-d", "participant").lastInsertRowid;
 
     expect(first).toBe(1);
     expect(fourth).toBe(4);
@@ -74,8 +74,8 @@ describe("migrate", () => {
   it("is idempotent across runs", () => {
     migrate(db);
     db.prepare(
-      "INSERT INTO users (token, role) VALUES (?, ?)",
-    ).run("token-keep", "admin");
+      "INSERT INTO users (token_hash, role) VALUES (?, ?)",
+    ).run("hash-keep", "admin");
 
     expect(() => migrate(db)).not.toThrow();
 
@@ -128,7 +128,7 @@ describe("getDb", () => {
       .all() as { name: string }[];
     expect(
       columns.map((column) => column.name),
-    ).toEqual(["id", "token", "role"]);
+    ).toEqual(["id", "token_hash", "role"]);
     expect(getDb()).toBe(db);
   });
 });
