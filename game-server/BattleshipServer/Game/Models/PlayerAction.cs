@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿// No substantial AI-generated code
+using System.Runtime.Serialization;
 using ProtoBuf;
 
 namespace BattleshipServer.Game.Models;

@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿// No substantial AI-generated code
+using System.Text.Json.Serialization;
 
 namespace Rena.Server.Rendering;
 

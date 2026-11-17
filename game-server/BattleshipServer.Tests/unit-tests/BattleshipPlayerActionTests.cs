@@ -1,4 +1,5 @@
-﻿using BattleshipServer.Game.Logic;
+﻿// Below 50% AI-generated
+using BattleshipServer.Game.Logic;
 using BattleshipServer.Game.Models;
 
 namespace BattleshipServer.Tests.Unit;
