@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { uploadSubmission } from "@/server/lib/game-server-uploads";
+import { listParticipantTokens } from "@/server/lib/participant-token-store";
 import { getSession } from "@/server/lib/session";
 import {
   MAX_SUBMISSION_SIZE_BYTES,
@@ -10,10 +11,39 @@ import { isAdmin } from "@/shared/token";
 
 // Allowance for multipart framing around the archive.
 const MULTIPART_OVERHEAD_BYTES = 64 * 1024;
+const MAX_BODY_BYTES = MAX_SUBMISSION_SIZE_BYTES + MULTIPART_OVERHEAD_BYTES;
 const TOO_LARGE_ERROR = `The selected ZIP exceeds the ${MAX_SUBMISSION_SIZE_BYTES / (1024 * 1024)} MiB upload limit`;
 
+class BodyTooLargeError extends Error {}
+
+// Stops reading once the limit is passed, so a missing or false Content-Length cannot make the server buffer an oversized upload.
+async function readBodyWithinLimit(
+  body: ReadableStream<Uint8Array<ArrayBuffer>>,
+  limit: number,
+): Promise<Blob> {
+  const reader = body.getReader();
+  const chunks: Uint8Array<ArrayBuffer>[] = [];
+  let received = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    received += value.byteLength;
+    if (received > limit) {
+      await reader.cancel();
+      throw new BodyTooLargeError();
+    }
+    chunks.push(value);
+  }
+  return new Blob(chunks);
+}
+
 async function requestFile(request: Request): Promise<File | null> {
-  const formData = await request.formData().catch(() => null);
+  const body = request.body
+    ? await readBodyWithinLimit(request.body, MAX_BODY_BYTES)
+    : new Blob();
+  const formData = await new Response(body, { headers: request.headers })
+    .formData()
+    .catch(() => null);
   const file = formData?.get("file");
   return file instanceof File && file.size > 0 ? file : null;
 }
@@ -37,15 +67,38 @@ export async function POST(request: Request) {
     );
   }
 
+  // The session cookie only proves its format, so confirm the token is registered and active.
+  const tokens = await listParticipantTokens();
+  if (!tokens) {
+    return NextResponse.json(
+      { error: "Could not verify your session" },
+      { status: 503 },
+    );
+  }
+  const registered = tokens.some(
+    (token) =>
+      token.active &&
+      token.participantId === session.participantId &&
+      token.token === session.token,
+  );
+  if (!registered) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
   const contentLength = Number(request.headers.get("content-length"));
-  if (
-    contentLength >
-    MAX_SUBMISSION_SIZE_BYTES + MULTIPART_OVERHEAD_BYTES
-  ) {
+  if (contentLength > MAX_BODY_BYTES) {
     return NextResponse.json({ error: TOO_LARGE_ERROR }, { status: 413 });
   }
 
-  const file = await requestFile(request);
+  let file: File | null;
+  try {
+    file = await requestFile(request);
+  } catch (error) {
+    if (error instanceof BodyTooLargeError) {
+      return NextResponse.json({ error: TOO_LARGE_ERROR }, { status: 413 });
+    }
+    throw error;
+  }
   if (!file) {
     return NextResponse.json(
       { error: "Select a ZIP archive to upload" },
