@@ -213,19 +213,6 @@ button {
   stroke-linecap: round;
 }
 
-.token-reveal {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: auto;
-  margin-bottom: 1rem;
-}
-
-.token-reveal input {
-  width: auto;
-  margin: 0;
-}
-
 .token-table-wrapper {
   overflow-x: auto;
 }
@@ -247,28 +234,6 @@ button {
   border-bottom: 1px solid #374151;
   text-align: left;
   white-space: nowrap;
-}
-
-.token-status {
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  font-size: 0.875rem;
-}
-
-.token-status-active {
-  background: #064e3b;
-  color: #a7f3d0;
-}
-
-.token-status-inactive {
-  background: #374151;
-  color: #d1d5db;
-}
-
-.token-cell-content {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
 }
 
 .copy-token {
