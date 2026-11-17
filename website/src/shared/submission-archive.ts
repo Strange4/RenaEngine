@@ -17,6 +17,8 @@ function zipEntryNames(buffer: ArrayBuffer): string[] | null {
   if (bytes.byteLength < MIN_END_RECORD_SIZE) return null;
 
   const view = new DataView(buffer);
+  // The end-of-central-directory record is followed by a variable-length
+  // comment, so search backwards through the largest valid record range.
   const searchStart = Math.max(
     0,
     bytes.byteLength - MIN_END_RECORD_SIZE - MAX_ZIP_COMMENT_SIZE,
@@ -28,6 +30,8 @@ function zipEntryNames(buffer: ArrayBuffer): string[] | null {
     offset--
   ) {
     if (view.getUint32(offset, true) === END_OF_CENTRAL_DIRECTORY) {
+      // A matching signature inside file data is not the end record unless its
+      // declared comment ends exactly at the end of the archive.
       const commentLength = view.getUint16(offset + 20, true);
       if (offset + MIN_END_RECORD_SIZE + commentLength === bytes.byteLength) {
         endRecord = offset;
@@ -37,6 +41,8 @@ function zipEntryNames(buffer: ArrayBuffer): string[] | null {
   }
   if (endRecord < 0) return null;
 
+  // The end record locates the central directory and declares how many file
+  // entries it contains.
   const diskNumber = view.getUint16(endRecord + 4, true);
   const centralDirectoryDisk = view.getUint16(endRecord + 6, true);
   const entriesOnDisk = view.getUint16(endRecord + 8, true);
@@ -60,6 +66,8 @@ function zipEntryNames(buffer: ArrayBuffer): string[] | null {
   const names: string[] = [];
   let offset = directoryOffset;
   for (let index = 0; index < entryCount; index++) {
+    // Each central-directory entry has a fixed 46-byte header followed by its
+    // variable-length name, extra data, and comment.
     if (
       offset + 46 > endRecord ||
       view.getUint32(offset, true) !== CENTRAL_DIRECTORY_ENTRY
@@ -68,6 +76,8 @@ function zipEntryNames(buffer: ArrayBuffer): string[] | null {
     }
 
     const flags = view.getUint16(offset + 8, true);
+    // Bit zero of the general-purpose flag marks an encrypted entry, which the
+    // submission pipeline does not support.
     if ((flags & 0x0001) !== 0) return null;
 
     const nameLength = view.getUint16(offset + 28, true);
@@ -77,12 +87,15 @@ function zipEntryNames(buffer: ArrayBuffer): string[] | null {
     if (nextOffset > endRecord) return null;
 
     const nameBytes = bytes.subarray(offset + 46, offset + 46 + nameLength);
+    // The required entrypoint, main.ts, is ASCII, so a byte-wise conversion is
+    // sufficient for the exact root-level filename comparison below.
     names.push(
       Array.from(nameBytes, (byte) => String.fromCharCode(byte)).join(""),
     );
     offset = nextOffset;
   }
 
+  // Reject directories whose declared size does not match the entries parsed.
   return offset === directoryOffset + directorySize ? names : null;
 }
 

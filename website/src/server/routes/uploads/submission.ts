@@ -2,16 +2,15 @@ import { NextResponse } from "next/server";
 import { uploadSubmission } from "@/server/lib/game-server-uploads";
 import { getSession } from "@/server/lib/session";
 import {
+  MAX_SUBMISSION_SIZE_BYTES,
   SUBMISSION_ENTRYPOINT_ERROR,
   validateSubmissionArchive,
 } from "@/shared/submission-archive";
 import { isAdmin } from "@/shared/token";
 
-// Must match the game server's MaxZipFileSizeBytes default.
-const MAX_ZIP_BYTES = 8 * 1024 * 1024;
 // Allowance for multipart framing around the archive.
 const MULTIPART_OVERHEAD_BYTES = 64 * 1024;
-const TOO_LARGE_ERROR = `The selected ZIP exceeds the ${MAX_ZIP_BYTES / (1024 * 1024)} MiB upload limit`;
+const TOO_LARGE_ERROR = `The selected ZIP exceeds the ${MAX_SUBMISSION_SIZE_BYTES / (1024 * 1024)} MiB upload limit`;
 
 async function requestFile(request: Request): Promise<File | null> {
   const formData = await request.formData().catch(() => null);
@@ -39,7 +38,10 @@ export async function POST(request: Request) {
   }
 
   const contentLength = Number(request.headers.get("content-length"));
-  if (contentLength > MAX_ZIP_BYTES + MULTIPART_OVERHEAD_BYTES) {
+  if (
+    contentLength >
+    MAX_SUBMISSION_SIZE_BYTES + MULTIPART_OVERHEAD_BYTES
+  ) {
     return NextResponse.json({ error: TOO_LARGE_ERROR }, { status: 413 });
   }
 
@@ -50,7 +52,7 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  if (file.size > MAX_ZIP_BYTES) {
+  if (file.size > MAX_SUBMISSION_SIZE_BYTES) {
     return NextResponse.json({ error: TOO_LARGE_ERROR }, { status: 413 });
   }
 
