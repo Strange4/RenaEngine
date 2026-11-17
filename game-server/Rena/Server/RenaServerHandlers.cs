@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -28,8 +29,24 @@ internal partial class RenaServerHandlers
             : Results.File(zipName, contentType: "application/zip");
     }
 
-    public static async Task<IResult> HandleUpload(string playerId, IFormFile file, IOptions<RenaOptions> options)
+    public static async Task<IResult> HandleUpload(
+        string playerId,
+        IFormFile file,
+        HttpRequest httpRequest,
+        IOptions<RenaOptions> options
+    )
     {
+        string authorization = httpRequest.Headers.Authorization.ToString();
+        if (!authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            return Results.Unauthorized();
+        }
+        string suppliedToken = authorization["Bearer ".Length..];
+        if (!TokensMatch(suppliedToken, options.Value.AdminToken))
+        {
+            return Results.StatusCode(StatusCodes.Status403Forbidden);
+        }
+
         if (!PlayerIdRegex().IsMatch(playerId))
         {
             return Results.BadRequest("The player id is in a bad format");
@@ -39,9 +56,34 @@ internal partial class RenaServerHandlers
             return Results.StatusCode(413);
         }
 
-        List<string> allowedContentTypes = ["application/zip", "application/x-zip", "application/octet-stream", "application/x-zip-compressed"];
+        List<string> allowedContentTypes =
+        [
+            "application/zip",
+            "application/x-zip",
+            "application/octet-stream",
+            "application/x-zip-compressed",
+        ];
 
-        if (!allowedContentTypes.Contains(file.ContentType) || !file.FileName.EndsWith(".zip"))
+        if (
+            !allowedContentTypes.Contains(file.ContentType)
+            || !file.FileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            return Results.StatusCode(415);
+        }
+
+        try
+        {
+            await using Stream archiveStream = file.OpenReadStream();
+            using ZipArchive archive = new(archiveStream, ZipArchiveMode.Read);
+            if (archive.GetEntry("main.ts") is null)
+            {
+                return Results.UnprocessableEntity(
+                    "Invalid ZIP structure.\nExpected:\nagent.zip\n└── main.ts\nmain.ts must be at the top level, not inside src/ or another folder."
+                );
+            }
+        }
+        catch (Exception exception) when (exception is InvalidDataException or ArgumentException)
         {
             return Results.StatusCode(415);
         }
@@ -141,6 +183,6 @@ internal partial class RenaServerHandlers
         return suppliedBytes.Length == expectedBytes.Length && CryptographicOperations.FixedTimeEquals(suppliedBytes, expectedBytes);
     }
 
-    [GeneratedRegex(@"PLAYER-\d+")]
+    [GeneratedRegex(@"^PLAYER-\d+$")]
     private static partial Regex PlayerIdRegex();
 }

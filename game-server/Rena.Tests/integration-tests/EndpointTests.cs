@@ -137,7 +137,12 @@ public class UploadEndpointTests
 
         builder.WebHost.UseTestServer();
         builder.Configuration.AddInMemoryCollection(
-            new Dictionary<string, string?> { { "RenaOptions:TSProtoPath", "TESTING" }, { "RenaOptions:UploadsDirectory", "./uploads" } }
+            new Dictionary<string, string?>
+            {
+                { "RenaOptions:TSProtoPath", "TESTING" },
+                { "RenaOptions:UploadsDirectory", "./uploads" },
+                { "RenaOptions:AdminToken", "TEST-ADMIN-TOKEN" },
+            }
         );
         builder.SetRenaServices<TestGame, GameState, GameAction>();
 
@@ -185,7 +190,8 @@ public class UploadEndpointTests
         string playerId = "PLAYER-42";
 
         // Send zip
-        HttpResponseMessage response = await _client.PostAsync($"/upload/{playerId}", formData);
+        using HttpRequestMessage request = CreateUploadRequest(playerId, formData);
+        HttpResponseMessage response = await _client.SendAsync(request);
 
         // Verify Zip
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Accepted));
@@ -210,7 +216,8 @@ public class UploadEndpointTests
         string playerId = "PLAYER-42";
 
         // Send file
-        HttpResponseMessage response = await _client.PostAsync($"/upload/{playerId}", formData);
+        using HttpRequestMessage request = CreateUploadRequest(playerId, formData);
+        HttpResponseMessage response = await _client.SendAsync(request);
 
         // Verify that is wasn't accepted
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.UnsupportedMediaType));
@@ -227,10 +234,74 @@ public class UploadEndpointTests
         string playerId = "passwd.exe";
 
         // Send file
-        HttpResponseMessage response = await _client.PostAsync($"/upload/{playerId}", formData);
+        using HttpRequestMessage request = CreateUploadRequest(playerId, formData);
+        HttpResponseMessage response = await _client.SendAsync(request);
 
         // Verify that is wasn't accepted
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+    }
+
+    [Test]
+    public async Task Uploads_RequiresServiceAuthorization()
+    {
+        using MultipartFormDataContent formData = CreateZipForm("main.ts");
+        using HttpRequestMessage request = CreateUploadRequest("PLAYER-42", formData, null);
+
+        using HttpResponseMessage response = await _client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+    }
+
+    [Test]
+    public async Task Uploads_RefusesArchiveWithoutEntrypoint()
+    {
+        using MultipartFormDataContent formData = CreateZipForm("src/main.ts");
+        using HttpRequestMessage request = CreateUploadRequest("PLAYER-42", formData);
+
+        using HttpResponseMessage response = await _client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.UnprocessableEntity));
+    }
+
+    [Test]
+    public async Task Uploads_RefusesMalformedZip()
+    {
+        using MultipartFormDataContent formData = new();
+        ByteArrayContent content = new(Encoding.UTF8.GetBytes("not a zip"));
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
+        formData.Add(content, "file", "file.zip");
+        using HttpRequestMessage request = CreateUploadRequest("PLAYER-42", formData);
+
+        using HttpResponseMessage response = await _client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.UnsupportedMediaType));
+    }
+
+    private static HttpRequestMessage CreateUploadRequest(
+        string playerId,
+        MultipartFormDataContent content,
+        string? token = "TEST-ADMIN-TOKEN"
+    )
+    {
+        HttpRequestMessage request = new(HttpMethod.Post, $"/upload/{playerId}") { Content = content };
+        if (token is not null)
+            request.Headers.Authorization = new("Bearer", token);
+        return request;
+    }
+
+    private static MultipartFormDataContent CreateZipForm(string entryName)
+    {
+        MemoryStream zipStream = new();
+        using (ZipArchive zipArchive = new(zipStream, ZipArchiveMode.Create, true))
+        {
+            zipArchive.CreateEntry(entryName, CompressionLevel.NoCompression);
+        }
+        MultipartFormDataContent formData = new();
+        ByteArrayContent content = new(zipStream.ToArray());
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
+        formData.Add(content, "file", "TestFile.zip");
+        zipStream.Dispose();
+        return formData;
     }
 }
 
