@@ -1,3 +1,4 @@
+// No substantial AI-generated code
 using System.Runtime.Serialization;
 using Microsoft.Extensions.Logging;
 using Rena.GameEngine;
