@@ -1,3 +1,4 @@
+// No substantial AI-generated code
 import Database from "better-sqlite3";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
@@ -21,29 +22,34 @@ const MIGRATIONS: string[] = [
 
 // Applies any pending migrations. user_version tracks how many have run,
 // so re-running on every boot is a no-op once up to date.
+// Read and update version atomically inside a transaction to prevent concurrent
+// processes from both seeing version 0.
 export function migrate(db: Database.Database): void {
-  const { user_version: version } = db
-    .prepare("PRAGMA user_version")
-    .get() as { user_version: number };
+  db.transaction(() => {
+    const { user_version: version } = db
+      .prepare("PRAGMA user_version")
+      .get() as { user_version: number };
 
-  for (let i = version; i < MIGRATIONS.length; i++) {
-    db.transaction(() => {
+    for (let i = version; i < MIGRATIONS.length; i++) {
       db.exec(MIGRATIONS[i]);
       db.exec(`PRAGMA user_version = ${i + 1}`);
-    })();
-  }
+    }
+  }).immediate();
 }
 
 let db: Database.Database | null = null;
 
 // Returns the shared database connection, creating and migrating it on first use.
+// Build in a local variable and only assign once fully initialized to prevent
+// returning a partially-initialized connection if migration fails.
 export function getDb(): Database.Database {
   if (db) return db;
 
   const file = dbPath();
   mkdirSync(path.dirname(file), { recursive: true });
-  db = new Database(file);
-  db.pragma("journal_mode = WAL");
-  migrate(db);
+  const newDb = new Database(file);
+  newDb.pragma("journal_mode = WAL");
+  migrate(newDb);
+  db = newDb;
   return db;
 }
