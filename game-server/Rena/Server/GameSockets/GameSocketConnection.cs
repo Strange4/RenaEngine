@@ -1,3 +1,4 @@
+// No substantial AI-generated code
 using System.Net.WebSockets;
 
 namespace Rena.Server.GameSockets;

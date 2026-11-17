@@ -1,3 +1,4 @@
+# No substantial AI-generated code
 ignore:
   - "**/*Dockerfile"
   - "**/*.dockerignore"
