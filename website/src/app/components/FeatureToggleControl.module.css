@@ -6,17 +6,21 @@
 }
 
 .control h3 {
-  margin: 0 0 0.35rem;
-  font-size: 0.95rem;
+  margin: 0 0 0.6rem;
+  font-family: var(--px);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--orange);
 }
 
 .control p {
   margin: 0;
-  font-size: 0.8rem;
-  color: var(--deep);
+  font-size: 20px;
+  color: var(--dim);
 }
 
 .control .error {
   margin-top: 0.5rem;
-  color: #a00036;
+  color: var(--red);
 }

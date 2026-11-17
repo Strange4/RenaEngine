@@ -11,12 +11,13 @@
 .track {
   display: block;
   flex: none;
-  width: 47px;
-  height: 26px;
+  width: 52px;
+  height: 28px;
   padding: 3px;
-  border: 0;
-  border-radius: 999px;
-  background: #f9ccdf;
+  border: 3px solid var(--edge);
+  border-radius: 0;
+  background: var(--panel2);
+  box-shadow: inset 0 0 0 2px var(--line);
 }
 
 .switch {
@@ -27,30 +28,32 @@
 .track::after {
   content: "";
   display: block;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 3px #a45c7f;
+  width: 18px;
+  height: 100%;
+  background: var(--dim);
+  box-shadow: inset -3px 0 0 var(--line);
 }
 
 .switch[aria-checked="true"],
 .input:checked + .track {
-  background: var(--grad);
+  background: var(--green);
+  box-shadow: inset 0 0 0 2px var(--green);
 }
 
 .switch[aria-checked="true"]::after,
 .input:checked + .track::after {
   margin-left: auto;
+  background: #fff;
+  box-shadow: inset -3px 0 0 var(--line);
 }
 
 .switch:focus-visible,
 .input:focus-visible + .track {
-  outline: 2px solid var(--deep);
+  outline: 3px solid var(--pink);
   outline-offset: 3px;
 }
 
 .switch:disabled {
   cursor: wait;
-  opacity: 0.65;
+  opacity: 0.6;
 }

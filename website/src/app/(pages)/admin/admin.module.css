@@ -1,6 +1,5 @@
 .page {
   min-height: 100vh;
-  background: #fff5fa;
   color: var(--ink);
 }
 
@@ -12,17 +11,27 @@
 
 .welcome {
   margin-bottom: 1.5rem;
-  background: var(--grad);
-  border-radius: 20px;
-  padding: 1.75rem 2.25rem;
-  color: #fff;
-  box-shadow: 0 16px 40px rgba(194, 0, 122, 0.35);
+  background: var(--panel);
+  border: 4px solid var(--edge);
+  box-shadow: inset 0 0 0 2px var(--line), 6px 6px 0 var(--edge);
+  padding: 1.5rem 2rem;
+  animation: enter 0.45s steps(4) both;
 }
 
 .welcomeTitle {
-  font-size: 1.9rem;
-  letter-spacing: 0.3px;
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.6rem;
+  font-family: var(--px);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--pink);
+  text-shadow: 3px 3px 0 var(--edge);
+}
+
+.welcomeTitle::after {
+  content: "_";
+  color: var(--pink);
+  animation: blink 1s steps(2) infinite;
 }
 
 .dashboard {
@@ -34,22 +43,32 @@
 
 .card {
   min-width: 0;
-  background: #fff;
-  border: 1px solid var(--blush-2);
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(194, 0, 122, 0.08);
+  background: var(--panel);
+  border: 4px solid var(--edge);
+  box-shadow: inset 0 0 0 2px var(--line), 6px 6px 0 var(--edge);
   padding: 1.5rem 1.75rem;
+  animation: enter 0.45s steps(4) both;
+  transition: transform 0.1s steps(2), box-shadow 0.1s steps(2);
+}
+
+.card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: inset 0 0 0 2px var(--line), 8px 8px 0 var(--edge);
 }
 
 .card h2 {
-  margin: 0 0 0.35rem;
-  font-size: 1.15rem;
+  margin: 0 0 0.6rem;
+  font-family: var(--px);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--orange);
 }
 
 .description {
   margin: 0 0 1.25rem;
-  font-size: 0.85rem;
-  color: var(--deep);
+  font-size: 22px;
+  color: var(--dim);
 }
 
 .liveViewer {
@@ -57,14 +76,13 @@
 }
 
 .error {
-  color: #a00036;
+  color: var(--red);
 }
 
 .tokens :global(.token-reveal) {
   justify-content: space-between;
   width: 100%;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 22px;
   cursor: pointer;
 }
 
@@ -83,49 +101,56 @@
 
 .tokens :global(.token-table) th,
 .tokens :global(.token-table) td {
-  padding: 0.75rem 0.55rem;
-  border-color: var(--blush-2);
-  font-size: 0.85rem;
+  padding: 0.6rem 0.55rem;
+  border-color: var(--line);
+  font-size: 21px;
 }
 
 .tokens :global(.token-table) thead th {
-  color: var(--deep);
-  font-size: 0.75rem;
+  color: var(--orange);
+  font-family: var(--px);
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1.6;
 }
 
 .tokens :global(.token-status) {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.25rem 0.7rem;
+  font-size: 8px;
 }
 
 .tokens :global(.token-status-active) {
-  background: #d7f7e5;
-  color: #087c47;
+  background: var(--green);
+  color: var(--edge);
 }
 
 .tokens :global(.token-status-inactive) {
-  background: var(--blush);
-  color: var(--deep);
+  background: var(--panel2);
+  color: var(--dim);
 }
 
 .tokens :global(.copy-token) button {
-  font: inherit;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--magenta);
-  background: var(--blush);
-  border: 1px solid var(--blush-2);
-  border-radius: 999px;
-  padding: 0.35rem 0.8rem;
+  font-family: var(--px);
+  font-size: 9px;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--pink);
+  border: 3px solid var(--edge);
+  border-radius: 0;
+  padding: 0.5rem 0.7rem;
+  box-shadow: 0 4px 0 var(--magenta);
+}
+
+.tokens :global(.copy-token) button:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--magenta);
 }
 
 .tokens :global(.copy-token .hint) {
-  color: #087c47;
+  color: var(--green);
 }
 
 .tokens :global(.copy-token .error) {
-  color: #a00036;
+  color: var(--red);
 }
 
 .feature {
@@ -133,20 +158,43 @@
 }
 
 .feature + .feature {
-  border-top: 1px solid var(--blush-2);
+  border-top: 3px dashed var(--line);
 }
 
 .featureLink {
   display: inline-block;
   margin-top: 0.7rem;
-  padding: 0.35rem 0.8rem;
-  border: 1px solid var(--blush-2);
-  border-radius: 999px;
-  color: var(--magenta);
-  background: var(--blush);
-  font-size: 0.8rem;
-  font-weight: 700;
+  padding: 0.6rem 0.9rem;
+  border: 3px solid var(--edge);
+  color: #fff;
+  background: var(--pink);
+  font-family: var(--px);
+  font-size: 9px;
+  text-transform: uppercase;
   text-decoration: none;
+  box-shadow: 0 4px 0 var(--magenta);
+}
+
+.featureLink:hover {
+  filter: brightness(1.08);
+}
+
+.featureLink:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--magenta);
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
 }
 
 @media (max-width: 600px) {
