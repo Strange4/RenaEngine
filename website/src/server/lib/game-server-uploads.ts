@@ -1,4 +1,4 @@
-function uploadUrl(participantId: number): string | null {
+function getUploadUrl(participantId: number): string | null {
   const baseUrl = process.env.GAME_SERVER_URL;
   if (!baseUrl) {
     console.error("GAME_SERVER_URL is not set; code uploads cannot be forwarded");
@@ -20,7 +20,7 @@ export async function uploadSubmission(
   participantId: number,
   file: File,
 ): Promise<Response | null> {
-  const url = uploadUrl(participantId);
+  const url = getUploadUrl(participantId);
   const serviceToken = process.env.ADMIN_TOKEN;
   if (!url || !serviceToken) return null;
 
