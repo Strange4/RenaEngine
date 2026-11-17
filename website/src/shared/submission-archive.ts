@@ -7,9 +7,13 @@ export type SubmissionArchiveValidation =
   | { ok: true }
   | { ok: false; error: string; status: 413 | 415 | 422 };
 
+// Little-endian "PK\x05\x06" signature that starts the end-of-central-directory record.
 const END_OF_CENTRAL_DIRECTORY = 0x06054b50;
+// Little-endian "PK\x01\x02" signature that starts each central-directory entry.
 const CENTRAL_DIRECTORY_ENTRY = 0x02014b50;
+// Size in bytes of the end-of-central-directory record when its comment is empty.
 const MIN_END_RECORD_SIZE = 22;
+// Largest comment length the 16-bit comment field can declare (65535 bytes).
 const MAX_ZIP_COMMENT_SIZE = 0xffff;
 
 function zipEntryNames(buffer: ArrayBuffer): string[] | null {
