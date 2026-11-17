@@ -60,18 +60,6 @@
   color: #a00036;
 }
 
-.tokens :global(.token-reveal) {
-  justify-content: space-between;
-  width: 100%;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.tokens :global(.token-reveal) > span {
-  order: 1;
-}
-
 .tokens :global(.token-table) caption {
   position: absolute;
   width: 1px;
@@ -91,22 +79,6 @@
 .tokens :global(.token-table) thead th {
   color: var(--deep);
   font-size: 0.75rem;
-}
-
-.tokens :global(.token-status) {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.25rem 0.7rem;
-}
-
-.tokens :global(.token-status-active) {
-  background: #d7f7e5;
-  color: #087c47;
-}
-
-.tokens :global(.token-status-inactive) {
-  background: var(--blush);
-  color: var(--deep);
 }
 
 .tokens :global(.copy-token) button {
