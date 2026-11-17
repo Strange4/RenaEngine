@@ -8,6 +8,7 @@ import {
 } from "react";
 import { validateSubmissionArchive } from "@/shared/submission-archive";
 import styles from "../(pages)/participant/participant.module.css";
+import uploadStyles from "./CodeUploadPanel.module.css";
 
 async function responseError(response: Response): Promise<string> {
   const body = await response.json().catch(() => null);
@@ -102,7 +103,7 @@ export default function CodeUploadPanel() {
 
       <form onSubmit={upload}>
         <label
-          className={`${styles.uploadDropzone} ${dragging ? styles.uploadDropzoneActive : ""}`}
+          className={`${uploadStyles.uploadDropzone} ${dragging ? uploadStyles.uploadDropzoneActive : ""}`}
           htmlFor="submission-file"
           onDragEnter={(event) => {
             event.preventDefault();
@@ -116,12 +117,12 @@ export default function CodeUploadPanel() {
           }}
           onDrop={dropFile}
         >
-          <span className={styles.uploadLabel}>Project archive</span>
-          <span className={styles.uploadDropzoneText}>
+          <span className={uploadStyles.uploadLabel}>Project archive</span>
+          <span className={uploadStyles.uploadDropzoneText}>
             Drop a ZIP archive here or select a file
           </span>
           <input
-            className={styles.uploadInput}
+            className={uploadStyles.uploadInput}
             ref={inputRef}
             id="submission-file"
             name="file"
@@ -132,13 +133,13 @@ export default function CodeUploadPanel() {
             onChange={(event) => void selectFile(event.target.files?.[0] ?? null)}
           />
         </label>
-        {file && <p className={styles.uploadSelection}>Selected: {file.name}</p>}
-        <p className={styles.uploadDescription}>
+        {file && <p className={uploadStyles.uploadSelection}>Selected: {file.name}</p>}
+        <p className={uploadStyles.uploadDescription}>
           ZIP files up to 8 MiB are accepted. A new upload replaces your previous
           submission.
         </p>
         <button
-          className={styles.uploadButton}
+          className={uploadStyles.uploadButton}
           type="submit"
           disabled={!file || uploading || validating}
         >
@@ -150,9 +151,9 @@ export default function CodeUploadPanel() {
         </button>
       </form>
 
-      <div className={styles.uploadFeedback} aria-live="polite">
-        {error && <p className={styles.uploadError}>{error}</p>}
-        {success && <p className={styles.uploadSuccess}>{success}</p>}
+      <div className={uploadStyles.uploadFeedback} aria-live="polite">
+        {error && <p className={uploadStyles.uploadError}>{error}</p>}
+        {success && <p className={uploadStyles.uploadSuccess}>{success}</p>}
       </div>
     </section>
   );
