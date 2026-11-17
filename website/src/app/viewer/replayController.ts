@@ -33,6 +33,7 @@ export class ReplayController {
   private playing = false;
   private speed = 1;
   private steps = Promise.resolve();
+  private playbackTask: Promise<void> | null = null;
   private listeners = new Set<ReplayStatusListener>();
   private disposed = false;
 
@@ -48,10 +49,10 @@ export class ReplayController {
 
   getStatus(): ReplayStatus {
     let state = PlaybackState.PAUSED;
-    if (this.playing) {
-      state = PlaybackState.PLAYING;
-    } else if (this.position >= this.changes.length) {
+    if (this.position >= this.changes.length) {
       state = PlaybackState.ENDED;
+    } else if (this.playing) {
+      state = PlaybackState.PLAYING;
     }
     return { state, position: this.position, length: this.changes.length, speed: this.speed };
   }
@@ -76,14 +77,32 @@ export class ReplayController {
     throw new Error("Stepping forward is not implemented yet (#172)");
   }
 
-  // TODO (171)
+  // Starts playback of the recording, applying changes at the current speed until paused or finished
   play(): void {
-    throw new Error("Playing is not implemented yet (#171)");
+    // If already playing or at the end of the recording, do nothing
+    if (this.disposed || this.position >= this.changes.length || this.playing) {
+      return;
+    }
+
+    // Start playback
+    this.playing = true;
+    this.notify();
+    // If there's no playback running, start one
+    if (!this.playbackTask) {
+      this.playbackTask = this.runPlayback();
+    }
   }
 
-  // TODO (171)
+  // Pauses playback of the recording
   pause(): void {
-    throw new Error("Pausing is not implemented yet (#171)");
+    // If already paused or disposed, do nothing
+    if (this.disposed || !this.playing) {
+      return;
+    }
+
+    // Pause playback
+    this.playing = false;
+    this.notify();
   }
 
   // TODO (173)
@@ -118,6 +137,7 @@ export class ReplayController {
 
   dispose(): void {
     this.disposed = true;
+    this.playing = false;
     this.listeners.clear();
     this.processor.dispose();
   }
@@ -140,6 +160,41 @@ export class ReplayController {
     this.position++;
     this.notify();
     return true;
+  }
+  // Runs the playback loop, applying changes at the current speed until paused or finished
+  private async runPlayback(): Promise<void> {
+    try {
+      // While playing and not disposed, apply the next change after waiting for the step delay
+      while (this.playing && !this.disposed) {
+        await new Promise<void>((resolve) => setTimeout(resolve, this.getStepDelay()));
+
+        // If playback was paused or disposed during the wait, exit the loop
+        if (!this.playing || this.disposed) {
+          break;
+        }
+
+        // Applies the next change and stops playback if no more changes.
+        const applied = await this.applyNextChange();
+        if (!applied) {
+          this.playing = false;
+          this.notify();
+          break;
+        }
+        // If the position is at or beyond the end of the recording, stop playback
+        if (this.position >= this.changes.length) {
+          this.playing = false;
+          this.notify();
+          break;
+        }
+      }
+    } catch (error) {
+      // If whatever error occurs during playback, stop playback and log the error
+      this.playing = false;
+      this.notify();
+      console.error("Replay playback failed", error);
+    } finally {
+      this.playbackTask = null;
+    }
   }
 
   private notify(): void {

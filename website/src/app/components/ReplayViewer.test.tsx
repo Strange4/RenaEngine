@@ -224,4 +224,21 @@ describe("ReplayViewer", () => {
     //switched the speed from 1x to 2x, we should see this displayed on the button now
     expect(await screen.findByRole("button", {name: "Speed 2x"})).toBeInTheDocument();
   });
+
+  it("connects the play and pause controls to the controller", async () => {
+    render(
+      <ReplayViewer
+        gameId="1"
+        recording={[{ index: 1, changes: [map] }]}
+      />,
+    );
+
+    await waitFor(() => expect(ReplayController).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(screen.getByRole("button", { name: "Play" }));
+    expect(await screen.findByRole("button", { name: "Pause" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+    expect(await screen.findByRole("button", { name: "Play" })).toBeInTheDocument();
+  });
 });

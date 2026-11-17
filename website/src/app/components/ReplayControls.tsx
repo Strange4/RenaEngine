@@ -114,7 +114,7 @@ export default function ReplayControls({
         <SkipBack aria-hidden="true" fill="currentColor" />
       </button>
       {playing ? (
-        <button type="button" className="replay-play" aria-label="Pause" title="Pause" onClick={onPause}>
+        <button type="button" className="replay-play replay-pause" aria-label="Pause" title="Pause" onClick={onPause}>
           <Pause aria-hidden="true" fill="currentColor" />
         </button>
       ) : (
