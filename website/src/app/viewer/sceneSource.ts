@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 import type { GameRenderable, ViewerSetup } from "@/shared/renderable";
 import { mockSceneSource } from "./mockScene";
 

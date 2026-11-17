@@ -1,4 +1,5 @@
-﻿using BattleshipServer.Game;
+﻿// Below 50% AI-generated
+using BattleshipServer.Game;
 using BattleshipServer.Game.Models;
 using Rena.Server.Rendering;
 

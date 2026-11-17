@@ -1,3 +1,4 @@
+// Below 50% AI-generated
 using BattleshipServer.Game.Logic;
 using BattleshipServer.Game.Models;
 

@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import { RenderableType, type GameRenderable, type RenderableChange } from "@/shared/renderable";
 import { RenderableChangeProcessor } from "./renderableChangeProcessor";
 import type { RenderableHandlers } from "./renderableHandler";

@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿// 50% or more AI-generated
+using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
@@ -7,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NSubstitute.ReturnsExtensions;
 using Rena.Server;
 using Rena.Server.GameSockets;
 using Rena.Server.Rendering;

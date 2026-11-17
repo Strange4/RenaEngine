@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import { RenderableType, type GameRenderable, type RenderableChange } from "@/shared/renderable";
 import type { RenderableHandlers } from "./renderableHandler";
 import { PlaybackState, ReplayController, type ReplayStatus, STEP_DELAY, PLAYBACK_SPEEDS} from "./replayController";
