@@ -6,14 +6,18 @@ function dbPath(): string {
   return process.env.DB_PATH ?? path.join(process.cwd(), "data", "rena.db");
 }
 
-// Migration v1: the users table. token_hash is the SHA-256 hex of the token;
-// plaintext tokens are never stored. users.id doubles as the participant number.
 const MIGRATIONS: string[] = [
+  /* users table:
+   * id: Internal database key only; never use it as a user reference.
+   * login_id: Unique ID users enter; all application references use this value.
+   * role: User permissions category; only admin and participant are allowed.
+   * password_hash: Slow password-hash output; never store the plaintext password.
+   */
   `CREATE TABLE users (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    role       TEXT NOT NULL CHECK (role IN ('admin', 'participant')),
-    token_hash TEXT NOT NULL UNIQUE,
-    active     INTEGER NOT NULL DEFAULT 1
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    login_id      TEXT NOT NULL UNIQUE,
+    role          TEXT NOT NULL CHECK (role IN ('admin', 'participant')),
+    password_hash TEXT NOT NULL
   )`,
 ];
 

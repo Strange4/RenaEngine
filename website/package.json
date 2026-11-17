@@ -11,11 +11,8 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-<<<<<<< HEAD
     "better-sqlite3": "^13.0.3",
-=======
     "lucide-react": "^1.61.0",
->>>>>>> main
     "next": "^16.3.8",
     "pixi.js": "^8.22.0",
     "react": "^19.3.0",
