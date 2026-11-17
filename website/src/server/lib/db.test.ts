@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { migrate } from "./db";
@@ -98,5 +98,47 @@ describe("migrate", () => {
       .prepare("SELECT COUNT(*) AS count FROM users")
       .get() as { count: number };
     expect(count.count).toBe(1);
+  });
+});
+
+describe("getDb", () => {
+  let dir: string;
+  let db: Database.Database | undefined;
+  let dbFile: string;
+  let originalDbPath: string | undefined;
+
+  beforeEach(() => {
+    jest.resetModules();
+    dir = mkdtempSync(path.join(tmpdir(), "rena-getdb-test-"));
+    dbFile = path.join(dir, "nested", "rena.db");
+    originalDbPath = process.env.DB_PATH;
+    process.env.DB_PATH = dbFile;
+  });
+
+  afterEach(() => {
+    db?.close();
+    if (originalDbPath === undefined) {
+      delete process.env.DB_PATH;
+    } else {
+      process.env.DB_PATH = originalDbPath;
+    }
+    rmSync(dir, { recursive: true, force: true });
+    jest.resetModules();
+  });
+
+  it("creates the file, applies migrations and reuses the connection", async () => {
+    const { getDb } = await import("./db");
+    db = getDb();
+
+    expect(existsSync(dbFile)).toBe(true);
+    expect(db.pragma("user_version", { simple: true })).toBe(1);
+    expect(db.pragma("journal_mode", { simple: true })).toBe("wal");
+    const columns = db
+      .prepare("PRAGMA table_info(users)")
+      .all() as { name: string }[];
+    expect(
+      columns.map((column) => column.name),
+    ).toEqual(["id", "login_id", "role", "password_hash"]);
+    expect(getDb()).toBe(db);
   });
 });

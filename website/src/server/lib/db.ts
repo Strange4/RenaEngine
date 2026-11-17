@@ -10,7 +10,7 @@ const MIGRATIONS: string[] = [
   /* users table:
    * id: Internal database key only; never use it as a user reference.
    * login_id: Unique ID users enter; all application references use this value.
-   * role: User permissions category; only admin and participant are allowed.
+   * role: User permissions category; only admin and participant are allowed, currently.
    * password_hash: Slow password-hash output; never store the plaintext password.
    */
   `CREATE TABLE users (
