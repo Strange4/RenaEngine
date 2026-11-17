@@ -1,3 +1,4 @@
+// No substantial AI-generated code
 namespace Rena.Server;
 
 using System.ComponentModel.DataAnnotations;
