@@ -64,6 +64,28 @@ describe("uploadSubmission", () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
+  it("builds the upload URL when the base URL ends with a slash", async () => {
+    process.env.GAME_SERVER_URL = "https://game-server.example/base/";
+    mockFetch.mockResolvedValue(new Response(null, { status: 202 }));
+
+    await uploadSubmission(42, new File(["zip"], "agent.zip"));
+
+    expect(mockFetch.mock.calls[0][0]).toBe(
+      "https://game-server.example/base/upload/PLAYER-42",
+    );
+  });
+
+  it("returns null and logs when the game server URL is invalid", async () => {
+    process.env.GAME_SERVER_URL = "not a url";
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const file = new File(["zip"], "agent.zip");
+
+    await expect(uploadSubmission(42, file)).resolves.toBeNull();
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledWith("GAME_SERVER_URL is not a valid URL");
+    errorSpy.mockRestore();
+  });
+
   it("returns null when the game server cannot be reached", async () => {
     const file = new File(["zip"], "agent.zip");
     mockFetch.mockRejectedValue(new Error("offline"));

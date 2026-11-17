@@ -7,14 +7,20 @@ import {
 } from "@/shared/submission-archive";
 import { isAdmin } from "@/shared/token";
 
-async function responseFile(request: Request): Promise<File | null> {
+// Must match the game server's MaxZipFileSizeBytes default.
+const MAX_ZIP_BYTES = 8 * 1024 * 1024;
+// Allowance for multipart framing around the archive.
+const MULTIPART_OVERHEAD_BYTES = 64 * 1024;
+const TOO_LARGE_ERROR = `The selected ZIP exceeds the ${MAX_ZIP_BYTES / (1024 * 1024)} MiB upload limit`;
+
+async function requestFile(request: Request): Promise<File | null> {
   const formData = await request.formData().catch(() => null);
   const file = formData?.get("file");
   return file instanceof File && file.size > 0 ? file : null;
 }
 
 function upstreamError(status: number): string {
-  if (status === 413) return "The selected ZIP exceeds the 8 MiB upload limit";
+  if (status === 413) return TOO_LARGE_ERROR;
   if (status === 415) return "Select a ZIP archive to upload";
   if (status === 422) return SUBMISSION_ENTRYPOINT_ERROR;
   return "The game server could not accept the submission";
@@ -32,12 +38,20 @@ export async function POST(request: Request) {
     );
   }
 
-  const file = await responseFile(request);
+  const contentLength = Number(request.headers.get("content-length"));
+  if (contentLength > MAX_ZIP_BYTES + MULTIPART_OVERHEAD_BYTES) {
+    return NextResponse.json({ error: TOO_LARGE_ERROR }, { status: 413 });
+  }
+
+  const file = await requestFile(request);
   if (!file) {
     return NextResponse.json(
       { error: "Select a ZIP archive to upload" },
       { status: 400 },
     );
+  }
+  if (file.size > MAX_ZIP_BYTES) {
+    return NextResponse.json({ error: TOO_LARGE_ERROR }, { status: 413 });
   }
 
   const validation = await validateSubmissionArchive(file);

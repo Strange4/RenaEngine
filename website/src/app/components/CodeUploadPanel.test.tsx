@@ -90,6 +90,24 @@ describe("CodeUploadPanel", () => {
     ).toBeInTheDocument();
   });
 
+  it("disables upload again when the selection is cleared", async () => {
+    render(<CodeUploadPanel />);
+    const file = zipFile(["main.ts"]);
+
+    fireEvent.change(screen.getByLabelText("Project archive"), {
+      target: { files: [file] },
+    });
+    const button = await screen.findByRole("button", {
+      name: "Upload submission",
+    });
+    expect(button).toBeEnabled();
+
+    fireEvent.change(screen.getByLabelText("Project archive"), {
+      target: { files: [] },
+    });
+    await waitFor(() => expect(button).toBeDisabled());
+  });
+
   it("shows a connection error when the request fails", async () => {
     mockFetch.mockRejectedValue(new Error("offline"));
     render(<CodeUploadPanel />);

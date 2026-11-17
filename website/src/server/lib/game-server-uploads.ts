@@ -1,6 +1,9 @@
 function uploadUrl(participantId: number): string | null {
   const baseUrl = process.env.GAME_SERVER_URL;
-  if (!baseUrl) return null;
+  if (!baseUrl) {
+    console.error("GAME_SERVER_URL is not set; code uploads cannot be forwarded");
+    return null;
+  }
 
   try {
     return new URL(
@@ -8,6 +11,7 @@ function uploadUrl(participantId: number): string | null {
       baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`,
     ).toString();
   } catch {
+    console.error("GAME_SERVER_URL is not a valid URL");
     return null;
   }
 }

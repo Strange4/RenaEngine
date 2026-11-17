@@ -57,7 +57,6 @@ describe("ReplayController", () => {
     expect(controller.getCurrentState()).toEqual([ship]);
     expect(testHandlers.calls).toEqual([]);
   });
-
   it("is ended if the recording is empty", async () => {
     const { controller } = controllerFor([]);
 
@@ -158,16 +157,107 @@ describe("ReplayController", () => {
     expect(controller.getStatus().position).toBe(0);
   });
 
-  it("throws for the controls that are not done yet", async () => {
+  it("Throws for unimplemented stepForward and stepBackward", async () => {
+    const { controller } = controllerFor();
+    
+    await expect(controller.stepForward()).rejects.toThrow("Stepping forward is not implemented yet (#172)");
+    await expect(controller.stepBackward()).rejects.toThrow("Stepping backward is not implemented yet (#173)");
+  });
+
+  it("starts and pauses playback without losing its position", async () => {
     const { controller, testHandlers } = controllerFor();
 
-    expect(() => controller.play()).toThrow("not implemented yet (#171)");
-    expect(() => controller.pause()).toThrow("not implemented yet (#171)");
-    await expect(controller.stepForward()).rejects.toThrow("not implemented yet (#172)");
-    await expect(controller.stepBackward()).rejects.toThrow("not implemented yet (#173)");
-    //expect(() => controller.setSpeed(2)).toThrow("not implemented yet (#174)");
-    expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0, speed: 1 });
-    expect(testHandlers.calls).toEqual([]);
+    jest.useFakeTimers();
+    try {
+      controller.play();
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PLAYING, position: 0 });
+
+      controller.pause();
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0 });
+
+      controller.play();
+      await jest.advanceTimersByTimeAsync(STEP_DELAY);
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PLAYING, position: 1 });
+      expect(testHandlers.calls).toEqual(["create:flag"]);
+    } finally {
+      controller.pause();
+      jest.useRealTimers();
+    }
+    expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 1, speed: 1 });
+  });
+
+  it("does not apply a change when paused during the playback delay", async () => {
+    const { controller, testHandlers } = controllerFor();
+    jest.useFakeTimers();
+
+    try {
+      controller.play();
+      controller.pause();
+      await jest.advanceTimersByTimeAsync(STEP_DELAY);
+
+      expect(testHandlers.calls).toEqual([]);
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0 });
+    } finally {
+      controller.dispose();
+      jest.useRealTimers();
+    }
+  });
+
+  it("ends playback after applying the final change", async () => {
+    const { controller, testHandlers } = controllerFor([RECORDING[0]]);
+    jest.useFakeTimers();
+
+    try {
+      controller.play();
+      await jest.advanceTimersByTimeAsync(STEP_DELAY);
+      await Promise.resolve();
+
+      expect(testHandlers.calls).toEqual(["create:flag"]);
+      expect(controller.getStatus()).toMatchObject({
+        state: PlaybackState.ENDED,
+        position: 1,
+        length: 1,
+      });
+    } finally {
+      controller.dispose();
+      jest.useRealTimers();
+    }
+  });
+
+  it("logs errors and stops playback if an error occurs during playback", async () => {
+    const { controller, testHandlers } = controllerFor();
+    jest.useFakeTimers();
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    try {
+      testHandlers.create = jest.fn().mockRejectedValueOnce(new Error("asset failed to load"));
+      controller.play();
+      await jest.advanceTimersByTimeAsync(STEP_DELAY);
+
+      expect(testHandlers.calls).toEqual([]);
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0 });
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("Replay playback failed"), expect.any(Error));
+    } finally {
+      controller.dispose();
+      consoleErrorSpy.mockRestore();
+      jest.useRealTimers();
+    }
+  });
+
+  it("stops playback when disposed during the playback delay", async () => {
+    const { controller, testHandlers } = controllerFor();
+    jest.useFakeTimers();
+
+    try {
+      controller.play();
+      controller.dispose();
+      await jest.advanceTimersByTimeAsync(STEP_DELAY);
+
+      expect(testHandlers.calls).toEqual([]);
+      expect(controller.getStatus().position).toBe(0);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });
 
