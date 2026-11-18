@@ -1,3 +1,4 @@
+// AI declaration: Below 50% AI-generated code
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { ParticipantToken } from "@/shared/participant-tokens";

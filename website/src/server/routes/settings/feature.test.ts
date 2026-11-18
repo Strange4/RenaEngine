@@ -1,6 +1,7 @@
 /**
  * @jest-environment node
  */
+// AI declaration: Above 50% AI-generated code - used for proper test coverage & mocking
 import { PUT } from "./feature";
 
 const mockGetSession = jest.fn();

@@ -1,3 +1,4 @@
+// AI declaration: Below 50% AI-generated code
 import type { FeatureKey } from "@/shared/features";
 
 export type FeatureSetting = {

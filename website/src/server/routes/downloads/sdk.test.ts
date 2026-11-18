@@ -1,6 +1,7 @@
 /**
  * @jest-environment node
  */
+// AI declaration: Above 50% AI-generated code - used for proper test coverage & mocking of the SDK download
 import { GET } from "./sdk";
 
 const mockGetSession = jest.fn();

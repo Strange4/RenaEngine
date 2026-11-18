@@ -1,3 +1,4 @@
+// AI declaration: Above 50% AI-generated code - used for proper test coverage & mocking of the game-server-settings module
 import {
   getFeatureSetting,
   updateFeatureSetting,

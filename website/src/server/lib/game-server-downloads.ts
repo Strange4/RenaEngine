@@ -1,3 +1,4 @@
+// AI declaration: No substantial AI-generated code
 import type { SdkLanguage } from "@/shared/sdk-languages";
 
 function downloadUrl(language: SdkLanguage): string | null {
