@@ -1,7 +1,7 @@
-// AI contribution: Below 50% AI-generated
 /**
  * @jest-environment node
  */
+// AI contribution: Below 50% AI-generated
 import { POST } from "./submission";
 import { zipFile } from "@/test-utils/zip";
 

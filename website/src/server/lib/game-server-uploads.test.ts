@@ -1,7 +1,7 @@
-// AI contribution: Below 50% AI-generated
 /**
  * @jest-environment node
  */
+// AI contribution: Below 50% AI-generated
 import { uploadSubmission } from "./game-server-uploads";
 
 const mockFetch = jest.fn();
