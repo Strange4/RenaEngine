@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { uploadSubmission } from "@/server/lib/game-server-uploads";
-import { listParticipantTokens } from "@/server/lib/participant-token-store";
 import { getSession } from "@/server/lib/session";
+import { isRegisteredParticipant } from "@/server/lib/user-store";
 import {
   MAX_SUBMISSION_SIZE_BYTES,
   SUBMISSION_ENTRYPOINT_ERROR,
@@ -67,20 +67,17 @@ export async function POST(request: Request) {
     );
   }
 
-  // The session cookie only proves its format, so confirm the token is registered and active.
-  const tokens = await listParticipantTokens();
-  if (!tokens) {
+  // The session cookie only proves its format, so confirm the token is registered.
+  let registered: boolean;
+  try {
+    registered = isRegisteredParticipant(session.participantId, session.token);
+  } catch (error) {
+    console.error("Could not verify the participant token", error);
     return NextResponse.json(
       { error: "Could not verify your session" },
       { status: 503 },
     );
   }
-  const registered = tokens.some(
-    (token) =>
-      token.active &&
-      token.participantId === session.participantId &&
-      token.token === session.token,
-  );
   if (!registered) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }

@@ -40,6 +40,19 @@ export function createParticipant(
   })();
 }
 
+// Returns true when the token is registered to this participant. A deleted
+// participant no longer has a row, so their token stops matching.
+export function isRegisteredParticipant(
+  participantId: number,
+  token: string,
+  db: Database.Database = getDb(),
+): boolean {
+  const row = db
+    .prepare("SELECT 1 FROM users WHERE id = ? AND role = ? AND token_hash = ?")
+    .get(participantId, Role.Participant, hashToken(token));
+  return row !== undefined;
+}
+
 // Returns participant IDs in ascending order.
 export function listParticipantIds(db: Database.Database = getDb()): number[] {
   const rows = db

@@ -4,7 +4,12 @@
 // AI contribution: 50% or more AI-generated
 import Database from "better-sqlite3";
 import { migrate } from "./db";
-import { createParticipant, hashToken, listParticipantIds } from "./user-store";
+import {
+  createParticipant,
+  hashToken,
+  isRegisteredParticipant,
+  listParticipantIds,
+} from "./user-store";
 
 let db: Database.Database;
 
@@ -57,6 +62,42 @@ describe("createParticipant", () => {
   });
 });
 
+describe("isRegisteredParticipant", () => {
+  it("accepts a participant's own token", () => {
+    const { participantId, token } = createParticipant(db);
+
+    expect(isRegisteredParticipant(participantId, token, db)).toBe(true);
+  });
+
+  it("rejects an unknown token", () => {
+    const { participantId } = createParticipant(db);
+
+    expect(isRegisteredParticipant(participantId, "PARTICIPANT-1-forged", db)).toBe(false);
+  });
+
+  it("rejects another participant's token", () => {
+    const first = createParticipant(db);
+    const second = createParticipant(db);
+
+    expect(isRegisteredParticipant(first.participantId, second.token, db)).toBe(false);
+  });
+
+  it("rejects a token stored on an admin row", () => {
+    db.prepare("INSERT INTO users (token_hash, role) VALUES (?, 'admin')").run(
+      hashToken("PARTICIPANT-1-secret"),
+    );
+
+    expect(isRegisteredParticipant(1, "PARTICIPANT-1-secret", db)).toBe(false);
+  });
+
+  it("rejects a participant whose row was deleted", () => {
+    const { participantId, token } = createParticipant(db);
+    db.prepare("DELETE FROM users WHERE id = ?").run(participantId);
+
+    expect(isRegisteredParticipant(participantId, token, db)).toBe(false);
+  });
+});
+
 describe("listParticipantIds", () => {
   it("lists participants in order and leaves out admins", () => {
     db.prepare("INSERT INTO users (token_hash, role) VALUES ('admin-hash', 'admin')").run();
@@ -76,5 +117,6 @@ describe("default connection", () => {
     const { participantId } = createParticipant();
 
     expect(listParticipantIds()).toEqual([participantId]);
+    expect(isRegisteredParticipant(participantId, "PARTICIPANT-x")).toBe(false);
   });
 });
