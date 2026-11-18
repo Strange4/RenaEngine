@@ -58,8 +58,9 @@ This file lists the generative AI tools the team used and the features AI helped
 
 #### Animations (#88)
 - **Pull request:** [#166](https://github.com/Strange4/RenaEngine/pull/166)
-
-**What AI assisted with:** All of the parts concerning pixi js and the ticker timing animations had the support of AI on top of the PixiJS manual documentation I researched.
+- **AI contribution:** Below 50% AI-generated
+  
+**What AI assisted with:** AI helped in the writing of tests for sufficient coverage and to give me insights on how I should address my code in response to my teammate's PR review-- it also helped me to prevent merge conflicts with the updated main brach which touched on the init of the game setup (tiles namely). To add, it guided me with the PixiJS timer implementation and wrote a skeleton logic that I later modified to fit our project. See list of files concerned in the PR description.
 
 **Verification:** unit tests added or updated; all tests pass locally and in CI.
 
@@ -86,6 +87,33 @@ This file lists the generative AI tools the team used and the features AI helped
 **What AI assisted with:** AI was used to help with debugging and conceptualizing the code.
 
 **Verification:** manual testing of rendering in the Live Viewer; unit tests added or updated; all tests pass locally and in CI.
+
+#### Sprite rotation (#130)
+- **Pull request:** [#131](https://github.com/Strange4/RenaEngine/pull/131)
+- **AI contribution:** Below 50% AI-generated
+
+**What AI assisted with:** AI was used to help with sprite rotation.
+
+**Verification:** manual testing of sprite rotation in the mock scene (before and after a 180° rotation, screenshots in the PR); unit tests added or updated; all tests pass locally and in CI.
+
+#### Implement Renderable Update Logic (#161)
+- **Pull request:** [#161]([https://github.com/Strange4/RenaEngine/pull/102](https://github.com/Strange4/RenaEngine/pull/161))
+- **AI contribution:** Below 50% AI-generated
+
+**What AI assisted with:**  AI was used here mainly for tests to provide sufficient coverage. Naturally, I human-check all of them and remove the out-of-scope unrelated tests the AI hallucinated. I still use AI for test coverage since it does a good job in checking through all possible edge cases. The creaation handler logic was already pushed before I started working on this task, so I anchored myself on that and used minimal AI since update derives a bit from creation. Moreover, the whole thing about sprites and renderables (data for sprites) is all new to me [as well as PixiJS and most of game development as a whole], so all throughout I use AI as my teacher. I ask it to teach me and explain how certain game notions work- i.e. how do pixel-tile conversions happen, what dimensional formulas exist, how to optimize sprite changes ... etc Indeed the latter is how I learned about SpriteSheets! This is widely used by game developers for updates. To see concerned files, please consult the PR description.
+
+**Verification:** manual testing; unit tests added or updated; all tests pass locally and in CI.
+
+#### Fixing Renderable Change Processor to handle missing index case (#142)
+- **Pull request:** [#161]([https://github.com/Strange4/RenaEngine/pull/102](https://github.com/Strange4/RenaEngine/pull/161))
+- **AI contribution:** Below 50% AI-generated
+
+**What AI assisted with:**   AI has helped in writing the tests and the resync asynchronous function, especially since it had multiple cases to handle- the fetching of the current scene and the reverse engineering of the missed updates to give to the viewer.
+website/src/app/viewer/renderableChangeProcessor.test.ts
+Human assisted AI- about 10% (used for the core logic of the timer): website/src/app/viewer/renderableChangeProcessor.ts
+
+**Verification:** manual testing; unit tests added or updated; all tests pass locally and in CI.
+
 
 ### Website
 
