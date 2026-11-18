@@ -1,3 +1,4 @@
+// AI contribution: 50% or more AI-generated - used for proper test coverage of the LoginForm component & mocking
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import LoginForm from "./LoginForm";
 

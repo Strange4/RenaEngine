@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 import { redirect } from "next/navigation";
 import { getSession } from "@/server/lib/session";
 import LoginForm from "@/app/components/LoginForm";

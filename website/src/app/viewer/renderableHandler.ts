@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 import type { GameRenderable } from "@/shared/renderable";
 import type {LiveViewRenderer} from "./liveViewRenderer";
 

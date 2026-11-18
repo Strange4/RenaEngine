@@ -1,3 +1,4 @@
+/* AI contribution: Below 50% AI-generated */
 import { render, screen } from "@testing-library/react";
 import LoginPage from "./page";
 

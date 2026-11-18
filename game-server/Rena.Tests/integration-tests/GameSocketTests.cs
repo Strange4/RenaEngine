@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 using System.Net.WebSockets;
 using System.Text;
 using Microsoft.AspNetCore.Builder;

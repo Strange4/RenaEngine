@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import { NextResponse } from "next/server";
 import { uploadSubmission } from "@/server/lib/game-server-uploads";
 import { getSession } from "@/server/lib/session";

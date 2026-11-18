@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 namespace Rena.Utility;
 
 internal class Result<T>

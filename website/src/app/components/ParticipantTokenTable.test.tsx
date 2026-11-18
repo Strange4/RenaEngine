@@ -1,4 +1,4 @@
-// AI contribution: 50% or more AI-generated
+// AI contribution: 50% or more AI-generated - used for proper test coverage of the ParticipantTokenTable component & mocking
 import { render, screen, within } from "@testing-library/react";
 import ParticipantTokenTable from "./ParticipantTokenTable";
 

@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import { Assets } from "pixi.js";
 import { AssetLoader, isLocalAssetPath, PLACEHOLDER_TEXTURE } from "./assetLoader";
 import { GameRenderable, RenderableType } from "@/shared/renderable";

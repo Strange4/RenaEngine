@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 import LogoutButton from "./LogoutButton";
 import styles from "./AppTopBar.module.css";
 

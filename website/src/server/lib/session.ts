@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 import { cookies } from "next/headers";
 import { parseToken, type ParsedToken } from "@/shared/token";
 
