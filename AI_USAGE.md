@@ -121,6 +121,8 @@ Human assisted AI- about 10% (used for the core logic of the timer): website/src
 - **Pull request:** [#207](https://github.com/Strange4/RenaEngine/pull/207)
 - **AI contribution:** Below 50% AI-generated
 - **AI-assisted files:**
+  - `game-server/Rena.Tests/integration-tests/EndpointTests.cs`
+  - `game-server/Rena/Server/RenaServerHandlers.cs`
   - `website/src/app/api/upload/route.ts`
   - `website/src/app/components/CodeUploadPanel.module.css`
   - `website/src/app/components/CodeUploadPanel.test.tsx`
