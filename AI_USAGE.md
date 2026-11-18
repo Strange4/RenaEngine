@@ -104,8 +104,8 @@ This file lists the generative AI tools the team used and the features AI helped
 
 **Verification:** manual testing; unit tests added or updated; all tests pass locally and in CI.
 
-#### Fixing Renderable Change Processor to handle missing index case (#142)
-- **Pull request:** [#161]([https://github.com/Strange4/RenaEngine/pull/102](https://github.com/Strange4/RenaEngine/pull/161))
+#### Fixing Renderable Change Processor to handle missing index case (#143)
+- **Pull request:** [#143]([[https://github.com/Strange4/RenaEngine/pull/102](https://github.com/Strange4/RenaEngine/pull/161](https://github.com/Strange4/RenaEngine/pull/143)))
 - **AI contribution:** Below 50% AI-generated
 
 **What AI assisted with:**   AI has helped in writing the tests and the resync asynchronous function, especially since it had multiple cases to handle- the fetching of the current scene and the reverse engineering of the missed updates to give to the viewer.
