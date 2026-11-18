@@ -1,4 +1,4 @@
-// AI contribution: Below 50% AI-generated
+// 50% or more AI-generated code
 import { RenderableType, type GameRenderable, type RenderableChange } from "@/shared/renderable";
 import type { RenderableHandlers } from "./renderableHandler";
 import { PlaybackState, ReplayController, type ReplayStatus, STEP_DELAY, PLAYBACK_SPEEDS} from "./replayController";
@@ -158,13 +158,6 @@ describe("ReplayController", () => {
     expect(controller.getStatus().position).toBe(0);
   });
 
-  it("Throws for unimplemented stepForward and stepBackward", async () => {
-    const { controller } = controllerFor();
-    
-    await expect(controller.stepForward()).rejects.toThrow("Stepping forward is not implemented yet (#172)");
-    await expect(controller.stepBackward()).rejects.toThrow("Stepping backward is not implemented yet (#173)");
-  });
-
   it("starts and pauses playback without losing its position", async () => {
     const { controller, testHandlers } = controllerFor();
 
@@ -321,5 +314,310 @@ describe ("playback speed", ()=> {
     const {controller} = controllerFor();
     
     expect(() => controller.setSpeed(speed)).toThrow("Unsupported playback speed-- playback speed error");
+  });
+});
+
+describe("step forward", () => {
+  it("applies only the next change and stays paused", async () => {
+    const { controller, testHandlers } = controllerFor();
+
+    await expect(controller.stepForward()).resolves.toBe(true);
+
+    expect(testHandlers.calls).toEqual(["create:flag"]);
+    expect(controller.getCurrentState()).toEqual([ship, flag]);
+    expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 1 });
+  });
+
+  it("steps through the changes in order and stops at the end", async () => {
+    const { controller, testHandlers } = controllerFor([RECORDING[2], RECORDING[0], RECORDING[1]]);
+    const statuses: ReplayStatus[] = [];
+    controller.onStatusChange((status) => statuses.push(status));
+
+    await expect(controller.stepForward()).resolves.toBe(true);
+    await expect(controller.stepForward()).resolves.toBe(true);
+    await expect(controller.stepForward()).resolves.toBe(true);
+    await expect(controller.stepForward()).resolves.toBe(false);
+
+    expect(testHandlers.calls).toEqual(["create:flag", "update:ship:2,1", "remove:ship"]);
+    expect(statuses.map((status) => `${status.state}@${status.position}`)).toEqual([
+      "PAUSED@1",
+      "PAUSED@2",
+      "ENDED@3",
+    ]);
+  });
+
+  it("keeps the order when stepping quickly", async () => {
+    const { controller, testHandlers } = controllerFor();
+
+    const results = await Promise.all([controller.stepForward(), controller.stepForward()]);
+
+    expect(results).toEqual([true, true]);
+    expect(testHandlers.calls).toEqual(["create:flag", "update:ship:2,1"]);
+    expect(controller.getStatus().position).toBe(2);
+  });
+
+  it("pauses playback and keeps the stepped position", async () => {
+    const { controller, testHandlers } = controllerFor();
+    jest.useFakeTimers();
+
+    try {
+      controller.play();
+      await expect(controller.stepForward()).resolves.toBe(true);
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 1 });
+
+      // the paused playback must not apply another change once its delay ends
+      await jest.advanceTimersByTimeAsync(STEP_DELAY * 2);
+      expect(testHandlers.calls).toEqual(["create:flag"]);
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 1 });
+    } finally {
+      controller.dispose();
+      jest.useRealTimers();
+    }
+  });
+
+  it("keeps the position if the change fails", async () => {
+    const testHandlers = handlers();
+    testHandlers.create = jest.fn().mockRejectedValueOnce(new Error("asset failed to load"));
+    const { controller } = controllerFor(RECORDING, testHandlers);
+
+    await expect(controller.stepForward()).rejects.toThrow("asset failed to load");
+    expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0 });
+  });
+
+  it("rolls back what was applied if the change fails partway", async () => {
+    const testHandlers = handlers();
+    const create = testHandlers.create;
+    testHandlers.create = jest.fn().mockRejectedValueOnce(new Error("asset failed to load")).mockImplementation(create);
+    const { controller } = controllerFor([{ index: 1, changes: [movedShip, flag] }], testHandlers);
+
+    await expect(controller.stepForward()).rejects.toThrow("asset failed to load");
+
+    expect(testHandlers.calls).toEqual(["update:ship:2,1", "update:ship:1,1"]);
+    expect(controller.getCurrentState()).toEqual([ship]);
+    expect(controller.getStatus().position).toBe(0);
+  });
+
+  it("can step back to the initial scene after retrying a change that failed partway", async () => {
+    const testHandlers = handlers();
+    const create = testHandlers.create;
+    testHandlers.create = jest.fn().mockRejectedValueOnce(new Error("asset failed to load")).mockImplementation(create);
+    const { controller } = controllerFor([{ index: 1, changes: [movedShip, flag] }], testHandlers);
+    await expect(controller.stepForward()).rejects.toThrow("asset failed to load");
+
+    await expect(controller.stepForward()).resolves.toBe(true);
+    expect(controller.getCurrentState()).toEqual([movedShip, flag]);
+    await expect(controller.stepBackward()).resolves.toBe(true);
+
+    expect(controller.getCurrentState()).toEqual([ship]);
+    expect(controller.getStatus().position).toBe(0);
+  });
+
+  it("does nothing after dispose", async () => {
+    const { controller, testHandlers } = controllerFor();
+    controller.dispose();
+
+    await expect(controller.stepForward()).resolves.toBe(false);
+    expect(testHandlers.calls).toEqual([]);
+    expect(controller.getStatus().position).toBe(0);
+  });
+});
+
+describe("step backward", () => {
+  async function stepForwardTimes(controller: ReplayController, times: number) {
+    for (let i = 0; i < times; i++) {
+      await controller.stepForward();
+    }
+  }
+
+  it("does nothing at the start of the recording", async () => {
+    const { controller, testHandlers } = controllerFor();
+
+    await expect(controller.stepBackward()).resolves.toBe(false);
+
+    expect(testHandlers.calls).toEqual([]);
+    expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0 });
+  });
+
+  it("removes a renderable that the change created", async () => {
+    const { controller, testHandlers } = controllerFor();
+    await stepForwardTimes(controller, 1);
+
+    await expect(controller.stepBackward()).resolves.toBe(true);
+
+    expect(testHandlers.calls).toEqual(["create:flag", "remove:flag"]);
+    expect(controller.getCurrentState()).toEqual([ship]);
+    expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0 });
+  });
+
+  it("restores a renderable that the change updated", async () => {
+    const { controller, testHandlers } = controllerFor();
+    await stepForwardTimes(controller, 2);
+
+    await controller.stepBackward();
+
+    expect(testHandlers.calls.slice(2)).toEqual(["update:ship:1,1"]);
+    expect(controller.getCurrentState()).toEqual([ship, flag]);
+    expect(controller.getStatus().position).toBe(1);
+  });
+
+  it("brings back a renderable that the change removed", async () => {
+    const { controller, testHandlers } = controllerFor();
+    await stepForwardTimes(controller, 3);
+    expect(controller.getStatus().state).toBe(PlaybackState.ENDED);
+
+    await controller.stepBackward();
+
+    expect(testHandlers.calls.slice(3)).toEqual(["create:ship"]);
+    expect(controller.getCurrentState()).toEqual(expect.arrayContaining([flag, movedShip]));
+    expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 2 });
+  });
+
+  it("steps all the way back to the initial scene", async () => {
+    const { controller } = controllerFor();
+    const statuses: ReplayStatus[] = [];
+    await stepForwardTimes(controller, 3);
+    controller.onStatusChange((status) => statuses.push(status));
+
+    for (let i = 0; i < 3; i++) {
+      await expect(controller.stepBackward()).resolves.toBe(true);
+    }
+    await expect(controller.stepBackward()).resolves.toBe(false);
+
+    expect(controller.getCurrentState()).toEqual([ship]);
+    expect(statuses.map((status) => `${status.state}@${status.position}`)).toEqual([
+      "PAUSED@2",
+      "PAUSED@1",
+      "PAUSED@0",
+    ]);
+  });
+
+  it("does not affect stepping forward again", async () => {
+    const { controller, testHandlers } = controllerFor();
+    await stepForwardTimes(controller, 3);
+    const endState = controller.getCurrentState();
+    for (let i = 0; i < 3; i++) {
+      await controller.stepBackward();
+    }
+    testHandlers.calls.length = 0;
+
+    await stepForwardTimes(controller, 3);
+
+    expect(testHandlers.calls).toEqual(["create:flag", "update:ship:2,1", "remove:ship"]);
+    expect(controller.getCurrentState()).toEqual(endState);
+  });
+
+  it("undoes a change that touches the same renderable more than once", async () => {
+    const boat: GameRenderable = { ...baseRenderable, id: "boat" };
+    const recording: RenderableChange[] = [
+      { index: 1, changes: [boat, { ...boat, position: [3, 3] }] }, // created then moved
+      { index: 2, changes: [{ ...ship, removed: true }, ship] }, // removed then put back the same
+    ];
+    const { controller, testHandlers } = controllerFor(recording);
+    await stepForwardTimes(controller, 2);
+    testHandlers.calls.length = 0;
+
+    await controller.stepBackward();
+    await controller.stepBackward();
+
+    // nothing to undo for the ship, and the boat only needs to be removed
+    expect(testHandlers.calls).toEqual(["remove:boat"]);
+    expect(controller.getCurrentState()).toEqual([ship]);
+  });
+
+  it("ignores removals of renderables that were not shown", async () => {
+    const { controller, testHandlers } = controllerFor([{ index: 1, changes: [{ ...flag, removed: true }] }]);
+    await controller.stepForward();
+
+    await expect(controller.stepBackward()).resolves.toBe(true);
+
+    expect(testHandlers.calls).toEqual([]);
+    expect(controller.getCurrentState()).toEqual([ship]);
+  });
+
+  it("keeps the order when stepping quickly", async () => {
+    const { controller, testHandlers } = controllerFor();
+
+    const results = await Promise.all([controller.stepForward(), controller.stepForward(), controller.stepBackward()]);
+
+    expect(results).toEqual([true, true, true]);
+    expect(testHandlers.calls).toEqual(["create:flag", "update:ship:2,1", "update:ship:1,1"]);
+    expect(controller.getStatus().position).toBe(1);
+  });
+
+  it("pauses playback and keeps the restored position", async () => {
+    const { controller, testHandlers } = controllerFor();
+    jest.useFakeTimers();
+
+    try {
+      controller.play();
+      await jest.advanceTimersByTimeAsync(STEP_DELAY);
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PLAYING, position: 1 });
+
+      await expect(controller.stepBackward()).resolves.toBe(true);
+      await jest.advanceTimersByTimeAsync(STEP_DELAY * 2);
+
+      expect(testHandlers.calls).toEqual(["create:flag", "remove:flag"]);
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0 });
+    } finally {
+      controller.dispose();
+      jest.useRealTimers();
+    }
+  });
+
+  it("keeps the position if restoring fails", async () => {
+    const testHandlers = handlers();
+    testHandlers.remove = jest.fn().mockRejectedValueOnce(new Error("sprite failed to remove"));
+    const { controller } = controllerFor(RECORDING, testHandlers);
+    await controller.stepForward();
+
+    await expect(controller.stepBackward()).rejects.toThrow("sprite failed to remove");
+    expect(controller.getStatus().position).toBe(1);
+  });
+
+  it("rolls back what was restored if restoring fails partway", async () => {
+    const testHandlers = handlers();
+    const remove = testHandlers.remove;
+    testHandlers.remove = jest.fn().mockRejectedValueOnce(new Error("sprite failed to remove")).mockImplementation(remove);
+    const { controller } = controllerFor([{ index: 1, changes: [movedShip, flag] }], testHandlers);
+    await controller.stepForward();
+    testHandlers.calls.length = 0;
+
+    await expect(controller.stepBackward()).rejects.toThrow("sprite failed to remove");
+
+    expect(testHandlers.calls).toEqual(["update:ship:1,1", "update:ship:2,1"]);
+    expect(controller.getCurrentState()).toEqual([movedShip, flag]);
+    expect(controller.getStatus().position).toBe(1);
+
+    await expect(controller.stepBackward()).resolves.toBe(true);
+    expect(controller.getCurrentState()).toEqual([ship]);
+    expect(controller.getStatus().position).toBe(0);
+  });
+
+  it("does nothing after dispose", async () => {
+    const { controller, testHandlers } = controllerFor();
+    await controller.stepForward();
+    controller.dispose();
+
+    await expect(controller.stepBackward()).resolves.toBe(false);
+    expect(testHandlers.calls).toEqual(["create:flag"]);
+    expect(controller.getStatus().position).toBe(1);
+  });
+
+  it("does not move the position if disposed while restoring", async () => {
+    const testHandlers = handlers();
+    let finishRemove: () => void = () => undefined;
+    testHandlers.remove = jest.fn(() => new Promise<void>((resolve) => (finishRemove = resolve)));
+    const { controller } = controllerFor(RECORDING, testHandlers);
+    await controller.stepForward();
+
+    const step = controller.stepBackward();
+    for (let i = 0; i < 20 && (testHandlers.remove as jest.Mock).mock.calls.length === 0; i++) {
+      await Promise.resolve();
+    }
+    controller.dispose();
+    finishRemove();
+
+    await expect(step).resolves.toBe(false);
+    expect(controller.getStatus().position).toBe(1);
   });
 });

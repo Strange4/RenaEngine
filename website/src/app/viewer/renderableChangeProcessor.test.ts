@@ -1,4 +1,4 @@
-// AI contribution: Below 50% AI-generated
+// 50% or more AI-generated code
 import { RenderableType, type GameRenderable, type RenderableChange } from "@/shared/renderable";
 import { RenderableChangeProcessor } from "./renderableChangeProcessor";
 import type { RenderableHandlers } from "./renderableHandler";
@@ -60,6 +60,17 @@ describe("RenderableChangeProcessor", () => {
 
     expect(testHandlers.calls).toEqual(["create:first", "create:second"]);
     expect(processor.getCurrentState()).toEqual([first, second]);
+  });
+
+  it("looks up the current state of one renderable", async () => {
+    const shown = { ...baseRenderable, id: "shown" };
+    const processor = new RenderableChangeProcessor(handlers(), sourceStub(), [shown]);
+
+    expect(processor.getRenderable("shown")).toEqual(shown);
+    expect(processor.getRenderable("missing")).toBeUndefined();
+
+    await processor.process(change({ ...shown, removed: true }));
+    expect(processor.getRenderable("shown")).toBeUndefined();
   });
 
   it("updates renderables when their data changes and ignores unchanged ones", async () => {

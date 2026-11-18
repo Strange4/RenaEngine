@@ -10,5 +10,6 @@ next-env.d.ts
 /playwright-report/
 /playwright/.cache/
 
-# Local participant token store
-/data/
+# SQLite database files
+data/
+*.db

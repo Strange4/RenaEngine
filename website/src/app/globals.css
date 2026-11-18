@@ -186,6 +186,12 @@ button {
   background: rgb(255 255 255 / 0.12);
 }
 
+.replay-controls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+  background: transparent;
+}
+
 .replay-controls .replay-play {
   width: 3.25rem;
   height: 3.25rem;

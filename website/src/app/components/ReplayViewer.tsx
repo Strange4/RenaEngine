@@ -1,3 +1,4 @@
+// No substantial AI-generated code
 "use client";
 // AI contribution: Below 50% AI-generated
 
@@ -122,6 +123,14 @@ export default function ReplayViewer({ gameId, recording = EMPTY_RECORDING }: Re
       speed={status?.speed}
       onPlay={() => controllerRef.current?.play()}
       onPause={() => controllerRef.current?.pause()}
+      onStepForward={() => {
+        controllerRef.current?.stepForward().catch((e) => console.error("Failed to step forward", e));
+      }}
+      canStepForward={status !== null && status.state !== PlaybackState.ENDED}
+      onStepBackward={() => {
+        controllerRef.current?.stepBackward().catch((e) => console.error("Failed to step backward", e));
+      }}
+      canStepBackward={status !== null && status.position > 0}
       onSpeedChange={(speed) => controllerRef.current?.setSpeed(speed)}
       />
     </div>

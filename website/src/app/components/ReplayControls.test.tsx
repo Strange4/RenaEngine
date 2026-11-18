@@ -1,4 +1,4 @@
-// AI contribution: Below 50% AI-generated
+// 50% or more AI-generated code
 import { fireEvent, render, screen } from "@testing-library/react";
 import ReplayControls from "./ReplayControls";
 import { PLAYBACK_SPEEDS, ReplayController } from "@/app/viewer/replayController";
@@ -49,6 +49,38 @@ describe("ReplayControls", () => {
     }
   });
 
+  it("enables step forward by default", () => {
+    render(<ReplayControls />);
+
+    expect(button("Step forward")).toBeEnabled();
+  });
+
+  it("disables step forward when it can't step", () => {
+    const onStepForward = jest.fn();
+    render(<ReplayControls canStepForward={false} onStepForward={onStepForward} />);
+
+    fireEvent.click(button("Step forward"));
+
+    expect(button("Step forward")).toBeDisabled();
+    expect(onStepForward).not.toHaveBeenCalled();
+  });
+
+  it("enables step back by default", () => {
+    render(<ReplayControls />);
+
+    expect(button("Step back")).toBeEnabled();
+  });
+
+  it("disables step back when it can't step", () => {
+    const onStepBackward = jest.fn();
+    render(<ReplayControls canStepBackward={false} onStepBackward={onStepBackward} />);
+
+    fireEvent.click(button("Step back"));
+
+    expect(button("Step back")).toBeDisabled();
+    expect(onStepBackward).not.toHaveBeenCalled();
+  });
+
   it("shows pause while playing", () => {
     const onPause = jest.fn();
     render(<ReplayControls playing onPause={onPause} />);
@@ -60,27 +92,27 @@ describe("ReplayControls", () => {
   });
 });
 
-describe("speed menu", ()=>{
+describe("speed menu", () => {
 
-  it("displays current speed on control bar", ()=>{
+  it("displays current speed on control bar", () => {
     render(<ReplayControls speed={1.25} />);
     expect(button("Speed 1.25x")).toHaveTextContent("Speed 1.25x");
   });
 
-  it("menu opens with the current speed made evident-- checked", ()=>{
+  it("menu opens with the current speed made evident-- checked", () => {
     render(<ReplayControls speed={1.5} />);
     fireEvent.click(button("Speed 1.5x"));
 
     expect(button("Speed 1.5x")).toHaveAttribute("aria-expanded", "true"); //open menu expanded
     const options = screen.getAllByRole("menuitemradio"); //options as radio buttons
-    expect(options.map((option) => option.textContent)).toEqual(PLAYBACK_SPEEDS.map((speed) =>`${speed}x`));
+    expect(options.map((option) => option.textContent)).toEqual(PLAYBACK_SPEEDS.map((speed) => `${speed}x`));
     //the current speed is the only one made evident and checked
-    expect(options.filter((option)=> option.getAttribute("aria-checked") === "true")).toEqual([screen.getByRole("menuitemradio", {name: "1.5x"})]);
+    expect(options.filter((option) => option.getAttribute("aria-checked") === "true")).toEqual([screen.getByRole("menuitemradio", { name: "1.5x" })]);
 
   });
 
   //dropdown menu of speed options closes/ collapses when the user clicks anywhere on the screen
-  it("dropdown collapses when user clicks mousedown on screen", ()=>{
+  it("dropdown collapses when user clicks mousedown on screen", () => {
     render(<ReplayControls />);
     fireEvent.click(button("Speed 1x"));
     fireEvent.mouseDown(document.body);
