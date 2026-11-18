@@ -12,7 +12,7 @@ RenaEngine is a game engine designed specifically for making programming strateg
 
 ## 📹 Release Demos
 Demo videos for each release will be added here
-
+Release 1: https://drive.google.com/drive/folders/113qdBHHkJboNKwJ5I6Y0iU6aVc8z4jSx?usp=drive_link
 
 ## Getting Started Guide
 [Look at our Getting Started Wiki](https://github.com/Strange4/RenaEngine/wiki/Getting-Started)
@@ -33,7 +33,8 @@ Make sure you have everything installed in the [How to run](https://github.com/S
 You now have the competition running on `http://localhost:3000`
 
 ## 👥 Team
-Add Name+student ID+ role
+Our team wishes to stay anonymous due to the project being open source. Hence, we wish to be identified by our github usernames
+CanadianMaple-Syrup, Dopyo, Strange4, Marian-Hristove, DallaliRim, SacciadisG, JenLys, YehJordan, benjaminsunliu, lucaieraci, nicolas-zampieri, kcrri
 
 ## 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
