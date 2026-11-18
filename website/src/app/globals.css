@@ -213,6 +213,53 @@ button {
   stroke-linecap: round;
 }
 
+.token-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.token-actions button {
+  width: auto;
+}
+
+.token-actions .error {
+  margin: 0;
+}
+
+.token-dialog {
+  width: min(32rem, calc(100vw - 2rem));
+  border: none;
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.token-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.token-dialog h3 {
+  margin: 0 0 0.5rem;
+}
+
+.token-dialog-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.token-dialog-value code {
+  overflow-wrap: anywhere;
+}
+
+.token-dialog > button {
+  width: auto;
+}
+
 .token-table-wrapper {
   overflow-x: auto;
 }

@@ -53,6 +53,7 @@ describe("AdminPage", () => {
     expect(screen.getByRole("button", { name: "Log Out" })).toBeInTheDocument();
     expect(screen.getByRole("table", { name: "Participant tokens" })).toBeInTheDocument();
     expect(screen.getByRole("rowheader", { name: "#1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Generate token" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Test feature" })).toBeChecked();
     expect(screen.getByRole("switch", { name: "Starter SDK downloads" })).not.toBeChecked();
     expect(screen.getByRole("link", { name: "Open test feature" })).toHaveAttribute("href", "/test-feature");
