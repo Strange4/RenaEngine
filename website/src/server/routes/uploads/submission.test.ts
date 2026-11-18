@@ -1,0 +1,290 @@
+/**
+ * @jest-environment node
+ */
+import { POST } from "./submission";
+import { zipFile } from "@/test-utils/zip";
+
+const mockGetSession = jest.fn();
+const mockListParticipantTokens = jest.fn();
+const mockUploadSubmission = jest.fn();
+
+const registeredToken = {
+  participantId: 42,
+  token: "PARTICIPANT-42-secret",
+  active: true,
+  lastSubmissionAt: null,
+};
+
+jest.mock("@/server/lib/session", () => ({
+  getSession: () => mockGetSession(),
+}));
+
+jest.mock("@/server/lib/participant-token-store", () => ({
+  listParticipantTokens: () => mockListParticipantTokens(),
+}));
+
+jest.mock("@/server/lib/game-server-uploads", () => ({
+  uploadSubmission: (participantId: number, file: File) =>
+    mockUploadSubmission(participantId, file),
+}));
+
+function uploadRequest(file?: File): Request {
+  const formData = new FormData();
+  if (file) formData.append("file", file);
+  return new Request("http://localhost/api/upload", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+beforeEach(() => {
+  mockGetSession.mockReset();
+  mockListParticipantTokens.mockReset();
+  mockListParticipantTokens.mockResolvedValue([registeredToken]);
+  mockUploadSubmission.mockReset();
+});
+
+describe("POST /api/upload", () => {
+  it("rejects logged-out visitors", async () => {
+    mockGetSession.mockResolvedValue(null);
+
+    const response = await POST(uploadRequest());
+
+    expect(response.status).toBe(401);
+    expect(mockUploadSubmission).not.toHaveBeenCalled();
+  });
+
+  it("rejects a token that is not registered", async () => {
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-forged",
+    });
+
+    const response = await POST(uploadRequest(zipFile(["main.ts"])));
+
+    expect(response.status).toBe(401);
+    expect(mockUploadSubmission).not.toHaveBeenCalled();
+  });
+
+  it("rejects an inactive participant token", async () => {
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-secret",
+    });
+    mockListParticipantTokens.mockResolvedValue([
+      { ...registeredToken, active: false },
+    ]);
+
+    const response = await POST(uploadRequest(zipFile(["main.ts"])));
+
+    expect(response.status).toBe(401);
+    expect(mockUploadSubmission).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the token store cannot be read", async () => {
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-secret",
+    });
+    mockListParticipantTokens.mockResolvedValue(null);
+
+    const response = await POST(uploadRequest(zipFile(["main.ts"])));
+
+    expect(response.status).toBe(503);
+    expect(mockUploadSubmission).not.toHaveBeenCalled();
+  });
+
+  it("rejects administrators", async () => {
+    mockGetSession.mockResolvedValue({ role: "admin", token: "ADMIN-secret" });
+
+    const response = await POST(uploadRequest());
+
+    expect(response.status).toBe(403);
+    expect(mockUploadSubmission).not.toHaveBeenCalled();
+  });
+
+  it("requires a non-empty archive", async () => {
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-secret",
+    });
+
+    const response = await POST(uploadRequest());
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "Select a ZIP archive to upload",
+    });
+    expect(mockUploadSubmission).not.toHaveBeenCalled();
+  });
+
+  it("uploads the archive using the participant session", async () => {
+    const file = zipFile(["main.ts"]);
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-secret",
+    });
+    mockUploadSubmission.mockResolvedValue(
+      new Response(null, { status: 202 }),
+    );
+
+    const response = await POST(uploadRequest(file));
+
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ status: "accepted" });
+    expect(mockUploadSubmission).toHaveBeenCalledTimes(1);
+    expect(mockUploadSubmission.mock.calls[0][0]).toBe(42);
+    expect(mockUploadSubmission.mock.calls[0][1]).toMatchObject({
+      name: "agent.zip",
+      size: file.size,
+      type: "application/zip",
+    });
+  });
+
+  it("reports when the game server cannot be reached", async () => {
+    const file = zipFile(["main.ts"]);
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-secret",
+    });
+    mockUploadSubmission.mockResolvedValue(null);
+
+    const response = await POST(uploadRequest(file));
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({
+      error: "Could not reach the game server",
+    });
+  });
+
+  it("preserves upload validation errors from the game server", async () => {
+    const file = zipFile(["main.ts"]);
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-secret",
+    });
+    mockUploadSubmission.mockResolvedValue(
+      new Response(null, { status: 413 }),
+    );
+
+    const response = await POST(uploadRequest(file));
+
+    expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({
+      error: "The selected ZIP exceeds the 8 MiB upload limit",
+    });
+  });
+
+  it.each([
+    [415, "Select a ZIP archive to upload"],
+    [
+      422,
+      "Invalid ZIP structure.\nExpected:\nagent.zip\n└── main.ts\nmain.ts must be at the top level, not inside src/ or another folder.",
+    ],
+    [500, "The game server could not accept the submission"],
+  ])("maps upstream status %i to a safe error", async (status, error) => {
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-secret",
+    });
+    mockUploadSubmission.mockResolvedValue(new Response(null, { status }));
+
+    const response = await POST(uploadRequest(zipFile(["main.ts"])));
+
+    expect(response.status).toBe(status);
+    expect(await response.json()).toEqual({ error });
+  });
+
+  it("rejects oversized archives before forwarding them", async () => {
+    const file = new File(["zip"], "agent.zip");
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-secret",
+    });
+    const request = new Request("http://localhost/api/upload", {
+      method: "POST",
+      headers: { "content-length": String(64 * 1024 * 1024) },
+      body: (() => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return formData;
+      })(),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(413);
+    expect(mockUploadSubmission).not.toHaveBeenCalled();
+  });
+
+  it("rejects archives over the limit when no content length is sent", async () => {
+    const file = new File([new ArrayBuffer(8 * 1024 * 1024 + 1)], "agent.zip");
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-secret",
+    });
+
+    const response = await POST(uploadRequest(file));
+
+    expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({
+      error: "The selected ZIP exceeds the 8 MiB upload limit",
+    });
+    expect(mockUploadSubmission).not.toHaveBeenCalled();
+  });
+
+  it("stops reading oversized bodies when no content length is sent", async () => {
+    const file = new File([new ArrayBuffer(8 * 1024 * 1024 + 128 * 1024)], "agent.zip");
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-secret",
+    });
+
+    const response = await POST(uploadRequest(file));
+
+    expect(response.status).toBe(413);
+    expect(mockUploadSubmission).not.toHaveBeenCalled();
+  });
+
+  it("rejects non-ZIP files without contacting the game server", async () => {
+    const file = new File(["text"], "agent.txt", { type: "text/plain" });
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-secret",
+    });
+
+    const response = await POST(uploadRequest(file));
+
+    expect(response.status).toBe(415);
+    expect(mockUploadSubmission).not.toHaveBeenCalled();
+  });
+
+  it("rejects archives without main.ts", async () => {
+    mockGetSession.mockResolvedValue({
+      role: "participant",
+      participantId: 42,
+      token: "PARTICIPANT-42-secret",
+    });
+
+    const response = await POST(uploadRequest(zipFile(["src/main.ts"])));
+
+    expect(response.status).toBe(422);
+    expect(await response.json()).toEqual({
+      error:
+        "Invalid ZIP structure.\nExpected:\nagent.zip\n└── main.ts\nmain.ts must be at the top level, not inside src/ or another folder.",
+    });
+    expect(mockUploadSubmission).not.toHaveBeenCalled();
+  });
+});
