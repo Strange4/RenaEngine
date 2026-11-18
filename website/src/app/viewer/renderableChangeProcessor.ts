@@ -1,3 +1,4 @@
+// No substantial AI-generated code
 import type { GameRenderable, RenderableChange } from "@/shared/renderable";
 import type { RenderableHandlers } from "./renderableHandler";
 import { RenderableChangeSource } from "./renderableChangeSource";
