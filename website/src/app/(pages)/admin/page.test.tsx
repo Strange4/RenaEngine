@@ -1,4 +1,4 @@
-// AI declaration: Below 50% AI-generated code
+// AI contribution: Below 50% AI-generated
 import { fireEvent, render, screen } from "@testing-library/react";
 import { Role } from "@/shared/token";
 import AdminPage from "./page";

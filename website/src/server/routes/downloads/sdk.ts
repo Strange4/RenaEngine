@@ -1,4 +1,4 @@
-// AI declaration: Below 50% AI-generated code
+// AI contribution: Below 50% AI-generated
 import { NextResponse } from "next/server";
 import { fetchSdkArchive } from "@/server/lib/game-server-downloads";
 import { getFeatureSetting } from "@/server/lib/game-server-settings";

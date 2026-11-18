@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-// AI declaration: Above 50% AI-generated code - used for proper test coverage & mocking of the login route
+// AI contribution: 50% or more AI-generated - used for proper test coverage & mocking of the login route
 import { POST } from "./login";
 
 function postLogin(body: string) {

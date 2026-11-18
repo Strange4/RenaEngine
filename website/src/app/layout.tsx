@@ -1,4 +1,4 @@
-// AI declaration: No substantial AI-generated code
+// AI contribution: No substantial AI-generated code
 import type { Metadata } from "next";
 import AuthProvider from "./components/AuthProvider";
 import "./globals.css";

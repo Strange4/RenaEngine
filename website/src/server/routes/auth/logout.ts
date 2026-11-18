@@ -1,4 +1,4 @@
-// AI declaration: No substantial AI-generated code
+// AI contribution: No substantial AI-generated code
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE } from "@/server/lib/session";
 

@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 export async function createReadableStream(
   participantId: number,
   signal: AbortSignal,

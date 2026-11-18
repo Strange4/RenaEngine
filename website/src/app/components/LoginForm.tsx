@@ -1,4 +1,4 @@
-// AI declaration: Below 50% AI-generated code
+// AI contribution: Below 50% AI-generated
 "use client";
 
 import { useRouter } from "next/navigation";

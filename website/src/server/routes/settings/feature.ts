@@ -1,4 +1,4 @@
-// AI declaration: Below 50% AI-generated code
+// AI contribution: Below 50% AI-generated
 import { NextResponse } from "next/server";
 import { updateFeatureSetting } from "@/server/lib/game-server-settings";
 import { getSession } from "@/server/lib/session";

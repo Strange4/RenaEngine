@@ -1,4 +1,4 @@
-// AI declaration: No substantial AI-generated code
+// AI contribution: No substantial AI-generated code
 import LiveViewer from "@/app/components/LiveViewer";
 
 export default async function LiveViewerPage({ params }: { params: Promise<{ id: string }> }) {

@@ -1,4 +1,4 @@
-// AI declaration: Below 50% AI-generated code
+// AI contribution: Below 50% AI-generated
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE } from "@/server/lib/session";
 import { isAdmin, parseToken, type ParsedToken } from "@/shared/token";

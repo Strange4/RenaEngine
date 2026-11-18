@@ -1,4 +1,4 @@
-// AI declaration: No substantial AI-generated code
+// AI contribution: No substantial AI-generated code
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AppTopBar from "@/app/components/AppTopBar";

@@ -1,4 +1,4 @@
-// AI declaration: No substantial AI-generated code
+// AI contribution: No substantial AI-generated code
 
 // Cover the whole page with a spinner and a short status message.
 // Use it while a session check or a login/logout redirect is in progress.

@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-// AI declaration: Below 50% AI-generated code
+// AI contribution: Below 50% AI-generated
 import { POST } from "./logout";
 
 describe("POST /api/auth/logout", () => {

@@ -1,4 +1,4 @@
-// AI declaration: Above 50% AI-generated code - used for proper test coverage of the LogoutButton component & mocking
+// AI contribution: 50% or more AI-generated - used for proper test coverage of the LogoutButton component & mocking
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import LogoutButton from "./LogoutButton";
 

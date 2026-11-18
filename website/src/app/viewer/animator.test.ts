@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import {type Sprite} from "pixi.js";
 import {Animator, getState, type AnimatedState} from "./animator";
 import { start } from "repl";

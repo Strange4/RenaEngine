@@ -1,4 +1,4 @@
-/* AI declaration: Above 50% AI-generated code - used for proper test coverage (specifically, ensuring proper mocking) */
+/* AI contribution: 50% or more AI-generated - used for proper test coverage (specifically, ensuring proper mocking) */
 import { render, screen } from "@testing-library/react";
 import ParticipantPage from "./page";
 

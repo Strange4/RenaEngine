@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import { GameRenderable, RenderableChange, RenderableType, ViewerSetup } from "./renderable";
 
 //reusable base object for the tests-- fills missing values 

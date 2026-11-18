@@ -1,2 +1,2 @@
-// AI declaration: No substantial AI-generated code
+// AI contribution: No substantial AI-generated code
 export { POST } from "@/server/routes/auth/login";
