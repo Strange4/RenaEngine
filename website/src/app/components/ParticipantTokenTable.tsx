@@ -1,79 +1,32 @@
 // AI contribution: Below 50% AI-generated
-"use client";
-
-import { useState } from "react";
-import CopyTokenButton from "./CopyTokenButton";
-import switchStyles from "./Switch.module.css";
-import {
-  MASKED_TOKEN,
-  formatLastSubmission,
-  formatTokenStatus,
-  sortParticipantTokens,
-  type ParticipantToken,
-} from "@/shared/participant-tokens";
-
 export default function ParticipantTokenTable({
-  tokens,
+  participantIds,
 }: {
-  tokens: readonly ParticipantToken[];
+  participantIds: readonly number[];
 }) {
-  const [showTokens, setShowTokens] = useState(false);
-  const rows = sortParticipantTokens(tokens);
-
-  if (rows.length === 0) {
+  if (participantIds.length === 0) {
     return <p>No participant tokens have been created yet.</p>;
   }
 
+  const rows = [...participantIds].sort((a, b) => a - b);
+
   return (
-    <>
-      <label className="token-reveal">
-        <input
-          className={switchStyles.input}
-          type="checkbox"
-          role="switch"
-          checked={showTokens}
-          onChange={(event) => setShowTokens(event.target.checked)}
-        />
-        <span className={switchStyles.track} aria-hidden="true" />
-        Show tokens
-      </label>
-      <div className="token-table-wrapper">
-        <table className="token-table">
-          <caption>Participant tokens</caption>
-          <thead>
-            <tr>
-              <th scope="col">Participant</th>
-              <th scope="col">Status</th>
-              <th scope="col">Last submission</th>
-              <th scope="col">Token</th>
+    <div className="token-table-wrapper">
+      <table className="token-table">
+        <caption>Participant tokens</caption>
+        <thead>
+          <tr>
+            <th scope="col">Participant</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((participantId) => (
+            <tr key={participantId}>
+              <th scope="row">#{participantId}</th>
             </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.participantId}>
-                <th scope="row">#{row.participantId}</th>
-                <td>
-                  <span
-                    className={`token-status ${row.active ? "token-status-active" : "token-status-inactive"}`}
-                  >
-                    {formatTokenStatus(row)}
-                  </span>
-                </td>
-                <td>{formatLastSubmission(row.lastSubmissionAt)}</td>
-                <td className="token-cell">
-                  <div className="token-cell-content">
-                    <code>{showTokens ? row.token : MASKED_TOKEN}</code>
-                    <CopyTokenButton
-                      token={row.token}
-                      participantId={row.participantId}
-                    />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

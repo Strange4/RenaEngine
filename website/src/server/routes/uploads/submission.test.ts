@@ -6,22 +6,18 @@ import { POST } from "./submission";
 import { zipFile } from "@/test-utils/zip";
 
 const mockGetSession = jest.fn();
-const mockListParticipantTokens = jest.fn();
+const mockIsRegisteredParticipant = jest.fn();
 const mockUploadSubmission = jest.fn();
 
-const registeredToken = {
-  participantId: 42,
-  token: "PARTICIPANT-42-secret",
-  active: true,
-  lastSubmissionAt: null,
-};
+const registeredToken = "PARTICIPANT-42-secret";
 
 jest.mock("@/server/lib/session", () => ({
   getSession: () => mockGetSession(),
 }));
 
-jest.mock("@/server/lib/participant-token-store", () => ({
-  listParticipantTokens: () => mockListParticipantTokens(),
+jest.mock("@/server/lib/user-store", () => ({
+  isRegisteredParticipant: (participantId: number, token: string) =>
+    mockIsRegisteredParticipant(participantId, token),
 }));
 
 jest.mock("@/server/lib/game-server-uploads", () => ({
@@ -40,8 +36,11 @@ function uploadRequest(file?: File): Request {
 
 beforeEach(() => {
   mockGetSession.mockReset();
-  mockListParticipantTokens.mockReset();
-  mockListParticipantTokens.mockResolvedValue([registeredToken]);
+  mockIsRegisteredParticipant.mockReset();
+  mockIsRegisteredParticipant.mockImplementation(
+    (participantId: number, token: string) =>
+      participantId === 42 && token === registeredToken,
+  );
   mockUploadSubmission.mockReset();
 });
 
@@ -68,34 +67,22 @@ describe("POST /api/upload", () => {
     expect(mockUploadSubmission).not.toHaveBeenCalled();
   });
 
-  it("rejects an inactive participant token", async () => {
-    mockGetSession.mockResolvedValue({
-      role: "participant",
-      participantId: 42,
-      token: "PARTICIPANT-42-secret",
-    });
-    mockListParticipantTokens.mockResolvedValue([
-      { ...registeredToken, active: false },
-    ]);
-
-    const response = await POST(uploadRequest(zipFile(["main.ts"])));
-
-    expect(response.status).toBe(401);
-    expect(mockUploadSubmission).not.toHaveBeenCalled();
-  });
-
   it("fails closed when the token store cannot be read", async () => {
     mockGetSession.mockResolvedValue({
       role: "participant",
       participantId: 42,
       token: "PARTICIPANT-42-secret",
     });
-    mockListParticipantTokens.mockResolvedValue(null);
+    mockIsRegisteredParticipant.mockImplementation(() => {
+      throw new Error("SQLITE_CANTOPEN");
+    });
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
 
     const response = await POST(uploadRequest(zipFile(["main.ts"])));
 
     expect(response.status).toBe(503);
     expect(mockUploadSubmission).not.toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 
   it("rejects administrators", async () => {

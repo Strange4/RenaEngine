@@ -214,17 +214,51 @@ button {
   stroke-linecap: round;
 }
 
-.token-reveal {
+.token-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
-  width: auto;
+  gap: 0.75rem;
   margin-bottom: 1rem;
 }
 
-.token-reveal input {
+.token-actions button {
   width: auto;
+}
+
+.token-actions .error {
   margin: 0;
+}
+
+.token-dialog {
+  width: min(32rem, calc(100vw - 2rem));
+  border: none;
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.token-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.token-dialog h3 {
+  margin: 0 0 0.5rem;
+}
+
+.token-dialog-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.token-dialog-value code {
+  overflow-wrap: anywhere;
+}
+
+.token-dialog > button {
+  width: auto;
 }
 
 .token-table-wrapper {
@@ -248,28 +282,6 @@ button {
   border-bottom: 1px solid #374151;
   text-align: left;
   white-space: nowrap;
-}
-
-.token-status {
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  font-size: 0.875rem;
-}
-
-.token-status-active {
-  background: #064e3b;
-  color: #a7f3d0;
-}
-
-.token-status-inactive {
-  background: #374151;
-  color: #d1d5db;
-}
-
-.token-cell-content {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
 }
 
 .copy-token {

@@ -4,27 +4,35 @@ import { redirect } from "next/navigation";
 import AppTopBar from "@/app/components/AppTopBar";
 import AdminLiveViewerForm from "@/app/components/AdminLiveViewerForm";
 import FeatureToggleControl from "@/app/components/FeatureToggleControl";
-import ParticipantTokenTable from "@/app/components/ParticipantTokenTable";
+import ParticipantTokenManager from "@/app/components/ParticipantTokenManager";
 import { getFeatureSetting } from "@/server/lib/game-server-settings";
-import { listParticipantTokens } from "@/server/lib/participant-token-store";
 import { getSession } from "@/server/lib/session";
+import { listParticipantIds } from "@/server/lib/user-store";
 import { FEATURES } from "@/shared/features";
 import { isAdmin } from "@/shared/token";
 import styles from "./admin.module.css";
+
+// Returns null when the database cannot be read, so the page can show an error.
+function loadParticipantIds(): number[] | null {
+  try {
+    return listParticipantIds();
+  } catch (error) {
+    console.error("Could not load participant tokens", error);
+    return null;
+  }
+}
 
 export default async function AdminPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   if (!isAdmin(session)) redirect("/access-denied");
-  const [tokens, features] = await Promise.all([
-    listParticipantTokens(),
-    Promise.all(
-      FEATURES.map(async (feature) => ({
-        feature,
-        setting: await getFeatureSetting(feature.key),
-      })),
-    ),
-  ]);
+  const participantIds = loadParticipantIds();
+  const features = await Promise.all(
+    FEATURES.map(async (feature) => ({
+      feature,
+      setting: await getFeatureSetting(feature.key),
+    })),
+  );
 
   return (
     <div className={styles.page}>
@@ -37,8 +45,8 @@ export default async function AdminPage() {
           <section className={`${styles.card} ${styles.tokens}`} aria-labelledby="tokens-title">
             <h2 id="tokens-title">Participant Tokens</h2>
             <p className={styles.description}>Create or revoke access for participants.</p>
-            {tokens ? (
-              <ParticipantTokenTable tokens={tokens} />
+            {participantIds ? (
+              <ParticipantTokenManager initialParticipantIds={participantIds} />
             ) : (
               <p className={styles.error}>Could not load the participant tokens.</p>
             )}
