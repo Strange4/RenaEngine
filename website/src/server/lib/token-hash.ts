@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 import { createHash } from "crypto";
 
 export function hashToken(token: string): string {
