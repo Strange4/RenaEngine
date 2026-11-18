@@ -2,6 +2,7 @@
 import Database from "better-sqlite3";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
+import { hashToken } from "./token-hash";
 
 function dbPath(): string {
   return process.env.DB_PATH ?? path.join(process.cwd(), "data", "rena.db");
@@ -18,6 +19,12 @@ const MIGRATIONS: string[] = [
     token_hash TEXT NOT NULL UNIQUE,
     role       TEXT NOT NULL CHECK (role IN ('admin', 'participant'))
   )`,
+  
+  // Seed default tokens (only runs once)
+  `INSERT OR IGNORE INTO users (token_hash, role) VALUES
+    ('${hashToken("ADMIN-dev")}', 'admin'),
+    ('${hashToken("PARTICIPANT-1-dev")}', 'participant'),
+    ('${hashToken("PARTICIPANT-2-dev")}', 'participant');`,
 ];
 
 // Applies any pending migrations. user_version tracks how many have run,
