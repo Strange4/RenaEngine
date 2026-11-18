@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useRef,
   useState,
   type DragEvent,
@@ -29,7 +30,7 @@ export default function CodeUploadPanel() {
 
   // Validates the chosen file and keeps it as the pending upload, or shows the
   // validation error. Results from superseded selections are ignored.
-  async function selectFile(selected: File | null) {
+  const selectFile = useCallback(async (selected: File | null) => {
     const currentValidation = ++validationId.current;
     setFile(null);
     setError(null);
@@ -47,7 +48,7 @@ export default function CodeUploadPanel() {
       return;
     }
     setFile(selected);
-  }
+  }, []);
 
   // Handles a file dropped on the dropzone by validating it like a picked file.
   function dropFile(event: DragEvent<HTMLLabelElement>) {
@@ -59,38 +60,41 @@ export default function CodeUploadPanel() {
 
   // Posts the pending file to /api/upload and shows either the success message
   // or the error returned by the server.
-  async function upload(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!file) return;
+  const upload = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!file) return;
 
-    setUploading(true);
-    setError(null);
-    setSuccess(null);
+      setUploading(true);
+      setError(null);
+      setSuccess(null);
 
-    const formData = new FormData();
-    formData.append("file", file);
+      const formData = new FormData();
+      formData.append("file", file);
 
-    try {
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-      if (!response.ok) {
-        setError(await responseError(response));
-        return;
+      try {
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+        if (!response.ok) {
+          setError(await responseError(response));
+          return;
+        }
+
+        setSuccess(`${file.name} was uploaded successfully.`);
+        setFile(null);
+        if (inputRef.current) inputRef.current.value = "";
+      } catch {
+        setError(
+          "Could not upload the submission. Check your connection and try again.",
+        );
+      } finally {
+        setUploading(false);
       }
-
-      setSuccess(`${file.name} was uploaded successfully.`);
-      setFile(null);
-      if (inputRef.current) inputRef.current.value = "";
-    } catch {
-      setError(
-        "Could not upload the submission. Check your connection and try again.",
-      );
-    } finally {
-      setUploading(false);
-    }
-  }
+    },
+    [file],
+  );
 
   return (
     <section className={styles.card} aria-labelledby="code-upload-title">

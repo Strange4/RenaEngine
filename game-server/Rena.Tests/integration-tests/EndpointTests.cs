@@ -4,8 +4,10 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Rena.Server;
 
 namespace Rena.Tests.Integration;
@@ -253,6 +255,39 @@ public class UploadEndpointTests
     }
 
     [Test]
+    public async Task Uploads_RejectsInvalidServiceAuthorization()
+    {
+        using MultipartFormDataContent formData = CreateZipForm("main.ts");
+        using HttpRequestMessage request = CreateUploadRequest("PLAYER-42", formData, "INVALID-SERVICE-TOKEN");
+
+        using HttpResponseMessage response = await _client.SendAsync(request);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
+    }
+
+    [Test]
+    public async Task Uploads_BuffersNonSeekableArchiveStream()
+    {
+        byte[] contents = CreateZipBytes("main.ts");
+        IFormFile file = new NonSeekableFormFile(contents);
+        DefaultHttpContext context = new();
+        context.Request.Headers.Authorization = "Bearer TEST-ADMIN-TOKEN";
+        IOptions<RenaOptions> options = Options.Create(
+            new RenaOptions
+            {
+                TSProtoPath = "TESTING",
+                AdminToken = "TEST-ADMIN-TOKEN",
+                UploadsDirectory = "./uploads",
+            }
+        );
+
+        IResult result = await RenaServerHandlers.HandleUpload("PLAYER-42", file, context.Request, options);
+
+        Assert.That(result, Is.InstanceOf<IStatusCodeHttpResult>());
+        Assert.That(((IStatusCodeHttpResult)result).StatusCode, Is.EqualTo(StatusCodes.Status202Accepted));
+    }
+
+    [Test]
     public async Task Uploads_RefusesArchiveWithoutEntrypoint()
     {
         using MultipartFormDataContent formData = CreateZipForm("src/main.ts");
@@ -287,17 +322,56 @@ public class UploadEndpointTests
 
     private static MultipartFormDataContent CreateZipForm(string entryName)
     {
-        MemoryStream zipStream = new();
+        MultipartFormDataContent formData = new();
+        ByteArrayContent content = new(CreateZipBytes(entryName));
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
+        formData.Add(content, "file", "TestFile.zip");
+        return formData;
+    }
+
+    private static byte[] CreateZipBytes(string entryName)
+    {
+        using MemoryStream zipStream = new();
         using (ZipArchive zipArchive = new(zipStream, ZipArchiveMode.Create, true))
         {
             zipArchive.CreateEntry(entryName, CompressionLevel.NoCompression);
         }
-        MultipartFormDataContent formData = new();
-        ByteArrayContent content = new(zipStream.ToArray());
-        content.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
-        formData.Add(content, "file", "TestFile.zip");
-        zipStream.Dispose();
-        return formData;
+        return zipStream.ToArray();
+    }
+
+    private sealed class NonSeekableFormFile(byte[] contents) : IFormFile
+    {
+        public string ContentType => "application/zip";
+        public string ContentDisposition => string.Empty;
+        public IHeaderDictionary Headers { get; } = new HeaderDictionary();
+        public long Length => contents.Length;
+        public string Name => "file";
+        public string FileName => "TestFile.zip";
+
+        public void CopyTo(Stream target)
+        {
+            target.Write(contents);
+        }
+
+        public Task CopyToAsync(Stream target, CancellationToken cancellationToken = default)
+        {
+            return target.WriteAsync(contents, cancellationToken).AsTask();
+        }
+
+        public Stream OpenReadStream()
+        {
+            return new NonSeekableReadStream(contents);
+        }
+    }
+
+    private sealed class NonSeekableReadStream(byte[] contents) : MemoryStream(contents, writable: false)
+    {
+        public override bool CanSeek => false;
+
+        public override long Seek(long offset, SeekOrigin loc)
+        {
+            throw new NotSupportedException();
+        }
     }
 }
 

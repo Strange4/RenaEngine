@@ -15,6 +15,12 @@ namespace Rena.Server;
 
 internal partial class RenaServerHandlers
 {
+    private static bool HasSubmissionEntrypoint(Stream stream)
+    {
+        using ZipArchive archive = new(stream, ZipArchiveMode.Read, leaveOpen: true);
+        return archive.GetEntry("main.ts") is not null;
+    }
+
     public static async Task<IResult> HandleDownloads(string languageName, IOptions<RenaOptions> options)
     {
         if (!SDKBuilder.AvailableLanguageGenerators().Contains(languageName, StringComparer.Ordinal))
@@ -61,8 +67,20 @@ internal partial class RenaServerHandlers
         try
         {
             await using Stream archiveStream = file.OpenReadStream();
-            using ZipArchive archive = new(archiveStream, ZipArchiveMode.Read);
-            if (archive.GetEntry("main.ts") is null)
+            bool hasEntrypoint;
+            if (archiveStream.CanSeek)
+            {
+                hasEntrypoint = HasSubmissionEntrypoint(archiveStream);
+            }
+            else
+            {
+                await using MemoryStream seekableStream = new((int)file.Length);
+                await archiveStream.CopyToAsync(seekableStream);
+                seekableStream.Position = 0;
+                hasEntrypoint = HasSubmissionEntrypoint(seekableStream);
+            }
+
+            if (!hasEntrypoint)
             {
                 return Results.UnprocessableEntity(
                     "Invalid ZIP structure.\nExpected:\nagent.zip\n└── main.ts\nmain.ts must be at the top level, not inside src/ or another folder."
