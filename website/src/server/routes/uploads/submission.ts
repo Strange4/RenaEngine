@@ -24,7 +24,7 @@ async function readBodyWithinLimit(
   const reader = body.getReader();
   const chunks: Uint8Array<ArrayBuffer>[] = [];
   let received = 0;
-  for (;;) {
+  while (true) {
     const { done, value } = await reader.read();
     if (done) break;
     received += value.byteLength;
