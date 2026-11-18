@@ -1,3 +1,4 @@
+// AI declaration: Below 50% AI-generated code
 export type FeatureDefinition = {
   key: string;
   label: string;

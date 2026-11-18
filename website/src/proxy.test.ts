@@ -1,6 +1,7 @@
 /**
  * @jest-environment node
  */
+// AI declaration: Above 50% AI-generated code - used for proper test coverage & mocking of the proxy middleware
 import { NextRequest } from "next/server";
 import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { SESSION_COOKIE } from "@/server/lib/session";

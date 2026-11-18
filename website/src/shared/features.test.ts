@@ -1,3 +1,4 @@
+// AI declaration: No substantial AI-generated code
 import {
   FEATURES,
   isFeatureKey,

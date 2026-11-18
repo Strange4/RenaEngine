@@ -1,3 +1,4 @@
+// AI declaration: Below 50% AI-generated code
 export enum Role {
   Admin = "admin",
   Participant = "participant",

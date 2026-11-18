@@ -1,3 +1,4 @@
+// AI declaration: No substantial AI-generated code
 import { parseToken } from "./token";
 
 // Builds a login token from an ID and password, or returns null if either is invalid.

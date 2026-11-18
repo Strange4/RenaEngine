@@ -1,3 +1,4 @@
+// AI declaration: Below 50% AI-generated code
 export type ParticipantToken = {
   participantId: number;
   token: string;
