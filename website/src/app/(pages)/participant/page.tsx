@@ -1,6 +1,7 @@
 // AI contribution: No substantial AI-generated code
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import CodeUploadPanel from "@/app/components/CodeUploadPanel";
 import AppTopBar from "@/app/components/AppTopBar";
 import SdkDownloadPanel from "@/app/components/SdkDownloadPanel";
 import { getFeatureAccess } from "@/server/lib/feature-access";
@@ -42,6 +43,8 @@ export default async function ParticipantPage() {
             )}
           </section>
 
+          <CodeUploadPanel />
+
           <section className={styles.card} aria-labelledby="live-viewer-title">
             <h2 className={styles.cardTitle} id="live-viewer-title">
               Live Viewer
@@ -55,7 +58,10 @@ export default async function ParticipantPage() {
             </Link>
           </section>
 
-          <section className={`${styles.card} ${styles.features}`} aria-labelledby="features-title">
+          <section
+            className={`${styles.card} ${styles.features}`}
+            aria-labelledby="features-title"
+          >
             <h2 className={styles.cardTitle} id="features-title">
               Features
             </h2>

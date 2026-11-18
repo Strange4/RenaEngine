@@ -50,6 +50,9 @@ describe("ParticipantPage", () => {
       screen.getByRole("heading", { name: "Starter SDK" }),
     ).toBeInTheDocument();
     expect(
+      screen.getByRole("heading", { name: "Upload submission" }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("button", { name: "Download TypeScript SDK" }),
     ).toBeEnabled();
     expect(
