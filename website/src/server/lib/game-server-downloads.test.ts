@@ -1,7 +1,7 @@
-// AI declaration: Below 50% AI-generated code
 /**
  * @jest-environment node
  */
+// AI contribution: Below 50% AI-generated
 import { fetchSdkArchive } from "./game-server-downloads";
 
 const mockFetch = jest.fn();
