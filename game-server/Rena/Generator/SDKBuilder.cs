@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 using Rena.GameEngine;
 
 namespace Rena.Generator;

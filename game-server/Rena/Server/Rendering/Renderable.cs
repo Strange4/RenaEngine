@@ -1,4 +1,4 @@
-﻿// No substantial AI-generated code
+﻿// AI contribution: No substantial AI-generated code
 using System.Text.Json.Serialization;
 
 namespace Rena.Server.Rendering;

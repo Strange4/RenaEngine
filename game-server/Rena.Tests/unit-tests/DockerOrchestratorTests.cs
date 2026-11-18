@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 using System.IO.Compression;
 using Docker.DotNet;
 using Docker.DotNet.Models;

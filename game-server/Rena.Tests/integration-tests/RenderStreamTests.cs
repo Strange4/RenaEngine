@@ -1,4 +1,4 @@
-﻿// 50% or more AI-generated
+﻿// AI contribution: 50% or more AI-generated
 using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;

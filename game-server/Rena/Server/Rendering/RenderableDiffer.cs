@@ -1,4 +1,4 @@
-﻿// Below 50% AI-generated
+﻿// AI contribution: Below 50% AI-generated
 namespace Rena.Server.Rendering;
 
 public class RenderableDiffer

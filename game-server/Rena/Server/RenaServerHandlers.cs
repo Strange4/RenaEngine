@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;

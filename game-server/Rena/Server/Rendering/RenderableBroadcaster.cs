@@ -1,4 +1,4 @@
-﻿// Below 50% AI-generated
+﻿// AI contribution: Below 50% AI-generated
 using System.Collections.Concurrent;
 using System.Threading.Channels;
 

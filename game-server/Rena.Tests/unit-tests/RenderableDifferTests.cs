@@ -1,4 +1,4 @@
-﻿// No substantial AI-generated code
+﻿// AI contribution: No substantial AI-generated code
 using Rena.Server.Rendering;
 
 namespace Rena.Tests.Unit;

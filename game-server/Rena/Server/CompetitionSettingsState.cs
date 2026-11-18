@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 namespace Rena.Server;
 
 using Microsoft.Extensions.Options;

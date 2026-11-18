@@ -1,4 +1,4 @@
-// No substantial AI-generated code
+// AI contribution: No substantial AI-generated code
 import { State, Action } from "./generated/gameTypes.ts";
 
 export const URL = "PUT THE URL HERE";

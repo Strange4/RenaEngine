@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 using System.Diagnostics;
 
 namespace Rena.Generator;

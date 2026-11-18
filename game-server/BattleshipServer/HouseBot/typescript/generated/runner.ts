@@ -1,4 +1,4 @@
-// No substantial AI-generated code
+// AI contribution: No substantial AI-generated code
 import Play, { URL, PLAYER_TOKEN, TURN_DELAY } from "../main.ts";
 import { State, Action } from "./gameTypes.ts";
 

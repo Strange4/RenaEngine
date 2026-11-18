@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 using System.ComponentModel.DataAnnotations;
 
 namespace Rena;
