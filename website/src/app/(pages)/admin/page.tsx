@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import AppTopBar from "@/app/components/AppTopBar";
 import AdminLiveViewerForm from "@/app/components/AdminLiveViewerForm";
 import FeatureToggleControl from "@/app/components/FeatureToggleControl";
-import ParticipantTokenTable from "@/app/components/ParticipantTokenTable";
+import ParticipantTokenManager from "@/app/components/ParticipantTokenManager";
 import { getFeatureSetting } from "@/server/lib/game-server-settings";
 import { getSession } from "@/server/lib/session";
 import { listParticipantIds } from "@/server/lib/user-store";
@@ -45,7 +45,7 @@ export default async function AdminPage() {
             <h2 id="tokens-title">Participant Tokens</h2>
             <p className={styles.description}>Create or revoke access for participants.</p>
             {participantIds ? (
-              <ParticipantTokenTable participantIds={participantIds} />
+              <ParticipantTokenManager initialParticipantIds={participantIds} />
             ) : (
               <p className={styles.error}>Could not load the participant tokens.</p>
             )}

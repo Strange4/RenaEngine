@@ -60,6 +60,42 @@
   color: #a00036;
 }
 
+.tokens :global(.token-actions) button,
+.tokens :global(.token-dialog) > button {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--grad);
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1.1rem;
+}
+
+.tokens :global(.token-actions) button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.tokens :global(.token-dialog) {
+  color: var(--ink);
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(194, 0, 122, 0.25);
+}
+
+.tokens :global(.token-dialog-warning) {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--deep);
+}
+
+.tokens :global(.token-dialog-value) code {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: var(--blush);
+  font-size: 0.85rem;
+}
+
 .tokens :global(.token-table) caption {
   position: absolute;
   width: 1px;
