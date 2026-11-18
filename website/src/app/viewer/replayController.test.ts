@@ -383,6 +383,34 @@ describe("step forward", () => {
     expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0 });
   });
 
+  it("rolls back what was applied if the change fails partway", async () => {
+    const testHandlers = handlers();
+    const create = testHandlers.create;
+    testHandlers.create = jest.fn().mockRejectedValueOnce(new Error("asset failed to load")).mockImplementation(create);
+    const { controller } = controllerFor([{ index: 1, changes: [movedShip, flag] }], testHandlers);
+
+    await expect(controller.stepForward()).rejects.toThrow("asset failed to load");
+
+    expect(testHandlers.calls).toEqual(["update:ship:2,1", "update:ship:1,1"]);
+    expect(controller.getCurrentState()).toEqual([ship]);
+    expect(controller.getStatus().position).toBe(0);
+  });
+
+  it("can step back to the initial scene after retrying a change that failed partway", async () => {
+    const testHandlers = handlers();
+    const create = testHandlers.create;
+    testHandlers.create = jest.fn().mockRejectedValueOnce(new Error("asset failed to load")).mockImplementation(create);
+    const { controller } = controllerFor([{ index: 1, changes: [movedShip, flag] }], testHandlers);
+    await expect(controller.stepForward()).rejects.toThrow("asset failed to load");
+
+    await expect(controller.stepForward()).resolves.toBe(true);
+    expect(controller.getCurrentState()).toEqual([movedShip, flag]);
+    await expect(controller.stepBackward()).resolves.toBe(true);
+
+    expect(controller.getCurrentState()).toEqual([ship]);
+    expect(controller.getStatus().position).toBe(0);
+  });
+
   it("does nothing after dispose", async () => {
     const { controller, testHandlers } = controllerFor();
     controller.dispose();
@@ -543,6 +571,25 @@ describe("step backward", () => {
 
     await expect(controller.stepBackward()).rejects.toThrow("sprite failed to remove");
     expect(controller.getStatus().position).toBe(1);
+  });
+
+  it("rolls back what was restored if restoring fails partway", async () => {
+    const testHandlers = handlers();
+    const remove = testHandlers.remove;
+    testHandlers.remove = jest.fn().mockRejectedValueOnce(new Error("sprite failed to remove")).mockImplementation(remove);
+    const { controller } = controllerFor([{ index: 1, changes: [movedShip, flag] }], testHandlers);
+    await controller.stepForward();
+    testHandlers.calls.length = 0;
+
+    await expect(controller.stepBackward()).rejects.toThrow("sprite failed to remove");
+
+    expect(testHandlers.calls).toEqual(["update:ship:1,1", "update:ship:2,1"]);
+    expect(controller.getCurrentState()).toEqual([movedShip, flag]);
+    expect(controller.getStatus().position).toBe(1);
+
+    await expect(controller.stepBackward()).resolves.toBe(true);
+    expect(controller.getCurrentState()).toEqual([ship]);
+    expect(controller.getStatus().position).toBe(0);
   });
 
   it("does nothing after dispose", async () => {

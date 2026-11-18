@@ -158,13 +158,11 @@ export class ReplayController {
     if (this.position >= this.changes.length) {
       return false;
     }
-    const change = this.changes[this.position];
-    const before = this.statesOf(change);
-    await this.processor.process(change);
+    const undo = await this.applyOrRollBack(this.changes[this.position]);
     if (this.disposed) {
       return false;
     }
-    this.undoChanges[this.position] = this.undoChangeFor(change, before);
+    this.undoChanges[this.position] = undo;
     this.position++;
     this.notify();
     return true;
@@ -174,13 +172,30 @@ export class ReplayController {
     if (this.position === 0) {
       return false;
     }
-    await this.processor.process(this.undoChanges[this.position - 1]);
+    await this.applyOrRollBack(this.undoChanges[this.position - 1]);
     if (this.disposed) {
       return false;
     }
     this.position--;
     this.notify();
     return true;
+  }
+
+  // Applies the change and returns the change that undoes it. If it fails partway, whatever was already
+  // applied gets undone before rethrowing, so the scene never ends up half-applied
+  private async applyOrRollBack(change: RenderableChange): Promise<RenderableChange> {
+    const before = this.statesOf(change);
+    try {
+      await this.processor.process(change);
+    } catch (error) {
+      try {
+        await this.processor.process(this.undoChangeFor(change, before));
+      } catch (rollbackError) {
+        console.error("Could not roll back a partially applied change", rollbackError);
+      }
+      throw error;
+    }
+    return this.undoChangeFor(change, before);
   }
 
   // The current state of every renderable the change touches (undefined if it isn't shown)
