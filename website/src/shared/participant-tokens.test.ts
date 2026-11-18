@@ -1,3 +1,4 @@
+// AI contribution: 50% or more AI-generated - used for proper test coverage & mocking of participant tokens
 import {
   formatLastSubmission,
   formatTokenStatus,

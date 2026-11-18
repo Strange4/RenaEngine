@@ -9,6 +9,11 @@ Closes: #issue number of task
 - 
 - 
 
+## AI contribution
+AI contribution:  <No substantial AI-generated code | Below 50% AI-generated | 50% or more AI-generated>
+
+AI-assisted files: 
+
 ## Testing
 <!-- Required -->
 - [ ] Manual testing performed (describe briefly)

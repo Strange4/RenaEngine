@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import { RenderableChange, RenderableType } from "@/shared/renderable";
 import {
   RecordedRenderableChangeSource,

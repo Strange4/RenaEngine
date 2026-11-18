@@ -1,4 +1,4 @@
-// 50% or more AI-generated code
+// AI contribution: 50% or more AI-generated
 import { fireEvent, render, screen } from "@testing-library/react";
 import ReplayControls from "./ReplayControls";
 import { PLAYBACK_SPEEDS, ReplayController } from "@/app/viewer/replayController";

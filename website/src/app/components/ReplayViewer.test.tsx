@@ -1,4 +1,4 @@
-// 50% or more AI-generated code
+// AI contribution: 50% or more AI-generated
 import { act, render, screen, waitFor, fireEvent} from "@testing-library/react";
 import { AssetLoader } from "@/app/viewer/assetLoader";
 import { getSceneSource } from "@/app/viewer/sceneSource";

@@ -1,6 +1,7 @@
 /**
  * @jest-environment node
  */
+// AI contribution: 50% or more AI-generated - used for proper test coverage & mocking of the participant-token-store module
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";

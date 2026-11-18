@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 function writeUint16(bytes: Uint8Array, offset: number, value: number) {
   new DataView(bytes.buffer).setUint16(offset, value, true);
 }

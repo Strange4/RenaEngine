@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import { NextResponse } from "next/server";
 import { uploadSubmission } from "@/server/lib/game-server-uploads";
 import { listParticipantTokens } from "@/server/lib/participant-token-store";

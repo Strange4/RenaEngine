@@ -1,4 +1,4 @@
-// No substantial AI-generated code
+// AI contribution: No substantial AI-generated code
 "use client";
 
 import { ChevronRight, Pause, Play, RotateCcw, RotateCw, SkipBack, SkipForward } from "lucide-react";

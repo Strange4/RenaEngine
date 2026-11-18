@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import {Sprite} from 'pixi.js';
 //this task is full LLL
 export interface AnimatedState{

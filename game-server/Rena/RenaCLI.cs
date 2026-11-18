@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 using Rena.GameEngine;
 using Rena.Generator;
 

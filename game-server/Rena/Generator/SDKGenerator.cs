@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 using System.IO.Compression;
 using System.Runtime.Serialization;
 using ProtoBuf;

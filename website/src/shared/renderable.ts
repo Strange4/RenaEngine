@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 //This file is essential for the rendering of real game data (fits any GENERIC game)
 //defines the shared interfaces from the game server (no hardcoded display rendering)-- it's the shared communication between the game server and the liveviewer
 

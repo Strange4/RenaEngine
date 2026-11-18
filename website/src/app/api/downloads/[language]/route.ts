@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 import { GET as downloadSdk } from "@/server/routes/downloads/sdk";
 
 export async function GET(

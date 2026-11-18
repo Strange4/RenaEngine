@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿// AI contribution: No substantial AI-generated code
+using System.Runtime.Serialization;
 
 namespace BattleshipServer.Game.Models;
 

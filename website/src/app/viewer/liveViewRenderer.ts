@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import { Container, Sprite } from 'pixi.js';
 import { RenderableType } from '@/shared/renderable';
 import type { GameRenderable, ViewerSetup } from '@/shared/renderable';
