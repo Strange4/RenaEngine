@@ -1,3 +1,4 @@
+// AI declaration: No substantial AI-generated code
 import { redirect } from "next/navigation";
 import FeatureDisabled from "@/app/components/FeatureDisabled";
 import { getFeatureAccess } from "@/server/lib/feature-access";

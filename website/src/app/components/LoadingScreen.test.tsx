@@ -1,3 +1,4 @@
+// AI declaration: Below 50% AI-generated code
 import { render, screen } from "@testing-library/react";
 import LoadingScreen from "./LoadingScreen";
 

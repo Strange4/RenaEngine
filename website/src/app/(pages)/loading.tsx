@@ -1,3 +1,4 @@
+// AI declaration: No substantial AI-generated code
 import LoadingScreen from "@/app/components/LoadingScreen";
 
 // Next.js shows this while a page checks the session on the server.

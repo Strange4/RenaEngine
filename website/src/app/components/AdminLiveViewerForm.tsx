@@ -1,3 +1,4 @@
+// AI declaration: Below 50% AI-generated code
 "use client";
 
 import { useState, type FormEvent } from "react";

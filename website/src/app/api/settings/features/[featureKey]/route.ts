@@ -1,3 +1,4 @@
+// AI declaration: No substantial AI-generated code
 import { PUT as updateFeature } from "@/server/routes/settings/feature";
 
 export async function PUT(

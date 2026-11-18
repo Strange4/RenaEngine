@@ -1,3 +1,4 @@
+// AI declaration: No substantial AI-generated code
 import { GET as connectSSE } from "@/server/routes/viewer/sse";
 import { NextRequest } from "next/server";
 

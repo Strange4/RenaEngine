@@ -1,3 +1,4 @@
+// AI declaration: Above 50% AI-generated code - used for proper test coverage of the ParticipantTokenTable component & mocking
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import ParticipantTokenTable from "./ParticipantTokenTable";
 import { MASKED_TOKEN, type ParticipantToken } from "@/shared/participant-tokens";

@@ -1,3 +1,4 @@
+// AI declaration: Above 50% AI-generated code - used for proper test coverage of the SdkDownloadPanel component & mocking
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import SdkDownloadPanel from "./SdkDownloadPanel";
 

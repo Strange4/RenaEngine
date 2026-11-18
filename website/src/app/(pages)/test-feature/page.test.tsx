@@ -1,3 +1,4 @@
+/* AI declaration: Above 50% AI-generated code - used for proper test coverage (specifically, ensuring proper mocking) */
 import { render, screen } from "@testing-library/react";
 import TestFeaturePage from "./page";
 

@@ -1,3 +1,4 @@
+/* AI declaration: Below 50% AI-generated code */
 import { fireEvent, render, screen } from "@testing-library/react";
 import AdminLiveViewerForm from "./AdminLiveViewerForm";
 

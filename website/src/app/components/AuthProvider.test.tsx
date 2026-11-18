@@ -1,3 +1,4 @@
+/* AI declaration: Above 50% AI-generated code - used for proper test coverage (specifically, ensuring proper mocking) */
 import { act, render, screen, waitFor } from "@testing-library/react";
 import AuthProvider, { useAuth } from "./AuthProvider";
 import { Role } from "@/shared/token";
