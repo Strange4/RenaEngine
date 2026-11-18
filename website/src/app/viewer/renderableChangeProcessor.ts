@@ -1,4 +1,4 @@
-// No substantial AI-generated code
+// AI contribution: Below 50% AI-generated
 import type { GameRenderable, RenderableChange } from "@/shared/renderable";
 import type { RenderableHandlers } from "./renderableHandler";
 import { RenderableChangeSource } from "./renderableChangeSource";

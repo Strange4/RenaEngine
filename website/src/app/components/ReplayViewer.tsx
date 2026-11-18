@@ -1,6 +1,5 @@
-// No substantial AI-generated code
+// AI contribution: No substantial AI-generated code
 "use client";
-// AI contribution: Below 50% AI-generated
 
 import { useEffect, useRef, useState } from "react";
 import { Application } from "pixi.js";
