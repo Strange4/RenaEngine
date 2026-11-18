@@ -89,6 +89,23 @@ This file lists the generative AI tools the team used and the features AI helped
 
 ### Website
 
+#### Submission code upload (#116, #132)
+- **Pull request:** [#207](https://github.com/Strange4/RenaEngine/pull/207)
+- **AI contribution:** Below 50% AI-generated
+- **AI-assisted files:**
+  - `website/src/app/api/upload/route.ts`
+  - `website/src/app/components/CodeUploadPanel.module.css`
+  - `website/src/app/components/CodeUploadPanel.test.tsx`
+  - `website/src/app/components/CodeUploadPanel.tsx`
+  - `website/src/server/lib/game-server-uploads.test.ts`
+  - `website/src/server/lib/game-server-uploads.ts`
+  - `website/src/server/routes/uploads/submission.test.ts`
+  - `website/src/server/routes/uploads/submission.ts`
+  - `website/src/shared/submission-archive.test.ts`
+  - `website/src/shared/submission-archive.ts`
+  - `website/src/test-utils/zip.ts`
+  - `website/tests/submission-upload.spec.ts`
+
 #### Navigation to the Live Viewer (#196)
 - **Pull request:** [#197](https://github.com/Strange4/RenaEngine/pull/197)
 - **AI contribution:** Below 50% AI-generated

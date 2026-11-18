@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 export const MAX_SUBMISSION_SIZE_BYTES = 8 * 1024 * 1024;
 export const SUBMISSION_ENTRYPOINT = "main.ts";
 export const SUBMISSION_ENTRYPOINT_ERROR =

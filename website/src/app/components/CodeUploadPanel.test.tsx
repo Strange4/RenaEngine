@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { zipFile } from "@/test-utils/zip";
 import CodeUploadPanel from "./CodeUploadPanel";

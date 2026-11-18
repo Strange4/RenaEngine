@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 function getUploadUrl(participantId: number): string | null {
   const baseUrl = process.env.GAME_SERVER_URL;
   if (!baseUrl) {

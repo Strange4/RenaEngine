@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import { zipFile } from "@/test-utils/zip";
 import {
   MAX_SUBMISSION_SIZE_BYTES,
