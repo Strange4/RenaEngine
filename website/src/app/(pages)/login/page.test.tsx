@@ -25,8 +25,7 @@ describe("LoginPage", () => {
     render(await LoginPage());
 
     expect(screen.getByRole("heading", { name: "RenaEngine" })).toBeInTheDocument();
-    expect(screen.getByLabelText("ID")).toBeInTheDocument();
-    expect(screen.getByLabelText("Password")).toBeInTheDocument();
+    expect(screen.getByLabelText("Token")).toBeInTheDocument();
   });
 
   it("redirects a logged-in admin to the admin page", async () => {
@@ -45,3 +44,4 @@ describe("LoginPage", () => {
     await expect(LoginPage()).rejects.toThrow("REDIRECT:/participant");
   });
 });
+

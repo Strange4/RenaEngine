@@ -58,6 +58,7 @@ describe("migrate", () => {
   it("auto-increments ids and never reuses them", () => {
     migrate(db);
 
+    // Migration seeds 3 default tokens (ids 1-3)
     const insert = db.prepare(
       "INSERT INTO users (token_hash, role) VALUES (?, ?)",
     );
@@ -68,8 +69,21 @@ describe("migrate", () => {
     );
     const fourth = insert.run("hash-d", "participant").lastInsertRowid;
 
-    expect(first).toBe(1);
-    expect(fourth).toBe(4);
+    expect(first).toBe(4);
+    expect(fourth).toBe(7);
+  });
+
+  it("seeds default tokens on first migration", () => {
+    migrate(db);
+
+    const users = db
+      .prepare("SELECT role FROM users ORDER BY id")
+      .all() as { role: string }[];
+    
+    expect(users).toHaveLength(3);
+    expect(users[0].role).toBe("admin");
+    expect(users[1].role).toBe("participant");
+    expect(users[2].role).toBe("participant");
   });
 
   it("is idempotent across runs", () => {
@@ -83,12 +97,12 @@ describe("migrate", () => {
     const { user_version: version } = db
       .prepare("PRAGMA user_version")
       .get() as { user_version: number };
-    expect(version).toBe(1);
+    expect(version).toBe(2);
 
     const count = db
       .prepare("SELECT COUNT(*) AS count FROM users")
       .get() as { count: number };
-    expect(count.count).toBe(1);
+    expect(count.count).toBe(4);
   });
 });
 
@@ -122,7 +136,7 @@ describe("getDb", () => {
     db = getDb();
 
     expect(existsSync(dbFile)).toBe(true);
-    expect(db.pragma("user_version", { simple: true })).toBe(1);
+    expect(db.pragma("user_version", { simple: true })).toBe(2);
     expect(db.pragma("journal_mode", { simple: true })).toBe("wal");
     const columns = db
       .prepare("PRAGMA table_info(users)")
@@ -130,6 +144,13 @@ describe("getDb", () => {
     expect(
       columns.map((column) => column.name),
     ).toEqual(["id", "token_hash", "role"]);
+    
+    // Should have seeded default tokens
+    const count = db
+      .prepare("SELECT COUNT(*) AS count FROM users")
+      .get() as { count: number };
+    expect(count.count).toBe(3);
+    
     expect(getDb()).toBe(db);
   });
 });

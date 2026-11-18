@@ -4,7 +4,15 @@
 import { NextRequest } from "next/server";
 import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { SESSION_COOKIE } from "@/server/lib/session";
+import { hashToken } from "@/server/lib/token-hash";
 import { config, proxy } from "./proxy";
+
+const mockDbPrepare = jest.fn();
+jest.mock("@/server/lib/db", () => ({
+  getDb: () => ({
+    prepare: mockDbPrepare,
+  }),
+}));
 
 function requestFor(path: string, token?: string) {
   const request = new NextRequest(`http://localhost${path}`);
@@ -17,7 +25,18 @@ function redirectLocation(response: Response) {
   return location ? new URL(location).pathname : null;
 }
 
+function withDbUser(token: string | null, role: string | null) {
+  mockDbPrepare.mockReturnValue({
+    get: (hash: string) => {
+      if (!token) return undefined;
+      return hash === hashToken(token) ? { role } : undefined;
+    },
+  });
+}
+
 describe("proxy", () => {
+  beforeEach(() => mockDbPrepare.mockReset());
+
   it.each(["/admin", "/participant", "/admin/settings"])(
     "redirects a visitor without a session from %s to /login",
     (path) => {
@@ -32,12 +51,14 @@ describe("proxy", () => {
   });
 
   it("sends a participant who opens an admin page to /access-denied", () => {
+    withDbUser("PARTICIPANT-42-secret", "participant");
     const response = proxy(requestFor("/admin/settings", "PARTICIPANT-42-secret"));
 
     expect(redirectLocation(response)).toBe("/access-denied");
   });
 
   it("sends an admin who opens a participant page to /admin", () => {
+    withDbUser("ADMIN-secret", "admin");
     const response = proxy(requestFor("/participant", "ADMIN-secret"));
 
     expect(redirectLocation(response)).toBe("/admin");
@@ -48,6 +69,8 @@ describe("proxy", () => {
     ["/admin/settings", "ADMIN-secret"],
     ["/participant", "PARTICIPANT-42-secret"],
   ])("lets %s through for token %s", (path, token) => {
+    const isAdmin = token.startsWith("ADMIN");
+    withDbUser(token, isAdmin ? "admin" : "participant");
     const response = proxy(requestFor(path, token));
 
     expect(response.headers.get("location")).toBeNull();
