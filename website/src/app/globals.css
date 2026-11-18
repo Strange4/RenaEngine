@@ -123,11 +123,11 @@ button {
 }
 
 .loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 6px solid var(--panel2);
+  width: 5vmin;
+  height: 5vmin;
+  border: 0.6vmin solid var(--panel2);
   border-top-color: var(--pink);
-  box-shadow: 0 0 0 3px var(--edge);
+  box-shadow: 0 0 0 0.3vmin var(--edge);
   animation: loading-spin 0.9s steps(8) infinite;
 }
 
