@@ -1,4 +1,4 @@
-# No substantial AI-generated code
+# AI contribution: No substantial AI-generated code
 # Based on the c# ASP .NET Core dockerfile from learn.microsoft.com
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build

@@ -1,3 +1,4 @@
+# AI contribution: No substantial AI-generated code
 FROM node:22-alpine AS deps
 WORKDIR /app
 # Build tools for better-sqlite3's native module (no prebuilt musl binary).
