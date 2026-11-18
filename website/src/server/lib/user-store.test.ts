@@ -22,6 +22,10 @@ jest.mock("./db", () => ({
 beforeEach(() => {
   db = new Database(":memory:");
   migrate(db);
+  // Clear seeded tokens from migration so tests can use predictable IDs
+  db.prepare("DELETE FROM users").run();
+  // Reset auto-increment counter
+  db.prepare("DELETE FROM sqlite_sequence WHERE name='users'").run();
 });
 
 afterEach(() => db.close());

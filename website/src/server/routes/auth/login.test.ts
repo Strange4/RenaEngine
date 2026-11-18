@@ -3,6 +3,14 @@
  */
 // AI contribution: 50% or more AI-generated - used for proper test coverage & mocking of the login route
 import { POST } from "./login";
+import { hashToken } from "@/server/lib/token-hash";
+
+const mockDbPrepare = jest.fn();
+jest.mock("@/server/lib/db", () => ({
+  getDb: () => ({
+    prepare: mockDbPrepare,
+  }),
+}));
 
 function postLogin(body: string) {
   return POST(
@@ -14,55 +22,87 @@ function postLogin(body: string) {
   );
 }
 
+function withDbUser(token: string | null, role: string | null) {
+  mockDbPrepare.mockReturnValue({
+    get: (hash: string) => {
+      if (!token) return undefined;
+      return hash === hashToken(token) ? { id: 1, role } : undefined;
+    },
+  });
+}
+
 describe("POST /api/auth/login", () => {
-  it("logs in an admin and sets the session cookie", async () => {
-    const response = await postLogin(
-      JSON.stringify({ id: "admin", password: "secret" }),
-    );
+  beforeEach(() => mockDbPrepare.mockReset());
+
+  it("logs in with a valid admin token", async () => {
+    withDbUser("ADMIN-dev", "admin");
+    const response = await postLogin(JSON.stringify({ token: "ADMIN-dev" }));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ role: "admin", id: "admin" });
-    expect(response.cookies.get("session_token")?.value).toBe("ADMIN-secret");
+    expect(await response.json()).toEqual({ role: "admin", id: 1 });
+    expect(response.cookies.get("session_token")?.value).toBe("ADMIN-dev");
   });
 
-  it("logs in a participant and sets the session cookie", async () => {
+  it("logs in with a valid participant token", async () => {
+    withDbUser("PARTICIPANT-42-dev", "participant");
     const response = await postLogin(
-      JSON.stringify({ id: "42", password: "secret" }),
+      JSON.stringify({ token: "PARTICIPANT-42-dev" }),
     );
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ role: "participant", id: "42" });
+    expect(await response.json()).toEqual({ role: "participant", id: 1 });
     expect(response.cookies.get("session_token")?.value).toBe(
-      "PARTICIPANT-42-secret",
+      "PARTICIPANT-42-dev",
     );
   });
 
-  it("trims whitespace from ID and password before building the token", async () => {
-    const response = await postLogin(
-      JSON.stringify({ id: " 42 ", password: " secret " }),
-    );
+  it("trims whitespace from token before validating", async () => {
+    withDbUser("ADMIN-dev", "admin");
+    const response = await postLogin(JSON.stringify({ token: "  ADMIN-dev  " }));
 
     expect(response.status).toBe(200);
-    expect(response.cookies.get("session_token")?.value).toBe(
-      "PARTICIPANT-42-secret",
-    );
+    expect(response.cookies.get("session_token")?.value).toBe("ADMIN-dev");
   });
 
-  it.each([
-    JSON.stringify({ id: "bob", password: "secret" }),
-    JSON.stringify({ id: "42", password: "" }),
-    JSON.stringify({ id: "42", password: "two words" }),
-    JSON.stringify({ id: "42" }),
-    JSON.stringify({ password: "secret" }),
-    JSON.stringify({ id: 42, password: "secret" }),
-    "not json",
-  ])("rejects invalid payload %s with 400", async (body) => {
-    const response = await postLogin(body);
+  it("returns 400 when token is missing", async () => {
+    const response = await postLogin(JSON.stringify({}));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Token required" });
+    expect(response.cookies.get("session_token")).toBeUndefined();
+  });
+
+  it("returns 400 when token is empty", async () => {
+    const response = await postLogin(JSON.stringify({ token: "" }));
+
+    expect(response.status).toBe(400);
+    expect(response.cookies.get("session_token")).toBeUndefined();
+  });
+
+  it("returns 400 when token format is invalid", async () => {
+    const response = await postLogin(JSON.stringify({ token: "invalid" }));
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({
-      error: "Enter ADMIN or a participant number, and a password",
+      error: "Invalid token format",
     });
     expect(response.cookies.get("session_token")).toBeUndefined();
   });
+
+  it("returns 401 when token is not found in DB", async () => {
+    withDbUser(null, null);
+    const response = await postLogin(JSON.stringify({ token: "ADMIN-wrong" }));
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "Token not found" });
+    expect(response.cookies.get("session_token")).toBeUndefined();
+  });
+
+  it("rejects non-JSON payload with 400", async () => {
+    const response = await postLogin("not json");
+
+    expect(response.status).toBe(400);
+    expect(response.cookies.get("session_token")).toBeUndefined();
+  });
 });
+
