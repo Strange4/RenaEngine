@@ -1,3 +1,4 @@
+// No substantial AI-generated code
 import type { GameRenderable, RenderableChange } from "@/shared/renderable";
 import type { RenderableHandlers } from "./renderableHandler";
 import { RenderableChangeSource } from "./renderableChangeSource";
@@ -51,7 +52,7 @@ export class RenderableChangeProcessor {
       } else if (existing) {
         // FOR UPDATES
         // This is the check for whether the renderable has changed. If it hasn't, we skip the update.
-        if (this.areRenderablesEqual(existing, renderable)) {
+        if (areRenderablesEqual(existing, renderable)) {
           console.error("Got a useless update for a renderable. This shouldn't happen", existing, renderable);
           continue;
         }
@@ -77,21 +78,26 @@ export class RenderableChangeProcessor {
     return Array.from(this.currentRenderables.values());
   }
 
-  // Helper function just to check if two renderables are equal (to avoid unnecessary updates)
-  private areRenderablesEqual(
-    first: GameRenderable,
-    second: GameRenderable,
-  ): boolean {
-    return (
-      first.assetPath === second.assetPath &&
-      first.type === second.type &&
-      first.layer === second.layer &&
-      Boolean(first.removed) === Boolean(second.removed) &&
-      first.position[0] === second.position[0] &&
-      first.position[1] === second.position[1] &&
-      first.size[0] === second.size[0] &&
-      first.size[1] === second.size[1] &&
-      (first.rotation ?? 0) === (second.rotation ?? 0)
-    );
+  // Returns the current state of one renderable, or undefined if it isn't shown
+  getRenderable(id: string): GameRenderable | undefined {
+    return this.currentRenderables.get(id);
   }
+}
+
+// Checks if two renderables would look the same (to avoid unnecessary updates)
+export function areRenderablesEqual(
+  first: GameRenderable,
+  second: GameRenderable,
+): boolean {
+  return (
+    first.assetPath === second.assetPath &&
+    first.type === second.type &&
+    first.layer === second.layer &&
+    Boolean(first.removed) === Boolean(second.removed) &&
+    first.position[0] === second.position[0] &&
+    first.position[1] === second.position[1] &&
+    first.size[0] === second.size[0] &&
+    first.size[1] === second.size[1] &&
+    (first.rotation ?? 0) === (second.rotation ?? 0)
+  );
 }
