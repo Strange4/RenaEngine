@@ -14,8 +14,23 @@ RenaEngine is a game engine designed specifically for making programming strateg
 Demo videos for each release will be added here
 
 
-## Deployment-Getting Started Guide
-TO ADD
+## Getting Started Guide
+[Look at our Getting Started Wiki](https://github.com/Strange4/RenaEngine/wiki/Getting-Started)
+
+#### How to run Locally
+
+### Running Locally
+Make sure you have everything installed in the [How to run](https://github.com/Strange4/RenaEngine/wiki/How-To-Run) from the wiki (docker, csharp, node, protobuf)
+
+1. Navigate in your terminal to `/game-server/Rena/generated/Rena/generated/typescript/sdk-tools` and run `npm install`
+2. Navigate to `/game-server/BattleshipServer` and 
+	1. run `dotnet run --generate` to generate the participants SDK (skip if you don't need them)
+	2. run `dotnet run` to run the game server.
+3. In a new terminal, navigate to `/website` and
+	1. run `npm install`
+	2. run `npm run dev`
+
+You now have the competition running on `http://localhost:3000`
 
 ## 👥 Team
 Add Name+student ID+ role
