@@ -106,6 +106,14 @@ This file lists the generative AI tools the team used and the features AI helped
   - `website/src/test-utils/zip.ts`
   - `website/tests/submission-upload.spec.ts`
 
+**What AI assisted with:** GitHub Copilot is co-author on commit `ce09578`, which added tests for upload error mapping, non-JSON error responses and game server URL edge cases in `CodeUploadPanel.test.tsx`, `game-server-uploads.test.ts` and `submission.test.ts`.
+
+**Verification:**
+- `npx jest` on `CodeUploadPanel` and `submission-archive`: 2 suites, 17 tests passed.
+- `npx jest` on `game-server-uploads.test.ts`: 2 tests fail with `ReferenceError: Response is not defined`.
+- `npx jest` on `submission.test.ts`: the suite fails to load with `ReferenceError: Request is not defined`. Both errors come from the jsdom test environment set in `website/jest.config.ts`.
+- The Playwright spec `website/tests/submission-upload.spec.ts` was not run.
+
 #### Navigation to the Live Viewer (#196)
 - **Pull request:** [#197](https://github.com/Strange4/RenaEngine/pull/197)
 - **AI contribution:** Below 50% AI-generated
