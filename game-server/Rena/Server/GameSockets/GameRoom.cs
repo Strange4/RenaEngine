@@ -18,6 +18,7 @@ internal class GameRoom<G, S, A>
     where S : class
     where A : class
 {
+    private const int MAX_MESSAGE_SIZE_BYTES = 8000;
     private readonly ConcurrentDictionary<string, Connection> _connections;
 
     private readonly int _roomSize;
@@ -125,5 +126,27 @@ internal class GameRoom<G, S, A>
         }
 
         return results;
+    }
+
+    private static async Task SplitAndSend(
+        MemoryStream stream,
+        WebSocket websocket,
+        WebSocketMessageType type,
+        CancellationToken token,
+        int messageSize = MAX_MESSAGE_SIZE_BYTES
+    )
+    {
+        //always returns true since MemoryStream was created by default constructor
+        _ = stream.TryGetBuffer(out ArraySegment<byte> segment);
+
+        int numMessages = (int)Math.Ceiling(segment.Count / (double)messageSize);
+
+        for (int i = 0; i < numMessages; i++)
+        {
+            bool isLastMessage = i == numMessages - 1;
+
+            int currentIndex = messageSize * i + segment.Offset;
+            await websocket.SendAsync(segment.Slice(currentIndex, Math.Min(segment.Count - currentIndex, messageSize)), type, isLastMessage, token);
+        }
     }
 }
