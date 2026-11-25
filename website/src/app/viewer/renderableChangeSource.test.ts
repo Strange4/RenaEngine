@@ -80,6 +80,68 @@ describe("SSERenderableChangeSource", () => {
     }
   });
 
+  describe("with a fake EventSource", () => {
+    const originalEventSource = global.EventSource;
+    let addEventListener: jest.Mock;
+
+    beforeEach(() => {
+      addEventListener = jest.fn();
+      global.EventSource = jest.fn().mockImplementation(() => ({ addEventListener, close: jest.fn() })) as any;
+    });
+
+    afterEach(() => {
+      global.EventSource = originalEventSource;
+    });
+
+    // like the server sending a change event
+    const send = (data: string) => addEventListener.mock.calls[0][1]({ data });
+
+    it("connects with credentials", () => {
+      new SSERenderableChangeSource("/api/viewer/sse/7");
+
+      expect(global.EventSource).toHaveBeenCalledWith("/api/viewer/sse/7", { withCredentials: true });
+    });
+
+    it("keeps changes that come before a listener is set", () => {
+      const source = new SSERenderableChangeSource("/api/test");
+
+      send(JSON.stringify(MOCK_RENDERABLE_CHANGES[0]));
+      send(JSON.stringify(MOCK_RENDERABLE_CHANGES[1]));
+
+      expect(source.getAllChanges()).toEqual(MOCK_RENDERABLE_CHANGES.slice(0, 2));
+    });
+
+    it("only calls the latest listener", () => {
+      const source = new SSERenderableChangeSource("/api/test", jest.fn());
+      const first = jest.fn();
+      const second = jest.fn();
+
+      source.setChangeListener(first);
+      source.setChangeListener(second);
+      send(JSON.stringify(MOCK_RENDERABLE_CHANGES[0]));
+
+      expect(first).not.toHaveBeenCalled();
+      expect(second).toHaveBeenCalledWith(MOCK_RENDERABLE_CHANGES[0]);
+    });
+
+    it("skips invalid json", () => {
+      const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+      try {
+        const listener = jest.fn();
+        const source = new SSERenderableChangeSource("/api/test", listener);
+
+        expect(() => send("{not json")).not.toThrow();
+        send(JSON.stringify(MOCK_RENDERABLE_CHANGES[0]));
+
+        expect(errorSpy).toHaveBeenCalled();
+        expect(listener).toHaveBeenCalledTimes(1);
+        expect(source.getAllChanges()).toEqual([MOCK_RENDERABLE_CHANGES[0]]);
+      } finally {
+        errorSpy.mockRestore();
+      }
+    });
+  });
+
   it("close closes the underlying EventSource", () => {
     const originalEventSource = global.EventSource;
     const close = jest.fn();
