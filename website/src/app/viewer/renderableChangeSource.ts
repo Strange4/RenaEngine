@@ -36,7 +36,14 @@ export class SSERenderableChangeSource implements RenderableChangeSource {
   }
 
   private onChange(e: MessageEvent<string>) {
-    const change: RenderableChange = JSON.parse(e.data);
+    let change: RenderableChange;
+    try {
+      change = JSON.parse(e.data);
+    } catch (error) {
+      // skip bad messages instead of crashing the viewer
+      console.error("Ignored a change from the Game Server that isn't valid JSON", error);
+      return;
+    }
     this.changes.push(change);
     this.callback?.call(undefined, change);
   }
