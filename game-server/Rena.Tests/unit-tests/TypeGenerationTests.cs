@@ -1,4 +1,5 @@
-﻿using Rena.Generator;
+﻿// AI contribution: No substantial AI-generated code
+using Rena.Generator;
 
 namespace Rena.Tests.Unit;
 

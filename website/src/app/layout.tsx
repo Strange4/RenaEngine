@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 import type { Metadata } from "next";
 import { Press_Start_2P, VT323 } from "next/font/google";
 import AuthProvider from "./components/AuthProvider";

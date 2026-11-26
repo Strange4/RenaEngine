@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 export enum Role {
   Admin = "admin",
   Participant = "participant",

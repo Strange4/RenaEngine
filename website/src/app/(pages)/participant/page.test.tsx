@@ -1,3 +1,4 @@
+/* AI contribution: 50% or more AI-generated - used for proper test coverage (specifically, ensuring proper mocking) */
 import { render, screen } from "@testing-library/react";
 import ParticipantPage from "./page";
 
@@ -47,6 +48,9 @@ describe("ParticipantPage", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Starter SDK" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Upload submission" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Download TypeScript SDK" }),

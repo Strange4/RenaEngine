@@ -1,3 +1,4 @@
+/* AI contribution: 50% or more AI-generated - used for proper colours & layout */
 .page {
   min-height: 100vh;
   color: var(--ink);
@@ -79,15 +80,40 @@
   color: var(--red);
 }
 
-.tokens :global(.token-reveal) {
-  justify-content: space-between;
-  width: 100%;
-  font-size: 22px;
-  cursor: pointer;
+.tokens :global(.token-actions) button,
+.tokens :global(.token-dialog) > button {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--grad);
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1.1rem;
 }
 
-.tokens :global(.token-reveal) > span {
-  order: 1;
+.tokens :global(.token-actions) button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.tokens :global(.token-dialog) {
+  color: var(--ink);
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(194, 0, 122, 0.25);
+}
+
+.tokens :global(.token-dialog-warning) {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--deep);
+}
+
+.tokens :global(.token-dialog-value) code {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: var(--blush);
+  font-size: 0.85rem;
 }
 
 .tokens :global(.token-table) caption {
@@ -112,20 +138,6 @@
   font-size: 9px;
   font-weight: 400;
   line-height: 1.6;
-}
-
-.tokens :global(.token-status) {
-  font-size: 8px;
-}
-
-.tokens :global(.token-status-active) {
-  background: var(--green);
-  color: var(--edge);
-}
-
-.tokens :global(.token-status-inactive) {
-  background: var(--panel2);
-  color: var(--dim);
 }
 
 .tokens :global(.copy-token) button {

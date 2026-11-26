@@ -1,4 +1,5 @@
-﻿using BattleshipServer.Game;
+﻿// AI contribution: No substantial AI-generated code
+using BattleshipServer.Game;
 
 namespace BattleshipServer.Tests.Unit;
 

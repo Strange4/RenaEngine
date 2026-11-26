@@ -1,3 +1,4 @@
+# AI contribution: No substantial AI-generated code
 name: Website CI
 
 on:
@@ -27,6 +28,7 @@ jobs:
           node-version: "22"
 
       - run: npm ci --ignore-scripts
+      - run: npm rebuild better-sqlite3
       - run: npm test -- --ci --coverage
       - run: npm run build
     

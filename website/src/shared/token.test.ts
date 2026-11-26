@@ -1,3 +1,4 @@
+// AI contribution: 50% or more AI-generated - used for proper test coverage & mocking of the token utilities
 import { homePathFor, isAdmin, parseToken, Role } from "./token";
 
 describe("isAdmin", () => {

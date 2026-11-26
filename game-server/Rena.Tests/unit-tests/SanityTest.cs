@@ -1,4 +1,5 @@
-﻿namespace Rena.Tests;
+﻿// AI contribution: No substantial AI-generated code
+namespace Rena.Tests;
 
 public class Tests
 {

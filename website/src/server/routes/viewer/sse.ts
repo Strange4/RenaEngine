@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 import { createReadableStream } from "@/server/lib/live-viewer";
 import { getSession } from "@/server/lib/session";
 import { isAdmin } from "@/shared/token";

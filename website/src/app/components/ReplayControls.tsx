@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 "use client";
 
 import { ChevronRight, Pause, Play, RotateCcw, RotateCw, SkipBack, SkipForward } from "lucide-react";
@@ -8,6 +9,8 @@ import {useEffect, useRef, useState} from "react";
 interface ReplayControlsProps {
   playing?: boolean;
   speed?: number; //default is 1x
+  canStepForward?: boolean; //false disables step forward, e.g. at the end of the recording
+  canStepBackward?: boolean; //false disables step back, e.g. at the start of the recording
   onPlay?: () => void;
   onPause?: () => void;
   onStepBackward?: () => void;
@@ -97,6 +100,8 @@ function SpeedMenuDropdown({speed, onSpeedChange}: SpeedMenuItem){
 export default function ReplayControls({
   playing = false,
   speed = 1,
+  canStepForward = true,
+  canStepBackward = true,
   onPlay,
   onPause,
   onStepBackward,
@@ -107,7 +112,7 @@ export default function ReplayControls({
 }: ReplayControlsProps) {
   return (
     <div className="replay-controls" role="toolbar" aria-label="Replay controls">
-      <button type="button" aria-label="Step back" title="Step back" onClick={onStepBackward}>
+      <button type="button" aria-label="Step back" title="Step back" onClick={onStepBackward} disabled={!canStepBackward}>
         <RotateCcw aria-hidden="true">{stepNumber}</RotateCcw>
       </button>
       <button type="button" aria-label="Go to start" title="Go to start" onClick={onGoToStart}>
@@ -125,7 +130,7 @@ export default function ReplayControls({
       <button type="button" aria-label="Go to end" title="Go to end" onClick={onGoToEnd}>
         <SkipForward aria-hidden="true" fill="currentColor" />
       </button>
-      <button type="button" aria-label="Step forward" title="Step forward" onClick={onStepForward}>
+      <button type="button" aria-label="Step forward" title="Step forward" onClick={onStepForward} disabled={!canStepForward}>
         <RotateCw aria-hidden="true">{stepNumber}</RotateCw>
       </button>
       <SpeedMenuDropdown speed={speed} onSpeedChange = {onSpeedChange} />

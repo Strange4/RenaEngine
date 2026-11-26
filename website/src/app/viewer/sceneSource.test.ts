@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 import { getSceneSource } from "./sceneSource";
 import { MOCK_SCENE, MOCK_VIEWER_SETUP, mockSceneSource } from "./mockScene";
 

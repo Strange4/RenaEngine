@@ -1,3 +1,4 @@
+/* AI contribution: Below 50% AI-generated */
 import { fireEvent, render, screen } from "@testing-library/react";
 import AccessDeniedPage from "./page";
 

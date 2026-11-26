@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 "use client";
 
 import { useRouter } from "next/navigation";

@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Rena.GameEngine;
