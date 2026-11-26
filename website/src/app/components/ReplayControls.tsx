@@ -5,12 +5,14 @@ import { ChevronRight, Pause, Play, RotateCcw, RotateCw, SkipBack, SkipForward }
 import { PLAYBACK_SPEEDS } from "../viewer/replayController";
 import {useEffect, useRef, useState} from "react";
 
-// TODO (171-175): connect the buttons to the ReplayController
 interface ReplayControlsProps {
   playing?: boolean;
   speed?: number; //default is 1x
+  canPlay?: boolean; //false disables play, e.g. at the end of the recording
   canStepForward?: boolean; //false disables step forward, e.g. at the end of the recording
   canStepBackward?: boolean; //false disables step back, e.g. at the start of the recording
+  canGoToStart?: boolean; //false disables go to start, e.g. already at the start of the recording
+  canGoToEnd?: boolean; //false disables go to end, e.g. already at the end of the recording
   onPlay?: () => void;
   onPause?: () => void;
   onStepBackward?: () => void;
@@ -100,8 +102,11 @@ function SpeedMenuDropdown({speed, onSpeedChange}: SpeedMenuItem){
 export default function ReplayControls({
   playing = false,
   speed = 1,
+  canPlay = true,
   canStepForward = true,
   canStepBackward = true,
+  canGoToStart = true,
+  canGoToEnd = true,
   onPlay,
   onPause,
   onStepBackward,
@@ -115,7 +120,7 @@ export default function ReplayControls({
       <button type="button" aria-label="Step back" title="Step back" onClick={onStepBackward} disabled={!canStepBackward}>
         <RotateCcw aria-hidden="true">{stepNumber}</RotateCcw>
       </button>
-      <button type="button" aria-label="Go to start" title="Go to start" onClick={onGoToStart}>
+      <button type="button" aria-label="Go to start" title="Go to start" onClick={onGoToStart} disabled={!canGoToStart}>
         <SkipBack aria-hidden="true" fill="currentColor" />
       </button>
       {playing ? (
@@ -123,11 +128,11 @@ export default function ReplayControls({
           <Pause aria-hidden="true" fill="currentColor" />
         </button>
       ) : (
-        <button type="button" className="replay-play" aria-label="Play" title="Play" onClick={onPlay}>
+        <button type="button" className="replay-play" aria-label="Play" title="Play" onClick={onPlay} disabled={!canPlay}>
           <Play aria-hidden="true" fill="currentColor" />
         </button>
       )}
-      <button type="button" aria-label="Go to end" title="Go to end" onClick={onGoToEnd}>
+      <button type="button" aria-label="Go to end" title="Go to end" onClick={onGoToEnd} disabled={!canGoToEnd}>
         <SkipForward aria-hidden="true" fill="currentColor" />
       </button>
       <button type="button" aria-label="Step forward" title="Step forward" onClick={onStepForward} disabled={!canStepForward}>
