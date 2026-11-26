@@ -15,12 +15,9 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ replace: mockReplace, refresh: mockRefresh }),
 }));
 
-// Types the ID and password, then clicks Log In.
-function fillAndSubmit(id: string, password: string) {
-  fireEvent.change(screen.getByLabelText("ID"), { target: { value: id } });
-  fireEvent.change(screen.getByLabelText("Password"), {
-    target: { value: password },
-  });
+// Types the token and clicks Log In
+function fillAndSubmit(token: string) {
+  fireEvent.change(screen.getByLabelText("Token"), { target: { value: token } });
   fireEvent.click(screen.getByRole("button", { name: "Log In" }));
 }
 
@@ -35,50 +32,34 @@ beforeEach(() => {
 });
 
 describe("LoginForm", () => {
-  it("renders separate ID and password fields", () => {
+  it("renders a single token input field", () => {
     render(<LoginForm />);
 
-    expect(screen.getByLabelText("ID")).toHaveAttribute("type", "text");
-    expect(screen.getByLabelText("Password")).toHaveAttribute(
-      "type",
-      "password",
-    );
+    expect(screen.getByLabelText("Token")).toHaveAttribute("type", "text");
+    expect(screen.queryByLabelText("ID")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
   });
 
-  it("shows a validation error and does not submit when password is empty", () => {
+  it("shows a validation error and does not submit when token is empty", () => {
     render(<LoginForm />);
 
-    fireEvent.change(screen.getByLabelText("ID"), { target: { value: "42" } });
     fireEvent.click(screen.getByRole("button", { name: "Log In" }));
 
-    expect(
-      screen.getByText("Enter ADMIN or a participant number, and a password"),
-    ).toBeInTheDocument();
-    expect(mockFetch).not.toHaveBeenCalled();
-  });
-
-  it("shows a validation error when the ID is neither admin nor a number", () => {
-    render(<LoginForm />);
-
-    fillAndSubmit("bob", "secret");
-
-    expect(
-      screen.getByText("Enter ADMIN or a participant number, and a password"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Enter your token")).toBeInTheDocument();
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("logs in a participant and redirects to the participant page", async () => {
     render(<LoginForm />);
 
-    fillAndSubmit("42", "secret");
+    fillAndSubmit("PARTICIPANT-42-secret");
 
     await waitFor(() =>
       expect(mockFetch).toHaveBeenCalledWith(
         "/api/auth/login",
         expect.objectContaining({
           method: "POST",
-          body: JSON.stringify({ id: "42", password: "secret" }),
+          body: JSON.stringify({ token: "PARTICIPANT-42-secret" }),
         }),
       ),
     );
@@ -92,13 +73,13 @@ describe("LoginForm", () => {
   it("logs in an admin and redirects to the admin page", async () => {
     render(<LoginForm />);
 
-    fillAndSubmit("admin", "secret");
+    fillAndSubmit("ADMIN-secret");
 
     await waitFor(() =>
       expect(mockFetch).toHaveBeenCalledWith(
         "/api/auth/login",
         expect.objectContaining({
-          body: JSON.stringify({ id: "admin", password: "secret" }),
+          body: JSON.stringify({ token: "ADMIN-secret" }),
         }),
       ),
     );
@@ -113,48 +94,57 @@ describe("LoginForm", () => {
     mockAuthRefresh.mockReturnValue(new Promise(() => {}));
     render(<LoginForm />);
 
-    fillAndSubmit("42", "secret");
+    fillAndSubmit("ADMIN-secret");
 
     expect(await screen.findByRole("status")).toHaveTextContent(
       "Signing you in…",
     );
-    expect(screen.queryByLabelText("ID")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Token")).not.toBeInTheDocument();
   });
 
   it("does not show the loading screen when login is rejected", async () => {
     mockFetch.mockResolvedValue({
       ok: false,
-      json: async () => ({ error: "Wrong credentials" }),
+      json: async () => ({ error: "Token not found" }),
     });
     render(<LoginForm />);
 
-    fillAndSubmit("42", "wrong");
+    fillAndSubmit("ADMIN-invalid");
 
-    expect(await screen.findByText("Wrong credentials")).toBeInTheDocument();
+    expect(await screen.findByText("Token not found")).toBeInTheDocument();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
-  it("shows the detected role while typing", () => {
+  it("shows the detected role while typing a valid token", () => {
     render(<LoginForm />);
 
-    fireEvent.change(screen.getByLabelText("ID"), { target: { value: "admin" } });
-    fireEvent.change(screen.getByLabelText("Password"), {
-      target: { value: "secret" },
+    fireEvent.change(screen.getByLabelText("Token"), {
+      target: { value: "ADMIN-secret" },
     });
 
-    expect(screen.getByText("Detected role: Admin")).toBeInTheDocument();
+    expect(screen.getByText("Role: Admin")).toBeInTheDocument();
+  });
+
+  it("shows the detected participant role while typing", () => {
+    render(<LoginForm />);
+
+    fireEvent.change(screen.getByLabelText("Token"), {
+      target: { value: "PARTICIPANT-42-secret" },
+    });
+
+    expect(screen.getByText("Role: Participant #42")).toBeInTheDocument();
   });
 
   it("shows the server error when login is rejected", async () => {
     mockFetch.mockResolvedValue({
       ok: false,
-      json: async () => ({ error: "Wrong credentials" }),
+      json: async () => ({ error: "Token not found" }),
     });
     render(<LoginForm />);
 
-    fillAndSubmit("42", "wrong");
+    fillAndSubmit("ADMIN-invalid");
 
-    expect(await screen.findByText("Wrong credentials")).toBeInTheDocument();
+    expect(await screen.findByText("Token not found")).toBeInTheDocument();
     expect(mockReplace).not.toHaveBeenCalled();
     expect(mockAuthRefresh).not.toHaveBeenCalled();
   });
