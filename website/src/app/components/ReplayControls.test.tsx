@@ -81,6 +81,28 @@ describe("ReplayControls", () => {
     expect(onStepBackward).not.toHaveBeenCalled();
   });
 
+  it("enables play, go to start and go to end by default", () => {
+    render(<ReplayControls />);
+
+    expect(button("Play")).toBeEnabled();
+    expect(button("Go to start")).toBeEnabled();
+    expect(button("Go to end")).toBeEnabled();
+  });
+
+  it.each([
+    ["Play", "canPlay", "onPlay"],
+    ["Go to start", "canGoToStart", "onGoToStart"],
+    ["Go to end", "canGoToEnd", "onGoToEnd"],
+  ])("disables %s when it can't move", (name, canProp, handlerProp) => {
+    const handler = jest.fn();
+    render(<ReplayControls {...{ [canProp]: false, [handlerProp]: handler }} />);
+
+    fireEvent.click(button(name));
+
+    expect(button(name)).toBeDisabled();
+    expect(handler).not.toHaveBeenCalled();
+  });
+
   it("shows pause while playing", () => {
     const onPause = jest.fn();
     render(<ReplayControls playing onPause={onPause} />);
