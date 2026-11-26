@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import { act, render, screen, waitFor } from "@testing-library/react";
 import { Sprite, Container } from "pixi.js";
 import { AssetLoader } from "@/app/viewer/assetLoader";

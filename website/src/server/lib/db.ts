@@ -1,4 +1,4 @@
-// No substantial AI-generated code
+// AI contribution: No substantial AI-generated code
 import Database from "better-sqlite3";
 import { mkdirSync } from "node:fs";
 import path from "node:path";

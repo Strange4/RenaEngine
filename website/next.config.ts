@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {

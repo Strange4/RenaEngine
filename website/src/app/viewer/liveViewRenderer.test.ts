@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import type { Container } from "pixi.js";
 import { RenderableType, type GameRenderable, type ViewerSetup } from "@/shared/renderable";
 import { Animator } from "./animator";

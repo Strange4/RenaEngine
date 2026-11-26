@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 import { getFeatureSetting } from "@/server/lib/game-server-settings";
 import { getSession } from "@/server/lib/session";
 import { FeatureAccessStatus, type FeatureKey } from "@/shared/features";

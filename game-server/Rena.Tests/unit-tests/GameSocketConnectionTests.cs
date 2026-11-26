@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 using System.Net.WebSockets;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;

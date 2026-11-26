@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 namespace Rena.Generator;
 
 using System.Reflection;

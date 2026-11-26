@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 import Link from "next/link";
 
 export default function FeatureDisabled({

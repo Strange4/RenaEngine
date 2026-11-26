@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({

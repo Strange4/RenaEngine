@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import { RenderableType, type GameRenderable, type ViewerSetup } from "@/shared/renderable";
 import type { Application } from "pixi.js";
 import type { LiveViewRenderer } from "./liveViewRenderer";

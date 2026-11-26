@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 import { Assets, Texture } from "pixi.js";
 import type { GameRenderable } from "@/shared/renderable";
 

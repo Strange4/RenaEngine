@@ -1,3 +1,4 @@
+/* AI contribution: 50% or more AI-generated - used for proper test coverage */
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import CopyTokenButton from "./CopyTokenButton";
 

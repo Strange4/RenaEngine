@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿// AI contribution: Below 50% AI-generated
+using Microsoft.Extensions.Logging;
 using Rena.Server.Rendering;
 
 namespace Rena.GameEngine;

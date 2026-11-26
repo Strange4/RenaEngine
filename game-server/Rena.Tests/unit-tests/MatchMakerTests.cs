@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;

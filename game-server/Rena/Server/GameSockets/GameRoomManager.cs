@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Threading.Channels;

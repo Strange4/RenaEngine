@@ -1,3 +1,4 @@
+// AI contribution: Below 50% AI-generated
 import { test, expect } from "@playwright/test";
 
 test("live viewer renders exactly one PixiJS canvas", async ({ page }) => {

@@ -1,4 +1,5 @@
-﻿using System.Threading.Channels;
+﻿// AI contribution: No substantial AI-generated code
+using System.Threading.Channels;
 using Rena.Server.Rendering;
 
 namespace Rena.Tests.Unit;

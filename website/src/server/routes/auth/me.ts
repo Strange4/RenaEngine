@@ -1,3 +1,4 @@
+// AI contribution: No substantial AI-generated code
 import { NextResponse } from "next/server";
 import { getSession } from "@/server/lib/session";
 import { isAdmin } from "@/shared/token";
