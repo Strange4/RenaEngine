@@ -116,6 +116,20 @@ export class ReplayController {
     return this.enqueueStep(() => this.applyPrevious());
   }
 
+  // Undoes every applied change to get back to the initial scene. Pauses playback first.
+  // Returns false if it was already at the start
+  goToStart(): Promise<boolean> {
+    this.pause();
+    return this.enqueueStep(() => this.repeatUntilBoundary(() => this.applyPrevious()));
+  }
+
+  // Applies every remaining change to get to the final scene. Pauses playback first.
+  // Returns false if it was already at the end
+  goToEnd(): Promise<boolean> {
+    this.pause();
+    return this.enqueueStep(() => this.repeatUntilBoundary(() => this.applyNext()));
+  }
+
   // TODO (174)
   setSpeed(speed: number): void {
     if (!PLAYBACK_SPEEDS.includes(speed)){ //we only follow set speeds
@@ -180,6 +194,16 @@ export class ReplayController {
     this.position--;
     this.notify();
     return true;
+  }
+
+  // Keeps stepping in one direction until the step can't go further (start/end of the recording, or disposed).
+  // Runs as a single queued step so nothing else gets applied in between. Returns true if it moved at all
+  private async repeatUntilBoundary(step: () => Promise<boolean>): Promise<boolean> {
+    let moved = false;
+    while (await step()) {
+      moved = true;
+    }
+    return moved;
   }
 
   // Applies the change and returns the change that undoes it. If it fails partway, whatever was already
