@@ -18,6 +18,7 @@ internal class GameRoom<G, S, A>
     where S : class
     where A : class
 {
+    private const int MAX_MESSAGE_SIZE_BYTES = 8000;
     private readonly ConcurrentDictionary<string, Connection> _connections;
 
     private readonly int _roomSize;
@@ -93,8 +94,7 @@ internal class GameRoom<G, S, A>
             using MemoryStream stream = new();
             Serializer.Serialize(stream, state);
             // TODO (#164): put a cancelation token for timeout based on settings
-            // TODO (#164): break down the message in to smaller ones instead of sending it all at once
-            await connection.SendAsync(new ArraySegment<byte>(stream.ToArray()), WebSocketMessageType.Binary, true, CancellationToken.None);
+            await SplitAndSend(stream, connection, WebSocketMessageType.Binary, CancellationToken.None);
         }
 
         Dictionary<string, A> results = [];
@@ -125,5 +125,29 @@ internal class GameRoom<G, S, A>
         }
 
         return results;
+    }
+
+    private static async Task SplitAndSend(
+        MemoryStream stream,
+        WebSocket websocket,
+        WebSocketMessageType type,
+        CancellationToken token,
+        int messageSize = MAX_MESSAGE_SIZE_BYTES
+    )
+    {
+        //always returns true since MemoryStream was created by default constructor
+        _ = stream.TryGetBuffer(out ArraySegment<byte> segment);
+
+        // Need to always send at least 1 message even if there is no data to actually send since
+        // protobuf can simplify an int = 0 into 0 bytes
+        int numMessages = Math.Max(1, (int)Math.Ceiling(segment.Count / (double)messageSize));
+
+        for (int i = 0; i < numMessages; i++)
+        {
+            bool isLastMessage = i == numMessages - 1;
+
+            int currentIndex = messageSize * i;
+            await websocket.SendAsync(segment.Slice(currentIndex, Math.Min(segment.Count - currentIndex, messageSize)), type, isLastMessage, token);
+        }
     }
 }
