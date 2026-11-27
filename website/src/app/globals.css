@@ -1,25 +1,64 @@
 /* AI contribution: 50% or more AI-generated - used for proper colours & layout */
+/* Pink and magenta palette: light blush panels, plum edges, pink brand accent. */
 :root {
-  --pink: #ff2e93;
-  --magenta: #c2007a;
-  --deep: #7a0050;
-  --plum: #3a0a2a;
-  --offwhite: #fff9fb;
+  --bg: #a09b5e2f;
+  --panel: #fff9fb;
+  --panel2: #ffe4ee;
   --blush: #ffe4ee;
   --blush-2: #ffd0e3;
+  --field: #ffffff;
+  --line: #ffd0e3;
+  --edge: #3a0a2a;
   --ink: #4a1230;
-  --grad: linear-gradient(135deg, var(--pink) 0%, var(--magenta) 55%, var(--deep) 100%);
+  --dim: #7a0050;
+  --orange: #c2007a;
+  --green: #087c47;
+  --red: #a00036;
+  --blue: #7a0050;
+  --pink: #c2007a;
+  --magenta: #c2007a;
+  --px: var(--font-pixel), ui-monospace, monospace;
+  --body: var(--font-body), ui-monospace, monospace;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  background: var(--bg);
+}
+
 body {
   margin: 0;
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-  background: #111827;
-  color: #f9fafb;
+  min-height: 100vh;
+  font-family: var(--body);
+  font-size: 21px;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+/* Fixed starfield behind everything; drifts in discrete steps. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.55;
+  background-image:
+    radial-gradient(2px 2px at 20px 30px, var(--pink), transparent),
+    radial-gradient(2px 2px at 90px 120px, var(--blush-2, #ffd0e3), transparent),
+    radial-gradient(2px 2px at 160px 60px, var(--magenta), transparent),
+    radial-gradient(2px 2px at 60px 170px, var(--pink), transparent);
+  background-size: 180px 200px;
+  animation: twinkle 2.4s steps(2) infinite;
+}
+
+@keyframes twinkle {
+  50% {
+    background-position: 8px 6px, -6px 4px, 4px -6px, -4px 8px;
+  }
 }
 
 main {
@@ -40,28 +79,36 @@ input,
 select {
   margin: 0.5rem 0;
   padding: 0.6rem;
-  font-size: 1rem;
+  font-family: var(--body);
+  font-size: 1.2rem;
 }
 
 select {
-  border: 1px solid #4b5563;
-  border-radius: 6px;
-  background: #111827;
-  color: #f9fafb;
+  border: 3px solid var(--edge);
+  border-radius: 0;
+  background: var(--field);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--line);
 }
 
 button {
   padding: 0.6rem;
-  font-size: 1rem;
+  font-family: var(--body);
+  font-size: 1.2rem;
   cursor: pointer;
 }
 
+:focus-visible {
+  outline: 3px solid var(--pink);
+  outline-offset: 2px;
+}
+
 .error {
-  color: #f87171;
+  color: var(--red);
 }
 
 .hint {
-  color: #34d399;
+  color: var(--green);
 }
 
 .loading-screen {
@@ -72,22 +119,26 @@ button {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  background: #111827;
+  gap: 1.5rem;
+  background: var(--bg);
 }
 
 .loading-spinner {
-  width: 3rem;
-  height: 3rem;
-  border: 4px solid #374151;
-  border-top-color: #60a5fa;
-  border-radius: 50%;
-  animation: loading-spin 0.8s linear infinite;
+  width: 5vmin;
+  height: 5vmin;
+  border: 0.6vmin solid var(--panel2);
+  border-top-color: var(--pink);
+  box-shadow: 0 0 0 0.3vmin var(--edge);
+  animation: loading-spin 0.9s steps(8) infinite;
 }
 
 .loading-message {
   margin: 0;
-  color: #d1d5db;
+  font-family: var(--px);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink);
+  animation: blink 1s steps(2) infinite;
 }
 
 @keyframes loading-spin {
@@ -96,9 +147,19 @@ button {
   }
 }
 
+@keyframes blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* Users who ask for less motion get static pixels. */
 @media (prefers-reduced-motion: reduce) {
-  .loading-spinner {
-    animation-duration: 3s;
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
   }
 }
 
@@ -116,27 +177,33 @@ button {
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  border: 1px solid #374151;
-  border-radius: 6px;
+  background: var(--panel);
+  border: 4px solid var(--edge);
+  box-shadow: inset 0 0 0 2px var(--line), 6px 6px 0 var(--edge);
 }
 
 .scoreboard h1 {
   margin: 0;
-  font-size: 1.25rem;
+  font-family: var(--px);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--pink);
+  text-shadow: 3px 3px 0 var(--edge);
 }
 
 .live-viewer-canvas {
   width: 100%;
   margin-inline: auto;
   overflow: hidden;
-  border: 1px solid #374151;
-  border-radius: 6px;
+  border: 4px solid var(--edge);
+  box-shadow: inset 0 0 0 2px var(--line), 6px 6px 0 var(--edge);
 }
 
 .live-viewer-canvas canvas {
   display: block;
   width: 100%;
   height: 100%;
+  image-rendering: pixelated;
 }
 
 .replay-viewer {
@@ -149,8 +216,6 @@ button {
 
 .replay-viewer .live-viewer-canvas {
   border-bottom: none;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
 }
 
 .replay-controls {
@@ -158,32 +223,37 @@ button {
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  padding: 0.5rem 1.25rem;
-  border: 1px solid #374151;
-  border-radius: 0 0 6px 6px;
-  background: #18181b;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.4);
+  padding: 0.6rem 1.25rem;
+  background: var(--panel);
+  border: 4px solid var(--edge);
+  border-top: none;
+  box-shadow: 6px 6px 0 var(--edge);
 }
 
 .replay-controls button {
   display: grid;
   place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
   padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: #f9fafb;
+  border: 3px solid var(--edge);
+  background: var(--panel2);
+  color: var(--ink);
+  box-shadow: 0 4px 0 var(--edge);
+}
+
+.replay-controls button:hover {
+  background: var(--blush-2);
+}
+
+.replay-controls button:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--edge);
 }
 
 .replay-controls button svg {
   width: 1.6rem;
   height: 1.6rem;
-}
-
-.replay-controls button:hover {
-  background: rgb(255 255 255 / 0.12);
 }
 
 .replay-controls button:disabled {
@@ -193,14 +263,19 @@ button {
 }
 
 .replay-controls .replay-play {
-  width: 3.25rem;
-  height: 3.25rem;
-  background: #f9fafb;
-  color: #18181b;
+  width: 3.5rem;
+  height: 3.5rem;
+  background: var(--pink);
+  color: #fff;
+  box-shadow: 0 4px 0 var(--magenta);
 }
 
 .replay-controls .replay-play:hover {
-  background: #e5e7eb;
+  background: var(--magenta);
+}
+
+.replay-controls .replay-play:active {
+  box-shadow: 0 1px 0 var(--magenta);
 }
 
 /* keep the white circle when disabled (e.g. at the end of the recording), otherwise the dark icon disappears on the dark bar */
@@ -216,7 +291,7 @@ button {
 /* Pause shares some styles with play */
 .replay-controls .replay-pause svg {
   stroke-width: 3;
-  stroke-linecap: round;
+  stroke-linecap: square;
 }
 
 .token-actions {
@@ -278,13 +353,13 @@ button {
 .token-table caption {
   text-align: left;
   margin-bottom: 0.5rem;
-  color: #d1d5db;
+  color: var(--pink);
 }
 
 .token-table th,
 .token-table td {
   padding: 0.6rem 0.75rem;
-  border-bottom: 1px solid #374151;
+  border-bottom: 3px dashed var(--line);
   text-align: left;
   white-space: nowrap;
 }
@@ -298,7 +373,7 @@ button {
 .copy-token button {
   width: auto;
   padding: 0.3rem 0.75rem;
-  font-size: 0.875rem;
+  font-size: 1rem;
 }
 
 /*FOR THE SPEED MENU */
@@ -321,22 +396,22 @@ button {
   height: auto;
   padding: 0.25rem 0.5rem;
   border: none;
-  border-radius: 0.375rem;
   background: none;
+  box-shadow: none;
   color: inherit;
-  font-size: 0.875rem;
+  font-size: 1.2rem;
   cursor: pointer;
 }
 
 .replay-controls .replay-speed-button:hover{
-  background-color: rgba(255,255,255,0.1);
+  background-color: rgba(194, 0, 122, 0.1);
 }
 
 /* triangle chevron points right, but when open it points down*/
 .replay-speed-arrow{
   width: 1rem;
   height: 1rem;
-  transition: transform 150ms ease;
+  transition: transform 150ms steps(3);
 }
 .replay-speed-arrow.open{
   transform: rotate(90deg);
@@ -353,31 +428,39 @@ we can change that if the testers don't like the ui*/
   flex-direction: column;
   min-width: 5rem;
   padding: 0.25rem;
-  border: 1px solid #3f3f46;
-  border-radius: 0.5rem;
-  background: #18181b;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  background: var(--panel);
+  border: 4px solid var(--edge);
+  box-shadow: 4px 4px 0 var(--edge);
+  animation: pop-in 0.2s steps(3);
+}
+
+@keyframes pop-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
 }
 
 .replay-controls .replay-speed-menu button{
   width: auto;
   height: auto;
-  padding: 0.375rem 0.75rem;
+  padding: 0.3rem 0.75rem;
   border: none;
-  border-radius: 0.25rem;
+  box-shadow: none;
   background: none;
   color: inherit;
-  font-size: 0.875rem;
+  font-size: 1.2rem;
   text-align: left;
   cursor: pointer;
 }
 .replay-controls .replay-speed-menu button:hover{
-  background: #27272a;
+  background: var(--panel2);
 }
 
 /* current speed*/
 .replay-controls .replay-speed-menu button[aria-checked="true"]{
-  font-weight: bold;
-  background: #3f3f46;
+  color: var(--pink);
+  background: var(--panel2);
 }
+
 

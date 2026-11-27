@@ -4,7 +4,6 @@
   max-width: none;
   margin: 0;
   padding: 0;
-  background: #fff5fa;
   color: var(--ink);
 }
 
@@ -20,22 +19,32 @@
 
 /* ---- welcome banner ---- */
 .welcome {
-  background: var(--grad);
-  border-radius: 20px;
-  padding: 1.75rem 2.25rem;
-  color: #fff;
-  box-shadow: 0 16px 40px rgba(194, 0, 122, 0.35);
+  background: var(--panel);
+  border: 4px solid var(--edge);
+  box-shadow: inset 0 0 0 2px var(--line), 6px 6px 0 var(--edge);
+  padding: 1.5rem 2rem;
+  animation: enter 0.45s steps(4) both;
 }
 
 .welcomeTitle {
-  font-size: 1.9rem;
-  letter-spacing: 0.3px;
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.6rem;
+  font-family: var(--px);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--pink);
+  text-shadow: 3px 3px 0 var(--edge);
+}
+
+.welcomeTitle::after {
+  content: "_";
+  color: var(--pink);
+  animation: blink 1s steps(2) infinite;
 }
 
 .welcomeSub {
-  font-size: 0.95rem;
-  opacity: 0.9;
+  font-size: 22px;
+  color: var(--dim);
   margin: 0;
 }
 
@@ -48,22 +57,39 @@
 }
 
 .card {
-  background: #fff;
-  border: 1px solid var(--blush-2);
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(194, 0, 122, 0.08);
+  background: var(--panel);
+  border: 4px solid var(--edge);
+  box-shadow: inset 0 0 0 2px var(--line), 6px 6px 0 var(--edge);
   padding: 1.5rem 1.75rem;
+  animation: enter 0.45s steps(4) both;
+  transition: transform 0.1s steps(2), box-shadow 0.1s steps(2);
+}
+
+.card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: inset 0 0 0 2px var(--line), 8px 8px 0 var(--edge);
+}
+
+.grid > .card:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.grid > .card:nth-child(3) {
+  animation-delay: 0.24s;
 }
 
 .cardTitle {
-  font-size: 1.15rem;
-  margin: 0 0 0.25rem;
+  margin: 0 0 0.6rem;
+  font-family: var(--px);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--orange);
 }
 
 .cardSub {
-  font-size: 0.85rem;
-  color: var(--deep);
-  opacity: 0.75;
+  font-size: 22px;
+  color: var(--dim);
   margin: 0 0 1.25rem;
 }
 
@@ -75,64 +101,69 @@
 .sdkLabel {
   width: auto;
   display: block;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-family: var(--px);
+  font-size: 9px;
+  line-height: 1.6;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--magenta);
-  margin-bottom: 0.35rem;
+  color: var(--pink);
+  margin-bottom: 0.5rem;
 }
 
 .sdkSelect {
   width: 100%;
   margin: 0;
-  padding: 0.7rem 0.9rem;
+  padding: 0.4rem 0.75rem;
   font: inherit;
-  border-radius: 12px;
-  border: 1.5px solid var(--blush-2);
-  background: #fff;
+  font-size: 24px;
+  background: var(--field);
   color: var(--ink);
+  border: 3px solid var(--edge);
+  border-radius: 0;
+  box-shadow: inset 0 0 0 2px var(--line);
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .sdkSelect:focus {
-  border-color: var(--pink);
-  box-shadow: 0 0 0 3px var(--blush);
+  outline: 3px solid var(--pink);
+  outline-offset: 0;
 }
 
 .sdkDescription {
   min-height: 3rem;
   margin: 0.75rem 0 1rem;
-  font-size: 0.9rem;
-  color: var(--deep);
-  line-height: 1.5;
+  font-size: 21px;
+  color: var(--dim);
+  line-height: 1.2;
 }
 
 .sdkButton {
   width: 100%;
-  padding: 0.8rem 1rem;
-  font: inherit;
-  font-weight: 700;
-  font-size: 1rem;
+  padding: 0.9rem 1rem;
+  font-family: var(--px);
+  font-size: 11px;
+  line-height: 1.4;
+  text-transform: uppercase;
   color: #fff;
-  background: var(--grad);
-  border: none;
-  border-radius: 999px;
+  background: var(--pink);
+  border: 3px solid var(--edge);
+  border-radius: 0;
+  box-shadow: 0 6px 0 var(--magenta);
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(194, 0, 122, 0.4);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
 .sdkButton:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 26px rgba(194, 0, 122, 0.5);
+  filter: brightness(1.1);
+}
+
+.sdkButton:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 var(--magenta);
 }
 
 .sdkButton:disabled,
 .sdkSelect:disabled {
   cursor: wait;
-  opacity: 0.65;
+  opacity: 0.6;
 }
 
 .sdkFeedback {
@@ -142,45 +173,63 @@
 
 .sdkFeedback p {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 21px;
 }
 
 .sdkError {
-  color: var(--magenta);
+  color: var(--red);
 }
 
 .sdkSuccess {
-  color: var(--deep);
+  color: var(--green);
 }
 
 .unavailable {
   margin: 0;
-  font-size: 0.9rem;
-  color: var(--deep);
-  background: var(--blush);
-  border: 1px solid var(--blush-2);
-  border-radius: 10px;
-  padding: 0.75rem 0.9rem;
+  font-size: 21px;
+  color: var(--dim);
+  background: var(--field);
+  border: 3px dashed var(--line);
+  padding: 0.6rem 0.8rem;
 }
 
 /* ---- feature link card ---- */
 .featureLink {
   display: inline-block;
-  font-weight: 700;
-  font-size: 0.95rem;
+  font-family: var(--px);
+  font-size: 10px;
+  line-height: 1.4;
+  text-transform: uppercase;
   color: #fff;
-  background: var(--grad);
-  border-radius: 999px;
-  padding: 0.7rem 1.5rem;
+  background: var(--pink);
+  border: 3px solid var(--edge);
+  padding: 0.8rem 1.1rem;
   text-decoration: none;
-  box-shadow: 0 8px 20px rgba(194, 0, 122, 0.4);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  box-shadow: 0 6px 0 var(--magenta);
 }
 
 .featureLink:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 26px rgba(194, 0, 122, 0.5);
+  filter: brightness(1.08);
 }
+
+.featureLink:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 var(--magenta);
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
 
 @media (max-width: 800px) {
   .grid {

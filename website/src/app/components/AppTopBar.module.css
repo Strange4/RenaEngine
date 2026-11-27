@@ -4,35 +4,45 @@
   align-items: center;
   justify-content: flex-end;
   gap: 1rem;
-  padding: 0.7rem 1.5rem;
-  background: var(--grad);
-  color: #fff;
+  padding: 0.6rem 1.5rem;
+  background: var(--panel);
+  border-bottom: 4px solid var(--edge);
+  box-shadow: 0 4px 0 rgba(58, 10, 42, 0.3);
+  color: var(--ink);
 }
 
 .team {
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-family: var(--px);
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--pink);
 }
 
 .logout {
   width: auto;
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 999px;
-  padding: 0.35rem 1.1rem;
+  font-family: var(--px);
+  font-size: 9px;
+  line-height: 1.6;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--panel2);
+  border: 3px solid var(--edge);
+  border-radius: 0;
+  padding: 0.5rem 0.8rem;
+  box-shadow: 0 4px 0 var(--edge);
   cursor: pointer;
-  transition: background 0.15s ease;
 }
 
 .logout:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.28);
+  background: var(--blush-2);
+}
+
+.logout:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--edge);
 }
 
 .logout:disabled {
   cursor: wait;
-  opacity: 0.7;
+  opacity: 0.6;
 }
