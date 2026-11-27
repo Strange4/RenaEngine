@@ -2,7 +2,8 @@
 import { act, render, screen, waitFor, fireEvent} from "@testing-library/react";
 import { AssetLoader } from "@/app/viewer/assetLoader";
 import { getSceneSource } from "@/app/viewer/sceneSource";
-import { RenderableType, type GameRenderable, type ViewerSetup } from "@/shared/renderable";
+import { RecordedRenderableChangeSource } from "@/app/viewer/renderableChangeSource";
+import { RenderableType, type GameRenderable, type RenderableChange, type ViewerSetup } from "@/shared/renderable";
 import ReplayViewer from "./ReplayViewer";
 import {ReplayController} from "@/app/viewer/replayController"
 
@@ -26,6 +27,9 @@ const map: GameRenderable = {
   type: RenderableType.MAP,
   layer: 0,
 };
+
+// the first change of a recording is the initial scene
+const FIRST: RenderableChange = { index: 0, changes: [map, ship] };
 
 jest.mock("pixi.js", () => {
   const appInstances: any[] = [];
@@ -116,7 +120,7 @@ describe("ReplayViewer", () => {
     const app = getPixiMocks().__appInstances[0];
     await waitFor(() => expect(getPixiMocks().__spriteInstances).toHaveLength(2));
 
-    expect(getSceneSource).toHaveBeenCalledWith("42");
+    expect(getSceneSource).toHaveBeenCalledWith(expect.any(RecordedRenderableChangeSource));
     expect(canvas).toHaveStyle({ height: "200px" });
     expect(canvas).toContainElement(app.canvas);
     expect(app.init).toHaveBeenCalledWith({ width: 400, height: 200, background: "#1f2937", antialias: true });
@@ -230,7 +234,7 @@ describe("ReplayViewer", () => {
     render(
       <ReplayViewer
         gameId="1"
-        recording={[{ index: 1, changes: [map] }]}
+        recording={[FIRST, { index: 1, changes: [map] }]}
       />,
     );
 
@@ -245,7 +249,7 @@ describe("ReplayViewer", () => {
 
   it("steps forward one change at a time and disables the button at the end", async () => {
     const flag: GameRenderable = { ...ship, id: "flag", type: RenderableType.DECORATION };
-    render(<ReplayViewer gameId="1" recording={[{ index: 1, changes: [flag] }]} />);
+    render(<ReplayViewer gameId="1" recording={[FIRST, { index: 1, changes: [flag] }]} />);
     const stepForward = screen.getByRole("button", { name: "Step forward" });
 
     await waitFor(() => expect(stepForward).toBeEnabled());
@@ -271,7 +275,7 @@ describe("ReplayViewer", () => {
     const failure = new Error("step failed");
     const stepSpy = jest.spyOn(actual.ReplayController.prototype, "stepForward").mockRejectedValueOnce(failure);
     try {
-      render(<ReplayViewer gameId="1" recording={[{ index: 1, changes: [map] }]} />);
+      render(<ReplayViewer gameId="1" recording={[FIRST, { index: 1, changes: [map] }]} />);
       const stepForward = screen.getByRole("button", { name: "Step forward" });
       await waitFor(() => expect(stepForward).toBeEnabled());
 
@@ -286,7 +290,7 @@ describe("ReplayViewer", () => {
 
   it("steps back to the previous change and disables the button at the start", async () => {
     const flag: GameRenderable = { ...ship, id: "flag", type: RenderableType.DECORATION };
-    render(<ReplayViewer gameId="1" recording={[{ index: 1, changes: [flag] }]} />);
+    render(<ReplayViewer gameId="1" recording={[FIRST, { index: 1, changes: [flag] }]} />);
     const stepForward = screen.getByRole("button", { name: "Step forward" });
     const stepBack = screen.getByRole("button", { name: "Step back" });
 
@@ -310,7 +314,7 @@ describe("ReplayViewer", () => {
     const failure = new Error("step failed");
     const stepSpy = jest.spyOn(actual.ReplayController.prototype, "stepBackward").mockRejectedValueOnce(failure);
     try {
-      render(<ReplayViewer gameId="1" recording={[{ index: 1, changes: [map] }]} />);
+      render(<ReplayViewer gameId="1" recording={[FIRST, { index: 1, changes: [map] }]} />);
       const stepForward = screen.getByRole("button", { name: "Step forward" });
       const stepBack = screen.getByRole("button", { name: "Step back" });
       await waitFor(() => expect(stepForward).toBeEnabled());
@@ -325,10 +329,20 @@ describe("ReplayViewer", () => {
       errorSpy.mockRestore();
     }
   });
+
+  it("plays back the recording after the first change", async () => {
+    const flag: GameRenderable = { ...ship, id: "flag", type: RenderableType.DECORATION };
+    render(<ReplayViewer gameId="1" recording={[{ index: 1, changes: [flag] }, FIRST]} />);
+
+    await waitFor(() => expect(ReplayController).toHaveBeenCalledTimes(1));
+
+    expect(ReplayController).toHaveBeenCalledWith(expect.any(Object), [{ index: 1, changes: [flag] }], [map, ship]);
+  });
+
   it("goes to the end and back to the start, disabling the buttons at each boundary", async () => {
     const flag: GameRenderable = { ...ship, id: "flag", type: RenderableType.DECORATION };
     const boat: GameRenderable = { ...ship, id: "boat" };
-    render(<ReplayViewer gameId="1" recording={[{ index: 1, changes: [flag] }, { index: 2, changes: [boat] }]} />);
+    render(<ReplayViewer gameId="1" recording={[FIRST, { index: 1, changes: [flag] }, { index: 2, changes: [boat] }]} />);
     const goToStart = screen.getByRole("button", { name: "Go to start" });
     const goToEnd = screen.getByRole("button", { name: "Go to end" });
 
@@ -379,7 +393,7 @@ describe("ReplayViewer", () => {
     const failure = new Error("jump failed");
     const jumpSpy = jest.spyOn(actual.ReplayController.prototype, method).mockRejectedValueOnce(failure);
     try {
-      render(<ReplayViewer gameId="1" recording={[{ index: 1, changes: [map] }]} />);
+      render(<ReplayViewer gameId="1" recording={[FIRST, { index: 1, changes: [map] }]} />);
       const stepForward = screen.getByRole("button", { name: "Step forward" });
       await waitFor(() => expect(stepForward).toBeEnabled());
       if (method === "goToStart") {

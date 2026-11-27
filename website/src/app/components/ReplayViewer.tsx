@@ -6,6 +6,7 @@ import { Application } from "pixi.js";
 import { AssetLoader } from "@/app/viewer/assetLoader";
 import { LiveViewRenderer } from "@/app/viewer/liveViewRenderer";
 import { getSceneSource } from "@/app/viewer/sceneSource";
+import { RecordedRenderableChangeSource } from "@/app/viewer/renderableChangeSource";
 import { getInitialMap, getInitialViewerWidth, getResponsiveViewerSetup, createViewerResizeHandler, observeViewerResize } from "@/app/viewer/responsiveViewer";
 import ReplayControls from "./ReplayControls";
 import {Animator, ANIMATION_DURATION} from "@/app/viewer/animator"; //animations are needed or else it will be instant
@@ -43,7 +44,9 @@ export default function ReplayViewer({ gameId, recording = EMPTY_RECORDING }: Re
     const animator = new Animator();
 
     (async () => {
-      const scene = await getSceneSource(gameId).getInitialScene();
+      // the first change of the recording is the initial scene (nothing is drawn without a recording)
+      const changeSource = new RecordedRenderableChangeSource(recording);
+      const scene = await getSceneSource(changeSource).getInitialScene();
       if (unmount.signal.aborted) return;
 
       // The initial map is used to determine the aspect ratio of the game and the tile size
@@ -88,7 +91,7 @@ export default function ReplayViewer({ gameId, recording = EMPTY_RECORDING }: Re
 
       //Adding missing code fix below for the speed selector to work. we are creating the controller here
       controller = new ReplayController(
-        createRendererHandlers(renderer, unmount.signal), recording, scene.renderables,
+        createRendererHandlers(renderer, unmount.signal), changeSource.getAllChanges().slice(1), scene.renderables,
       );
       controllerRef.current = controller;
 

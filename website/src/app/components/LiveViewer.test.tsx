@@ -4,6 +4,7 @@ import { Sprite, Container } from "pixi.js";
 import { AssetLoader } from "@/app/viewer/assetLoader";
 import { RenderableChangeProcessor } from "@/app/viewer/renderableChangeProcessor";
 import { getSceneSource } from "@/app/viewer/sceneSource";
+import { SSERenderableChangeSource } from "@/app/viewer/renderableChangeSource";
 import {
   RenderableType,
   type GameRenderable,
@@ -214,7 +215,8 @@ describe("LiveViewer", () => {
       expect(mockGetInitialScene).toHaveBeenCalledTimes(1);
     });
 
-    expect(getSceneSource).toHaveBeenCalledWith("42");
+    expect(SSERenderableChangeSource).toHaveBeenCalledWith("/api/viewer/sse/42");
+    expect(getSceneSource).toHaveBeenCalledWith((SSERenderableChangeSource as jest.Mock).mock.results[0].value);
   });
 
   it.each([
@@ -323,6 +325,7 @@ describe("LiveViewer", () => {
     expect(app.init).not.toHaveBeenCalled();
     expect(app.destroy).not.toHaveBeenCalled();
     expect(Container).toHaveBeenCalledTimes(1);
+    expect((SSERenderableChangeSource as jest.Mock).mock.results[0].value.close).toHaveBeenCalled();
   });
 
   it("initializes PixiJS and adds a centered sprite", async () => {
@@ -666,5 +669,69 @@ describe("LiveViewer", () => {
     tick({deltaMS: 100});
     expect(oldShip.position.set).toHaveBeenLastCalledWith(180,60); //some coordinate position for update
     expect(oldShip.position.set).toHaveBeenCalledWith(180, 60);
+  });
+
+  it("applies the changes that came in while setting up", async () => {
+    const newFlag: GameRenderable = {
+      id: "new-flag",
+      position: [4, 1],
+      assetPath: "/sprites/flag.svg",
+      size: [1, 1],
+      type: RenderableType.DECORATION,
+      layer: 5,
+    };
+    (SSERenderableChangeSource as jest.Mock).mockImplementationOnce(() => ({
+      setChangeListener: jest.fn(),
+      getAllChanges: jest.fn().mockReturnValue([
+        { index: 1, changes: TEST_SCENE },
+        { index: 2, changes: [newFlag] },
+      ]),
+      close: jest.fn(),
+    }));
+
+    render(<LiveViewer gameId="1" />);
+
+    // first change is the initial scene, only the second one gets applied
+    await waitFor(() => {
+      expect(Sprite).toHaveBeenCalledTimes(4);
+    });
+    expect(getViewerProcessor().getRenderable("new-flag")).toEqual(newFlag);
+  });
+
+  it("logs an error if a change from setup fails", async () => {
+    const error = new Error("asset failed");
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    (SSERenderableChangeSource as jest.Mock).mockImplementationOnce(() => ({
+      setChangeListener: jest.fn(),
+      getAllChanges: jest.fn().mockReturnValue([
+        { index: 1, changes: TEST_SCENE },
+        { index: 2, changes: [{ ...TEST_SCENE[1], id: "late-sprite" }] },
+      ]),
+      close: jest.fn(),
+    }));
+    (AssetLoader as jest.Mock).mockImplementationOnce(() => ({
+      loadFor: jest.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(error),
+      getTexture: jest.fn().mockReturnValue("mock-texture"),
+    }));
+
+    try {
+      render(<LiveViewer gameId="1" />);
+      await waitFor(() => {
+        expect(logSpy).toHaveBeenCalledWith(error);
+      });
+    } finally {
+      logSpy.mockRestore();
+    }
+  });
+
+  it("closes the SSE connection on unmount", async () => {
+    const { unmount } = render(<LiveViewer gameId="1" />);
+    await waitFor(() => {
+      expect(RenderableChangeProcessor).toHaveBeenCalledTimes(1);
+    });
+
+    unmount();
+
+    expect((SSERenderableChangeSource as jest.Mock).mock.results[0].value.close).toHaveBeenCalled();
   });
 });

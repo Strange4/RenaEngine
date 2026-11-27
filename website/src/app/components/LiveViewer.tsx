@@ -34,7 +34,9 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
     const unmount = new AbortController();
 
     (async () => {
-      const scene = await getSceneSource(gameId).getInitialScene();
+      // connect to SSE, the first change from the server is the initial scene
+      changeSource = new SSERenderableChangeSource(`/api/viewer/sse/${gameId}`);
+      const scene = await getSceneSource(changeSource).getInitialScene();
       if (unmount.signal.aborted) return;
 
       // The initial map is used to determine the aspect ratio of the game and the tile size
@@ -78,9 +80,6 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
 
       resizeObserver = observeViewerResize(container, resize);
 
-      // connect to SSE
-      changeSource = new SSERenderableChangeSource(`/api/viewer/sse/${gameId}`);
-
       // Applies the RenderableChanges that come after the initial scene
       processor = new RenderableChangeProcessor({
         //if new, create
@@ -93,6 +92,11 @@ export default function LiveViewer({ gameId }: LiveViewerProps) {
         },
         remove: async (id) => renderer.removeGameRenderable(id),
       }, changeSource, scene.renderables);
+
+      // apply the changes we got while setting up (skip the first one, it's already drawn)
+      for (const change of changeSource.getAllChanges().slice(1)) {
+        processor.process(change).catch((e) => console.log(e));
+      }
     })().catch((e) => {
       console.log(e);
       // TODO put actual error handling here
