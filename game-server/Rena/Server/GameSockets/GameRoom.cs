@@ -146,7 +146,7 @@ internal class GameRoom<G, S, A>
         {
             bool isLastMessage = i == numMessages - 1;
 
-            int currentIndex = messageSize * i + segment.Offset;
+            int currentIndex = messageSize * i;
             await websocket.SendAsync(segment.Slice(currentIndex, Math.Min(segment.Count - currentIndex, messageSize)), type, isLastMessage, token);
         }
     }
