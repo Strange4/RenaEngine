@@ -21,7 +21,7 @@ interface ReplayViewerProps {
 
 const EMPTY_RECORDING: RenderableChange[] = []; // default value of recording if none provided. 
 
-// only draws the initial scene for now, the ReplayController gets connected in 171-175
+// Draws the initial scene, then plays back the recording through the ReplayController
 export default function ReplayViewer({ gameId, recording = EMPTY_RECORDING }: ReplayViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [resolution, setResolution] = useState<[number, number] | null>(null);
@@ -133,6 +133,16 @@ export default function ReplayViewer({ gameId, recording = EMPTY_RECORDING }: Re
         controllerRef.current?.stepBackward().catch((e) => console.error("Failed to step backward", e));
       }}
       canStepBackward={status !== null && status.position > 0}
+      onGoToStart={() => {
+        controllerRef.current?.goToStart().catch((e) => console.error("Failed to go to start", e));
+      }}
+      canGoToStart={status !== null && status.position > 0}
+      onGoToEnd={() => {
+        controllerRef.current?.goToEnd().catch((e) => console.error("Failed to go to end", e));
+      }}
+      canGoToEnd={status !== null && status.state !== PlaybackState.ENDED}
+      // nothing left to play at the end, and nothing to play at all if the recording is empty
+      canPlay={status !== null && status.state !== PlaybackState.ENDED}
       onSpeedChange={(speed) => controllerRef.current?.setSpeed(speed)}
       />
     </div>

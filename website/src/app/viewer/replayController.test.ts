@@ -621,3 +621,159 @@ describe("step backward", () => {
     expect(controller.getStatus().position).toBe(1);
   });
 });
+
+describe("go to start and end", () => {
+  it("applies every remaining change and ends on the final scene", async () => {
+    const { controller, testHandlers } = controllerFor();
+    await controller.stepForward();
+
+    await expect(controller.goToEnd()).resolves.toBe(true);
+
+    expect(testHandlers.calls).toEqual(["create:flag", "update:ship:2,1", "remove:ship"]);
+    expect(controller.getCurrentState()).toEqual([flag]);
+    expect(controller.getStatus()).toMatchObject({ state: PlaybackState.ENDED, position: 3 });
+  });
+
+  it("undoes every applied change and ends on the initial scene", async () => {
+    const { controller, testHandlers } = controllerFor();
+    await controller.goToEnd();
+    testHandlers.calls.length = 0;
+
+    await expect(controller.goToStart()).resolves.toBe(true);
+
+    expect(testHandlers.calls).toEqual(["create:ship", "update:ship:1,1", "remove:flag"]);
+    expect(controller.getCurrentState()).toEqual([ship]);
+    expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0 });
+  });
+
+  it("does nothing when already at the boundary", async () => {
+    const { controller, testHandlers } = controllerFor();
+    const listener = jest.fn();
+    controller.onStatusChange(listener);
+
+    await expect(controller.goToStart()).resolves.toBe(false);
+    await controller.goToEnd();
+    testHandlers.calls.length = 0;
+    listener.mockClear();
+    await expect(controller.goToEnd()).resolves.toBe(false);
+
+    expect(testHandlers.calls).toEqual([]);
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it("does nothing with an empty recording", async () => {
+    const { controller, testHandlers } = controllerFor([]);
+
+    await expect(controller.goToEnd()).resolves.toBe(false);
+    await expect(controller.goToStart()).resolves.toBe(false);
+
+    expect(testHandlers.calls).toEqual([]);
+    expect(controller.getCurrentState()).toEqual([ship]);
+    expect(controller.getStatus()).toMatchObject({ state: PlaybackState.ENDED, position: 0, length: 0 });
+  });
+
+  it("can step back from the end after going to the end", async () => {
+    const { controller } = controllerFor();
+    await controller.goToEnd();
+
+    await expect(controller.stepBackward()).resolves.toBe(true);
+
+    expect(controller.getCurrentState()).toEqual(expect.arrayContaining([flag, movedShip]));
+    expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 2 });
+  });
+
+  it("keeps the order when mixed with stepping quickly", async () => {
+    const { controller } = controllerFor();
+
+    const results = await Promise.all([controller.goToEnd(), controller.stepBackward(), controller.goToStart()]);
+
+    expect(results).toEqual([true, true, true]);
+    expect(controller.getCurrentState()).toEqual([ship]);
+    expect(controller.getStatus().position).toBe(0);
+  });
+
+  it("pauses playback and stays on the final scene", async () => {
+    const { controller, testHandlers } = controllerFor();
+    jest.useFakeTimers();
+
+    try {
+      controller.play();
+      await jest.advanceTimersByTimeAsync(STEP_DELAY);
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PLAYING, position: 1 });
+
+      await expect(controller.goToEnd()).resolves.toBe(true);
+      await jest.advanceTimersByTimeAsync(STEP_DELAY * 3);
+
+      expect(testHandlers.calls).toEqual(["create:flag", "update:ship:2,1", "remove:ship"]);
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.ENDED, position: 3 });
+    } finally {
+      controller.dispose();
+      jest.useRealTimers();
+    }
+  });
+
+  it("pauses playback and stays on the initial scene", async () => {
+    const { controller, testHandlers } = controllerFor();
+    jest.useFakeTimers();
+
+    try {
+      controller.play();
+      await jest.advanceTimersByTimeAsync(STEP_DELAY * 2);
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PLAYING, position: 2 });
+
+      await expect(controller.goToStart()).resolves.toBe(true);
+      await jest.advanceTimersByTimeAsync(STEP_DELAY * 3);
+
+      expect(testHandlers.calls).toEqual(["create:flag", "update:ship:2,1", "update:ship:1,1", "remove:flag"]);
+      expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 0 });
+    } finally {
+      controller.dispose();
+      jest.useRealTimers();
+    }
+  });
+
+  it("stops on the last change that worked if a change fails on the way", async () => {
+    const testHandlers = handlers();
+    const update = testHandlers.update;
+    testHandlers.update = jest.fn().mockRejectedValueOnce(new Error("asset failed to load")).mockImplementation(update);
+    const { controller } = controllerFor(RECORDING, testHandlers);
+
+    await expect(controller.goToEnd()).rejects.toThrow("asset failed to load");
+
+    expect(controller.getCurrentState()).toEqual([ship, flag]);
+    expect(controller.getStatus()).toMatchObject({ state: PlaybackState.PAUSED, position: 1 });
+
+    await expect(controller.goToEnd()).resolves.toBe(true);
+    expect(controller.getStatus()).toMatchObject({ state: PlaybackState.ENDED, position: 3 });
+  });
+
+  it("does nothing after dispose", async () => {
+    const { controller, testHandlers } = controllerFor();
+    await controller.stepForward();
+    controller.dispose();
+
+    await expect(controller.goToEnd()).resolves.toBe(false);
+    await expect(controller.goToStart()).resolves.toBe(false);
+
+    expect(testHandlers.calls).toEqual(["create:flag"]);
+    expect(controller.getStatus().position).toBe(1);
+  });
+
+  it("stops going to the end if disposed partway", async () => {
+    const testHandlers = handlers();
+    let finishCreate: () => void = () => undefined;
+    testHandlers.create = jest.fn(() => new Promise<void>((resolve) => (finishCreate = resolve)));
+    const { controller } = controllerFor(RECORDING, testHandlers);
+
+    const step = controller.goToEnd();
+    for (let i = 0; i < 20 && (testHandlers.create as jest.Mock).mock.calls.length === 0; i++) {
+      await Promise.resolve();
+    }
+    controller.dispose();
+    finishCreate();
+
+    await expect(step).resolves.toBe(false);
+    expect(testHandlers.update).not.toHaveBeenCalled();
+    expect(controller.getStatus().position).toBe(0);
+  });
+});

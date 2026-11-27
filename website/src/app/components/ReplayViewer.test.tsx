@@ -338,4 +338,75 @@ describe("ReplayViewer", () => {
 
     expect(ReplayController).toHaveBeenCalledWith(expect.any(Object), [{ index: 1, changes: [flag] }], [map, ship]);
   });
+
+  it("goes to the end and back to the start, disabling the buttons at each boundary", async () => {
+    const flag: GameRenderable = { ...ship, id: "flag", type: RenderableType.DECORATION };
+    const boat: GameRenderable = { ...ship, id: "boat" };
+    render(<ReplayViewer gameId="1" recording={[FIRST, { index: 1, changes: [flag] }, { index: 2, changes: [boat] }]} />);
+    const goToStart = screen.getByRole("button", { name: "Go to start" });
+    const goToEnd = screen.getByRole("button", { name: "Go to end" });
+
+    await waitFor(() => expect(goToEnd).toBeEnabled());
+    expect(goToStart).toBeDisabled();
+    await waitFor(() => expect(getPixiMocks().__spriteInstances).toHaveLength(2));
+
+    fireEvent.click(goToEnd);
+    await waitFor(() => expect(goToEnd).toBeDisabled());
+    expect(getPixiMocks().__spriteInstances).toHaveLength(4);
+    expect(goToStart).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Play" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Step forward" })).toBeDisabled();
+
+    const [flagSprite, boatSprite] = getPixiMocks().__spriteInstances.slice(2) as Array<{ destroy: jest.Mock }>;
+    fireEvent.click(goToStart);
+    await waitFor(() => expect(goToStart).toBeDisabled());
+    expect(flagSprite.destroy).toHaveBeenCalled();
+    expect(boatSprite.destroy).toHaveBeenCalled();
+    expect(goToEnd).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Play" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Step back" })).toBeDisabled();
+  });
+
+  it("disables every playback button when the recording is empty", async () => {
+    render(<ReplayViewer gameId="1" />);
+
+    await waitFor(() => expect(ReplayController).toHaveBeenCalledTimes(1));
+
+    for (const name of ["Step back", "Go to start", "Play", "Go to end", "Step forward"]) {
+      expect(screen.getByRole("button", { name })).toBeDisabled();
+    }
+  });
+
+  it("disables play before the replay has loaded", () => {
+    mockGetInitialScene.mockReturnValue(new Promise(() => undefined));
+    render(<ReplayViewer gameId="1" recording={[{ index: 1, changes: [map] }]} />);
+
+    expect(screen.getByRole("button", { name: "Play" })).toBeDisabled();
+  });
+
+  it.each([
+    ["Go to end", "goToEnd", "Failed to go to end"],
+    ["Go to start", "goToStart", "Failed to go to start"],
+  ] as const)("logs an error if %s fails", async (name, method, message) => {
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const actual = jest.requireActual("@/app/viewer/replayController") as typeof import("@/app/viewer/replayController");
+    const failure = new Error("jump failed");
+    const jumpSpy = jest.spyOn(actual.ReplayController.prototype, method).mockRejectedValueOnce(failure);
+    try {
+      render(<ReplayViewer gameId="1" recording={[FIRST, { index: 1, changes: [map] }]} />);
+      const stepForward = screen.getByRole("button", { name: "Step forward" });
+      await waitFor(() => expect(stepForward).toBeEnabled());
+      if (method === "goToStart") {
+        fireEvent.click(stepForward);
+        await waitFor(() => expect(screen.getByRole("button", { name })).toBeEnabled());
+      }
+
+      fireEvent.click(screen.getByRole("button", { name }));
+
+      await waitFor(() => expect(errorSpy).toHaveBeenCalledWith(message, failure));
+    } finally {
+      jumpSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
+  });
 });

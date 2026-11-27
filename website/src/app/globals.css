@@ -203,6 +203,11 @@ button {
   background: #e5e7eb;
 }
 
+/* keep the white circle when disabled (e.g. at the end of the recording), otherwise the dark icon disappears on the dark bar */
+.replay-controls .replay-play:disabled {
+  background: #f9fafb;
+}
+
 .replay-controls .replay-play svg {
   width: 2rem;
   height: 2rem;
